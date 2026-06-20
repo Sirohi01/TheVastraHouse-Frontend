@@ -48,7 +48,7 @@ export function InstagramMarquee({ posts }: Readonly<{ posts: string[] }>) {
       <div className="instagram-marquee flex w-max animate-[instaMarquee_38s_linear_infinite] items-stretch gap-4 hover:[animation-play-state:paused]">
         {marqueePosts.map((href, index) => (
           <div
-            className="h-[460px] w-[300px] shrink-0 overflow-hidden rounded-sm border border-[#e1d6c4] bg-white p-2 shadow-sm sm:h-[520px] sm:w-[340px]"
+            className="h-[590px] w-[calc(100vw-40px)] max-w-[340px] shrink-0 overflow-hidden rounded-sm border border-[#e1d6c4] bg-white shadow-sm sm:h-[620px] sm:w-[340px]"
             key={`${href}-${index}`}
           >
             <blockquote
@@ -79,6 +79,10 @@ export function InstagramMarquee({ posts }: Readonly<{ posts: string[] }>) {
           height: 100% !important;
           min-height: 100% !important;
           max-height: 100% !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
         }
       `}</style>
     </div>
