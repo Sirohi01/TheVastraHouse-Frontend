@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare": "husky",
+    "prepare": "node -e \"if (!process.env.CI && process.env.NODE_ENV !== 'production') import('husky').then(({default: husky}) => husky())\"",
     "dev": "next dev",
     "clean": "node -e \"require('node:fs').rmSync('.next',{recursive:true,force:true})\"",
     "build": "npm run clean && next build",
@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "precommit": "npm run format:check && npm run lint && npm run typecheck",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --ext .ts,.tsx"
   },
