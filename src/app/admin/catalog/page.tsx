@@ -1,0 +1,429 @@
+"use client";
+
+import { Edit3, ImagePlus, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { MediaPicker, type MediaItem } from "@/components/media/MediaPicker";
+import { ResponsiveImage } from "@/components/media/ResponsiveImage";
+import { EmptyState } from "@/components/states/EmptyState";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DataTable } from "@/components/ui/DataTable";
+import { Field } from "@/components/ui/Field";
+import { Modal } from "@/components/ui/Modal";
+import { Tabs } from "@/components/ui/Tabs";
+import { Textarea } from "@/components/ui/Textarea";
+import { errorMessage, useToast } from "@/components/ui/Toast";
+import { apiFetch } from "@/lib/api";
+import type { MediaReference } from "@/lib/catalog";
+import { useAuthStore } from "@/stores/authStore";
+
+type TaxonomyKind = "categories" | "collections" | "tags";
+
+type TaxonomyItem = {
+  _id: string;
+  brandId?: string;
+  name: string;
+  slug: string;
+  description?: string;
+  banner?: MediaReference | null;
+  active: boolean;
+};
+
+type TaxonomyForm = {
+  brandId: string;
+  name: string;
+  slug: string;
+  description: string;
+  banner: MediaReference | null;
+  active: boolean;
+};
+
+const tabs: { label: string; value: TaxonomyKind }[] = [
+  { label: "Categories", value: "categories" },
+  { label: "Collections", value: "collections" },
+  { label: "Tags", value: "tags" },
+];
+
+const blankForm: TaxonomyForm = {
+  brandId: "",
+  name: "",
+  slug: "",
+  description: "",
+  banner: null,
+  active: true,
+};
+
+export default function AdminCatalogPage() {
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const toast = useToast();
+  const [kind, setKind] = useState<TaxonomyKind>("categories");
+  const [items, setItems] = useState<TaxonomyItem[]>([]);
+  const [form, setForm] = useState<TaxonomyForm>(blankForm);
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [editingId, setEditingId] = useState<string>();
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<TaxonomyItem>();
+  const imageMedia = useMemo(() => media.filter((item) => item.resourceType === "image"), [media]);
+
+  async function loadItems(nextKind: TaxonomyKind = kind) {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ sort: "name" });
+
+      if (search) {
+        params.set("search", search);
+      }
+
+      const payload = await apiFetch<{ data: TaxonomyItem[] }>(
+        `/catalog/admin/${nextKind}?${params.toString()}`,
+        { accessToken },
+      );
+      setItems(payload.data);
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to load catalog data"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (accessToken) {
+      void loadItems(kind);
+      void loadMedia();
+    }
+  }, [accessToken, kind]);
+
+  async function loadMedia() {
+    try {
+      const payload = await apiFetch<{ media: MediaItem[] }>("/media", { accessToken });
+      setMedia(payload.media);
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to load media library"));
+    }
+  }
+
+  function updateForm(field: keyof TaxonomyForm, value: string | boolean) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function setBanner(item: MediaItem) {
+    setForm((current) => ({
+      ...current,
+      banner: toMediaReference(item, current.name || labelFor(kind).replace(/s$/, ""), "9:16"),
+    }));
+  }
+
+  function clearBanner() {
+    setForm((current) => ({ ...current, banner: null }));
+  }
+
+  function selectKind(nextKind: TaxonomyKind) {
+    setKind(nextKind);
+  }
+
+  function openCreate() {
+    setEditingId(undefined);
+    setForm(blankForm);
+    setEditorOpen(true);
+  }
+
+  function editItem(item: TaxonomyItem) {
+    setEditingId(item._id);
+    setForm({
+      brandId: item.brandId ? String(item.brandId) : "",
+      name: item.name,
+      slug: item.slug,
+      description: item.description ?? "",
+      banner: item.banner ?? null,
+      active: item.active,
+    });
+    setEditorOpen(true);
+  }
+
+  async function saveItem(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const payload =
+      kind === "tags"
+        ? { name: form.name, slug: form.slug || undefined, active: form.active }
+        : {
+            brandId: kind === "collections" ? form.brandId : undefined,
+            name: form.name,
+            slug: form.slug || undefined,
+            description: form.description || undefined,
+            banner: form.banner,
+            active: form.active,
+          };
+    const path = editingId ? `/catalog/admin/${kind}/${editingId}` : `/catalog/admin/${kind}`;
+    const method = editingId ? "PATCH" : "POST";
+
+    try {
+      await apiFetch(path, { accessToken, method, body: JSON.stringify(payload) });
+      setEditorOpen(false);
+      setEditingId(undefined);
+      setForm(blankForm);
+      toast.success("Catalog data saved");
+      await loadItems();
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to save catalog data"));
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) {
+      return;
+    }
+
+    try {
+      await apiFetch(`/catalog/admin/${kind}/${deleteTarget._id}`, {
+        accessToken,
+        method: "DELETE",
+      });
+      toast.success("Catalog data deleted");
+      setDeleteTarget(undefined);
+      await loadItems();
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to delete catalog data"));
+    }
+  }
+
+  return (
+    <ProtectedRoute>
+      <section className="mx-auto max-w-6xl">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-semibold">Catalog</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage categories, collections, and tags.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-sm font-semibold"
+              onClick={() => void loadItems()}
+              type="button"
+            >
+              <RefreshCw aria-hidden="true" size={16} />
+              Refresh
+            </button>
+            <button
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+              onClick={openCreate}
+              type="button"
+            >
+              <Plus aria-hidden="true" size={16} />
+              New {tabs.find((tab) => tab.value === kind)?.label.replace(/s$/, "")}
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <Tabs active={kind} items={tabs} onChange={selectKind} />
+          <div className="flex gap-2">
+            <input
+              className="h-9 w-48 rounded-md border border-border px-2.5 text-sm"
+              onChange={(event) => setSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  void loadItems();
+                }
+              }}
+              placeholder={`Search ${labelFor(kind).toLowerCase()}`}
+              value={search}
+            />
+            <button
+              className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-semibold"
+              onClick={() => void loadItems()}
+              type="button"
+            >
+              Search
+            </button>
+          </div>
+        </div>
+
+        {items.length ? (
+          <DataTable
+            columns={[
+              {
+                header: "Name",
+                render: (item) => <span className="font-semibold">{item.name}</span>,
+              },
+              {
+                header: "Image",
+                render: (item) =>
+                  kind === "tags" ? (
+                    <span className="text-muted-foreground">Not used</span>
+                  ) : item.banner?.url ? (
+                    <div className="w-12 overflow-hidden rounded-md border border-border">
+                      <ResponsiveImage
+                        alt={item.banner.altText ?? `${item.name} banner`}
+                        aspectRatio={item.banner.aspectRatio ?? "9:16"}
+                        sizes="48px"
+                        src={item.banner.url}
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">No image</span>
+                  ),
+              },
+              {
+                header: "Slug",
+                render: (item) => <span className="text-muted-foreground">{item.slug}</span>,
+              },
+              { header: "Status", render: (item) => (item.active ? "Active" : "Inactive") },
+              {
+                align: "right",
+                header: "Actions",
+                render: (item) => (
+                  <div className="flex justify-end gap-1.5">
+                    <button
+                      className="inline-flex size-8 items-center justify-center rounded-md border border-border"
+                      onClick={() => editItem(item)}
+                      title="Edit"
+                      type="button"
+                    >
+                      <Edit3 aria-hidden="true" size={14} />
+                    </button>
+                    <button
+                      className="inline-flex size-8 items-center justify-center rounded-md border border-border text-destructive"
+                      onClick={() => setDeleteTarget(item)}
+                      title="Delete"
+                      type="button"
+                    >
+                      <Trash2 aria-hidden="true" size={14} />
+                    </button>
+                  </div>
+                ),
+              },
+            ]}
+            emptyMessage={loading ? "Loading..." : `No ${labelFor(kind).toLowerCase()} yet.`}
+            getRowKey={(item) => item._id}
+            rows={items}
+          />
+        ) : (
+          <EmptyState
+            title={`No ${labelFor(kind).toLowerCase()}`}
+            message={loading ? "Loading..." : "Create the first item."}
+          />
+        )}
+
+        <Modal
+          onClose={() => setEditorOpen(false)}
+          open={editorOpen}
+          size="sm"
+          title={editingId ? "Edit item" : "Create item"}
+        >
+          <form className="space-y-3" onSubmit={saveItem}>
+            {kind === "collections" ? (
+              <Field
+                label="Brand ID"
+                onChange={(value) => updateForm("brandId", value)}
+                required
+                value={form.brandId}
+              />
+            ) : null}
+            <Field
+              label="Name"
+              onChange={(value) => updateForm("name", value)}
+              required
+              value={form.name}
+            />
+            <Field label="Slug" onChange={(value) => updateForm("slug", value)} value={form.slug} />
+            {kind !== "tags" ? (
+              <>
+                <Textarea
+                  label="Description"
+                  onChange={(value) => updateForm("description", value)}
+                  value={form.description}
+                />
+                <div className="rounded-lg border border-border p-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <ImagePlus aria-hidden="true" size={16} />
+                    Banner Image
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Used on category and collection cards. Recommended ratio: 9:16.
+                  </p>
+                  {form.banner?.url ? (
+                    <div className="mt-3 grid gap-2">
+                      <div className="w-32 overflow-hidden rounded-md border border-border">
+                        <ResponsiveImage
+                          alt={form.banner.altText ?? `${form.name || "Catalog"} banner`}
+                          aspectRatio={form.banner.aspectRatio ?? "9:16"}
+                          sizes="128px"
+                          src={form.banner.url}
+                        />
+                      </div>
+                      <button
+                        className="inline-flex h-8 w-fit items-center gap-1.5 rounded-md border border-destructive/40 px-2 text-xs font-semibold text-destructive"
+                        onClick={clearBanner}
+                        type="button"
+                      >
+                        <Trash2 aria-hidden="true" size={13} />
+                        Remove image
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="mt-3 rounded-md border border-border p-3 text-sm text-muted-foreground">
+                      No banner selected.
+                    </p>
+                  )}
+                  <div className="mt-3">
+                    <MediaPicker media={imageMedia} onSelect={setBanner} />
+                  </div>
+                </div>
+              </>
+            ) : null}
+            <Checkbox
+              checked={form.active}
+              label="Active"
+              onChange={(value) => updateForm("active", value)}
+            />
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                className="h-9 rounded-md border border-border px-3 text-sm font-semibold"
+                onClick={() => setEditorOpen(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button className="h-9 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
+                Save
+              </button>
+            </div>
+          </form>
+        </Modal>
+
+        <ConfirmDialog
+          confirmLabel="Delete"
+          message={`This will permanently delete "${deleteTarget?.name}". This cannot be undone.`}
+          onCancel={() => setDeleteTarget(undefined)}
+          onConfirm={confirmDelete}
+          open={!!deleteTarget}
+          title="Delete item"
+        />
+      </section>
+    </ProtectedRoute>
+  );
+}
+
+function labelFor(kind: TaxonomyKind): string {
+  return tabs.find((tab) => tab.value === kind)?.label ?? "Catalog";
+}
+
+function toMediaReference(
+  item: MediaItem,
+  fallbackAlt: string,
+  aspectRatio: string,
+): MediaReference {
+  return {
+    mediaId: item._id,
+    url: item.originalUrl ?? item.secureUrl,
+    altText: item.altText ?? `${fallbackAlt} banner image`,
+    type: "image",
+    aspectRatio: item.selectedAspectRatio || aspectRatio,
+    objectFit: "cover",
+  };
+}
