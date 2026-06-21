@@ -1,13 +1,6 @@
-import {
-  ArrowRight,
-  Award,
-  Instagram,
-  PackageCheck,
-  RotateCcw,
-  ShieldCheck,
-  Truck,
-} from "lucide-react";
+import { ArrowRight, Award, PackageCheck, RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import { InstagramMarquee } from "@/components/home/InstagramMarquee";
+import { ProductMediaCarousel } from "@/components/catalog/ProductMediaCarousel";
 import { MobileHomeSearch } from "@/components/home/MobileHomeSearch";
 import { PreOrderAnnouncementModal } from "@/components/home/PreOrderAnnouncementModal";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
@@ -41,6 +34,7 @@ type VisualTile = {
     aspectRatio: string;
     src: string;
   };
+  mediaItems?: MediaReference[];
   pricing?: ReturnType<typeof getProductPricing>;
 };
 
@@ -51,7 +45,6 @@ export default async function HomePage() {
   const productTiles = toProductTiles(data.products);
   const categoryTiles = toTaxonomyTiles(data.categories, "categories");
   const collectionTiles = toTaxonomyTiles(data.collections, "collections");
-  const topTiles = [...categoryTiles, ...collectionTiles, ...productTiles].slice(0, 5);
   const heroImage = productTiles[0]?.media.src ?? collectionTiles[0]?.media.src ?? fallbackHero;
   const heroSlides = normalizeHeroSlides(cms?.home?.hero?.slides, cms?.home?.hero, heroImage);
   const storyImage =
@@ -61,7 +54,6 @@ export default async function HomePage() {
     heroImage;
   const storyImageAlt =
     cms?.home?.storyMedia?.altText ?? "Wide embroidered fabric detail for The Vastra House story";
-  const socialTiles = [...productTiles, ...categoryTiles, ...collectionTiles].slice(0, 7);
   const instagramPosts = cms?.footer?.instagramPosts?.filter(Boolean) ?? [];
 
   return (
@@ -79,12 +71,12 @@ export default async function HomePage() {
         </div>
         <MobileHomeSearch />
         <Hero slides={heroSlides} />
-        <SquareTileRail tiles={topTiles} />
+        <SquareTileRail tiles={categoryTiles} />
         <StoryBand image={storyImage} imageAlt={storyImageAlt} />
-        <CollectionGrid tiles={collectionTiles.length ? collectionTiles : categoryTiles} />
+        <CollectionGrid tiles={collectionTiles} />
         <ProductGrid products={productTiles} />
         <TrustStrip />
-        <SocialGrid instagramPosts={instagramPosts} tiles={socialTiles} />
+        <SocialGrid instagramPosts={instagramPosts} />
       </div>
       <style>{`
         @keyframes heroFade {
@@ -256,10 +248,10 @@ function SquareTileRail({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
         <div className="mb-5 flex flex-col gap-2 text-center sm:mb-6">
           <FiligreeDivider align="center" />
           <h2 className="font-serif text-2xl uppercase tracking-[0.08em] text-[#3d1620] sm:text-[28px]">
-            Shop The Edit
+            Shop by Category
           </h2>
           <p className="mx-auto max-w-2xl text-sm leading-6 text-muted-foreground">
-            Curated categories, collections, and pre-order favourites for a refined wardrobe.
+            Explore the categories created in your catalog.
           </p>
         </div>
 
@@ -397,12 +389,10 @@ function ProductGrid({ products }: Readonly<{ products: VisualTile[] }>) {
               key={`${product.href}-${index}`}
             >
               <div className="relative overflow-hidden">
-                <ResponsiveImage
+                <ProductMediaCarousel
                   alt={product.media.alt}
-                  aspectRatio={TALL_TILE_ASPECT_RATIO}
-                  className="transition-transform duration-500 group-hover:scale-105"
+                  media={product.mediaItems ?? []}
                   sizes="(max-width: 640px) 100vw, 25vw"
-                  src={product.media.src}
                 />
                 <span className="pointer-events-none absolute inset-1.5 border border-white/0 transition-colors duration-200 group-hover:border-[#caa14e]/55" />
                 {product.pricing?.hasSale ? (
@@ -493,15 +483,10 @@ function TrustStrip() {
   );
 }
 
-function SocialGrid({
-  instagramPosts,
-  tiles,
-}: Readonly<{ instagramPosts: string[]; tiles: VisualTile[] }>) {
-  if (!tiles.length && !instagramPosts.length) {
+function SocialGrid({ instagramPosts }: Readonly<{ instagramPosts: string[] }>) {
+  if (!instagramPosts.length) {
     return null;
   }
-
-  const tileItems = [...tiles, ...tiles];
 
   return (
     <section className="mx-auto max-w-7xl px-5 pb-10 pt-6">
@@ -512,32 +497,7 @@ function SocialGrid({
         </h2>
         <span className="h-px w-8 bg-[#caa14e]/70" />
       </div>
-      {instagramPosts.length ? (
-        <InstagramMarquee posts={instagramPosts} />
-      ) : (
-        <div className="mt-5 overflow-hidden">
-          <div className="flex w-max animate-[instaMarquee_28s_linear_infinite] gap-3 hover:[animation-play-state:paused]">
-            {tileItems.map((tile, index) => (
-              <a
-                className="group relative block w-36 shrink-0 overflow-hidden rounded-sm border border-[#e1d6c4] bg-white sm:w-40"
-                href={tile.href}
-                key={`${tile.href}-${index}`}
-              >
-                <ResponsiveImage
-                  alt={tile.media.alt}
-                  aspectRatio={TALL_TILE_ASPECT_RATIO}
-                  className="transition-transform duration-500 group-hover:scale-110"
-                  sizes="160px"
-                  src={tile.media.src}
-                />
-                <span className="absolute inset-0 grid place-items-center bg-[#2e0c12]/0 text-white transition-colors duration-200 group-hover:bg-[#2e0c12]/35">
-                  <Instagram aria-hidden="true" className="opacity-0 group-hover:opacity-100" />
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+      <InstagramMarquee posts={instagramPosts} />
     </section>
   );
 }
@@ -704,6 +664,7 @@ function toProductTiles(products: CatalogProduct[]): VisualTile[] {
     return {
       href: `/shop/${product.slug}`,
       media: normalizeMedia(media, product.name),
+      mediaItems: getProductMedia(product),
       pricing: getProductPricing(product),
       sizes: [...new Set(product.variants.map((variant) => variant.size).filter(isString))],
       subtitle: getProductPrice(product),

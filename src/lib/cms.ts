@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiBaseUrl, apiFetch } from "@/lib/api";
 import type { MediaReference } from "@/lib/catalog";
 
 export type CmsLink = {
@@ -160,8 +160,14 @@ export const defaultCmsContent: CmsContent = {
   policies: [],
 };
 
-export function fetchCmsContent(key: string) {
-  return apiFetch<{ content: CmsContent | null }>(`/cms/content/${key}`);
+export async function fetchCmsContent(key: string) {
+  const response = await fetch(`${apiBaseUrl}/cms/content/${key}`, { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error(`Failed to load CMS content (${response.status})`);
+  }
+
+  return response.json() as Promise<{ content: CmsContent | null }>;
 }
 
 export function fetchAdminCmsContent(key: string, accessToken?: string) {

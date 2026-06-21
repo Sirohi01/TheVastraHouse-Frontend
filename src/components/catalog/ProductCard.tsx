@@ -2,7 +2,7 @@
 
 import { Eye, Heart } from "lucide-react";
 import Link from "next/link";
-import { ResponsiveImage } from "@/components/media/ResponsiveImage";
+import { ProductMediaCarousel } from "@/components/catalog/ProductMediaCarousel";
 import {
   getProductMedia,
   getProductPrice,
@@ -16,7 +16,7 @@ export function ProductCard({
   product,
   view = "grid",
 }: Readonly<{ product: CatalogProduct; view?: "grid" | "list" }>) {
-  const media = getProductMedia(product)[0];
+  const media = getProductMedia(product);
   const price = getProductPrice(product);
   const pricing = getProductPricing(product);
   const sizes = [...new Set(product.variants.map((variant) => variant.size).filter(isString))];
@@ -24,7 +24,7 @@ export function ProductCard({
     (variant) => variant.preOrder?.enabled && (variant.preOrder.remainingQuantity ?? 0) > 0,
   );
   const storedProduct = {
-    imageUrl: media?.url,
+    imageUrl: media[0]?.url,
     name: product.name,
     price,
     slug: product.slug,
@@ -40,20 +40,11 @@ export function ProductCard({
         className="relative block overflow-hidden rounded-sm bg-[#d9c3a4]"
         href={`/shop/${product.slug}`}
       >
-        {media?.url ? (
-          <ResponsiveImage
-            alt={media.altText ?? product.name}
-            aspectRatio="9 / 16"
-            className="transition-transform duration-500 group-hover:scale-105"
-            objectFit={media.objectFit ?? "cover"}
-            sizes={view === "list" ? "180px" : "(max-width: 768px) 50vw, 25vw"}
-            src={media.url}
-          />
-        ) : (
-          <div className="grid aspect-[9/16] place-items-center bg-muted text-sm font-semibold text-muted-foreground">
-            {product.name}
-          </div>
-        )}
+        <ProductMediaCarousel
+          alt={product.name}
+          media={media}
+          sizes={view === "list" ? "180px" : "(max-width: 768px) 50vw, 25vw"}
+        />
         <span className="pointer-events-none absolute inset-1.5 border border-white/0 transition-colors duration-200 group-hover:border-[#caa14e]/55" />
         <span className="absolute right-3 top-3 grid size-8 place-items-center rounded-full border border-white/70 bg-white/30 text-white backdrop-blur transition-colors hover:bg-[#6e1423] hover:text-[#f0d9a4]">
           <Heart aria-hidden="true" size={17} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageIcon } from "lucide-react";
+import { Check, ImageIcon } from "lucide-react";
 import { EmptyState } from "@/components/states/EmptyState";
 import { ResponsiveImage } from "./ResponsiveImage";
 
@@ -15,8 +15,15 @@ export type MediaItem = {
 
 export function MediaPicker({
   media,
+  multiSelect = false,
   onSelect,
-}: Readonly<{ media: MediaItem[]; onSelect: (media: MediaItem) => void }>) {
+  selectedIds = [],
+}: Readonly<{
+  media: MediaItem[];
+  multiSelect?: boolean;
+  onSelect: (media: MediaItem) => void;
+  selectedIds?: string[];
+}>) {
   if (!media.length) {
     return <EmptyState title="No media" message="Upload assets to use them here." />;
   }
@@ -25,11 +32,21 @@ export function MediaPicker({
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {media.map((item) => (
         <button
-          className="rounded-lg border border-border bg-card p-2 text-left transition hover:border-primary"
+          aria-pressed={multiSelect ? selectedIds.includes(item._id) : undefined}
+          className={`relative rounded-lg border bg-card p-2 text-left transition hover:border-primary ${
+            selectedIds.includes(item._id)
+              ? "border-primary ring-2 ring-primary/20"
+              : "border-border"
+          }`}
           key={item._id}
           onClick={() => onSelect(item)}
           type="button"
         >
+          {multiSelect && selectedIds.includes(item._id) ? (
+            <span className="absolute right-3 top-3 z-10 inline-flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+              <Check aria-hidden="true" size={15} />
+            </span>
+          ) : null}
           {item.resourceType === "image" ? (
             <ResponsiveImage
               alt={item.altText ?? "Media asset"}

@@ -4,6 +4,8 @@ import { AppProviders } from "@/components/providers/AppProviders";
 import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
 import "./globals.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "The Vastra House",
   description: "Soft-luxury Indian wear, festive edits, and everyday occasion pieces.",

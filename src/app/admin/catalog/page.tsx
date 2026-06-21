@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit3, ImagePlus, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Edit3, ImagePlus, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MediaPicker, type MediaItem } from "@/components/media/MediaPicker";
@@ -31,7 +31,6 @@ type TaxonomyItem = {
 };
 
 type TaxonomyForm = {
-  brandId: string;
   name: string;
   slug: string;
   description: string;
@@ -46,7 +45,6 @@ const tabs: { label: string; value: TaxonomyKind }[] = [
 ];
 
 const blankForm: TaxonomyForm = {
-  brandId: "",
   name: "",
   slug: "",
   description: "",
@@ -65,6 +63,7 @@ export default function AdminCatalogPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TaxonomyItem>();
   const imageMedia = useMemo(() => media.filter((item) => item.resourceType === "image"), [media]);
 
@@ -133,7 +132,6 @@ export default function AdminCatalogPage() {
   function editItem(item: TaxonomyItem) {
     setEditingId(item._id);
     setForm({
-      brandId: item.brandId ? String(item.brandId) : "",
       name: item.name,
       slug: item.slug,
       description: item.description ?? "",
@@ -149,7 +147,6 @@ export default function AdminCatalogPage() {
       kind === "tags"
         ? { name: form.name, slug: form.slug || undefined, active: form.active }
         : {
-            brandId: kind === "collections" ? form.brandId : undefined,
             name: form.name,
             slug: form.slug || undefined,
             description: form.description || undefined,
@@ -159,6 +156,7 @@ export default function AdminCatalogPage() {
     const path = editingId ? `/catalog/admin/${kind}/${editingId}` : `/catalog/admin/${kind}`;
     const method = editingId ? "PATCH" : "POST";
 
+    setSaving(true);
     try {
       await apiFetch(path, { accessToken, method, body: JSON.stringify(payload) });
       setEditorOpen(false);
@@ -168,6 +166,8 @@ export default function AdminCatalogPage() {
       await loadItems();
     } catch (error) {
       toast.error(errorMessage(error, "Failed to save catalog data"));
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -316,14 +316,6 @@ export default function AdminCatalogPage() {
           title={editingId ? "Edit item" : "Create item"}
         >
           <form className="space-y-3" onSubmit={saveItem}>
-            {kind === "collections" ? (
-              <Field
-                label="Brand ID"
-                onChange={(value) => updateForm("brandId", value)}
-                required
-                value={form.brandId}
-              />
-            ) : null}
             <Field
               label="Name"
               onChange={(value) => updateForm("name", value)}
@@ -384,13 +376,18 @@ export default function AdminCatalogPage() {
             <div className="flex justify-end gap-2 pt-1">
               <button
                 className="h-9 rounded-md border border-border px-3 text-sm font-semibold"
+                disabled={saving}
                 onClick={() => setEditorOpen(false)}
                 type="button"
               >
                 Cancel
               </button>
-              <button className="h-9 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-                Save
+              <button
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={saving}
+              >
+                {saving ? <Loader2 aria-hidden="true" className="animate-spin" size={15} /> : null}
+                {saving ? "Saving..." : "Save"}
               </button>
             </div>
           </form>

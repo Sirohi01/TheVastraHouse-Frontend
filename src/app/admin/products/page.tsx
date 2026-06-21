@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit3, ImagePlus, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Edit3, ImagePlus, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MediaPicker, type MediaItem } from "@/components/media/MediaPicker";
@@ -14,7 +14,7 @@ import { Select } from "@/components/ui/Select";
 import { Tabs } from "@/components/ui/Tabs";
 import { Textarea } from "@/components/ui/Textarea";
 import { errorMessage, useToast } from "@/components/ui/Toast";
-import { apiBaseUrl, apiFetch } from "@/lib/api";
+import { apiFetch, authenticatedFetch } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 
 type MediaReference = {
@@ -61,7 +61,6 @@ type LookupItem = { _id: string; name: string; slug?: string };
 
 type Product = {
   _id: string;
-  brandId: string;
   name: string;
   slug: string;
   description: string;
@@ -155,7 +154,6 @@ const blankVariant: VariantForm = {
 };
 
 const blankForm: ProductForm = {
-  brandId: "",
   name: "",
   slug: "",
   description: "",
@@ -197,22 +195,23 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [lookups, setLookups] = useState<{
-    brands: LookupItem[];
     categories: LookupItem[];
     collections: LookupItem[];
     tags: LookupItem[];
-  }>({ brands: [], categories: [], collections: [], tags: [] });
+  }>({ categories: [], collections: [], tags: [] });
   const [form, setForm] = useState<ProductForm>(blankForm);
   const [formTab, setFormTab] = useState<FormTab>("basics");
   const [editingId, setEditingId] = useState<string>();
   const [editorOpen, setEditorOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [uploadingProductMedia, setUploadingProductMedia] = useState(false);
   const [uploadAltText, setUploadAltText] = useState("");
   const [uploadAspectRatio, setUploadAspectRatio] = useState("1:1");
   const [uploadObjectFit, setUploadObjectFit] = useState<"cover" | "contain">("cover");
   const [deleteTarget, setDeleteTarget] = useState<Product>();
+  const [selectedGalleryMediaIds, setSelectedGalleryMediaIds] = useState<string[]>([]);
 
   const selectedMediaUrls = useMemo(
     () => new Set(form.media.map((item) => item.url)),
@@ -292,22 +291,33 @@ export default function AdminProductsPage() {
     );
   }
 
-  function addMedia(item: MediaItem) {
-    if (selectedMediaUrls.has(item.secureUrl)) {
+  function toggleGalleryMedia(item: MediaItem) {
+    setSelectedGalleryMediaIds((current) =>
+      current.includes(item._id)
+        ? current.filter((mediaId) => mediaId !== item._id)
+        : [...current, item._id],
+    );
+  }
+
+  function attachSelectedGalleryMedia() {
+    const selectedMedia = media.filter(
+      (item) =>
+        selectedGalleryMediaIds.includes(item._id) && !selectedMediaUrls.has(item.secureUrl),
+    );
+
+    if (!selectedMedia.length) {
+      toast.error("Select at least one new media item");
       return;
     }
 
     updateField("media", [
       ...form.media,
-      {
-        mediaId: item._id,
-        url: item.secureUrl,
-        altText: item.altText ?? form.name ?? "Product media",
-        type: item.resourceType === "video" ? "video" : "image",
-        aspectRatio: item.selectedAspectRatio,
-        objectFit: "cover",
-      },
+      ...selectedMedia.map((item) => toMediaReference(item, form.name || "Product media")),
     ]);
+    setSelectedGalleryMediaIds([]);
+    toast.success(
+      `${selectedMedia.length} media item${selectedMedia.length > 1 ? "s" : ""} attached`,
+    );
   }
 
   function addSizeGuideMedia(item: MediaItem) {
@@ -357,9 +367,8 @@ export default function AdminProductsPage() {
         payload.set("altText", files.length > 1 ? `${altText} ${index + 1}` : altText);
         payload.set("tags", `product,${form.slug || form.name || "catalog"}`);
 
-        const response = await fetch(`${apiBaseUrl}/media/upload`, {
+        const response = await authenticatedFetch("/media/upload", {
           body: payload,
-          headers: { Authorization: `Bearer ${accessToken}` },
           method: "POST",
         });
 
@@ -392,6 +401,7 @@ export default function AdminProductsPage() {
     setEditingId(undefined);
     setForm(blankForm);
     setFormTab("basics");
+    setSelectedGalleryMediaIds([]);
     setEditorOpen(true);
   }
 
@@ -400,6 +410,7 @@ export default function AdminProductsPage() {
     setEditingId(undefined);
     setForm(blankForm);
     setFormTab("basics");
+    setSelectedGalleryMediaIds([]);
   }
 
   function editProduct(product: Product) {
@@ -450,13 +461,30 @@ export default function AdminProductsPage() {
       completeTheLookIds: product.completeTheLookIds?.map(String) ?? [],
     });
     setFormTab("basics");
+    setSelectedGalleryMediaIds([]);
     setEditorOpen(true);
   }
 
   async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (form.seoTitle.length > 70 || form.seoDescription.length > 180) {
+      setFormTab("seo");
+      toast.error(
+        "SEO title must be 70 characters or less, and SEO description 180 characters or less.",
+      );
+      return;
+    }
+
+    const pendingGalleryMedia = media.filter(
+      (item) =>
+        selectedGalleryMediaIds.includes(item._id) && !selectedMediaUrls.has(item.secureUrl),
+    );
+    const productMedia = [
+      ...form.media,
+      ...pendingGalleryMedia.map((item) => toMediaReference(item, form.name || "Product media")),
+    ];
     const payload = {
-      brandId: form.brandId,
       name: form.name,
       slug: form.slug || undefined,
       description: form.description,
@@ -471,7 +499,7 @@ export default function AdminProductsPage() {
       sizeGuideMedia: form.sizeGuideMedia,
       hsnCode: form.hsnCode,
       gstRate: Number(form.gstRate),
-      media: form.media,
+      media: productMedia,
       active: form.active,
       categoryIds: form.categoryIds.filter(Boolean),
       collectionIds: form.collectionIds.filter(Boolean),
@@ -526,6 +554,7 @@ export default function AdminProductsPage() {
     const path = editingId ? `/catalog/admin/products/${editingId}` : "/catalog/admin/products";
     const method = editingId ? "PATCH" : "POST";
 
+    setSaving(true);
     try {
       await apiFetch(path, { accessToken, method, body: JSON.stringify(payload) });
       closeEditor();
@@ -533,6 +562,8 @@ export default function AdminProductsPage() {
       await loadProducts();
     } catch (error) {
       toast.error(errorMessage(error, "Failed to save product"));
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -661,16 +692,6 @@ export default function AdminProductsPage() {
 
             <div className="mt-3">
               <div className={formTab === "basics" ? "space-y-3" : "hidden"}>
-                <Select
-                  label="Brand"
-                  onChange={(value) => updateField("brandId", value)}
-                  options={[
-                    { label: "Select brand", value: "" },
-                    ...lookups.brands.map((brand) => ({ label: brand.name, value: brand._id })),
-                  ]}
-                  required
-                  value={form.brandId}
-                />
                 <Field
                   label="Name"
                   onChange={(value) => updateField("name", value)}
@@ -979,7 +1000,30 @@ export default function AdminProductsPage() {
                     </button>
                   </div>
                 </div>
-                <MediaPicker media={media} onSelect={addMedia} />
+                <div className="rounded-md border border-border p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold">Media Gallery</p>
+                      <p className="text-xs text-muted-foreground">
+                        Select multiple photos, then attach them together.
+                      </p>
+                    </div>
+                    <button
+                      className="h-9 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={!selectedGalleryMediaIds.length}
+                      onClick={attachSelectedGalleryMedia}
+                      type="button"
+                    >
+                      Attach selected ({selectedGalleryMediaIds.length})
+                    </button>
+                  </div>
+                  <MediaPicker
+                    media={media}
+                    multiSelect
+                    onSelect={toggleGalleryMedia}
+                    selectedIds={selectedGalleryMediaIds}
+                  />
+                </div>
                 {form.media.length ? (
                   <div className="space-y-2 text-xs text-muted-foreground">
                     {form.media.map((item, index) => (
@@ -1014,11 +1058,13 @@ export default function AdminProductsPage() {
               <div className={formTab === "seo" ? "space-y-3" : "hidden"}>
                 <Field
                   label="SEO title"
+                  maxLength={70}
                   onChange={(value) => updateField("seoTitle", value)}
                   value={form.seoTitle}
                 />
                 <Textarea
                   label="SEO description"
+                  maxLength={180}
                   onChange={(value) => updateField("seoDescription", value)}
                   value={form.seoDescription}
                 />
@@ -1115,13 +1161,18 @@ export default function AdminProductsPage() {
             <div className="mt-4 flex justify-end gap-2 border-t border-border pt-3">
               <button
                 className="h-9 rounded-md border border-border px-3 text-sm font-semibold"
+                disabled={saving}
                 onClick={closeEditor}
                 type="button"
               >
                 Cancel
               </button>
-              <button className="h-9 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-                Save
+              <button
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={saving}
+              >
+                {saving ? <Loader2 aria-hidden="true" className="animate-spin" size={15} /> : null}
+                {saving ? "Saving..." : "Save"}
               </button>
             </div>
           </form>

@@ -1,6 +1,6 @@
 "use client";
 
-import { LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
+import { Loader2, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { getGuestSessionId } from "@/lib/commerce";
@@ -272,18 +272,8 @@ export default function AdminLoginPage() {
               <span className="pointer-events-none absolute bottom-1.5 right-1.5 size-1.5 border-b border-r border-[#e4c17b]/70" />
               {submitting ? (
                 <span className="inline-flex items-center gap-2">
-                  Signing in
-                  <span className="inline-flex gap-1">
-                    <span className="vh-dot size-1.5 rounded-full bg-[#e4c17b]" />
-                    <span
-                      className="vh-dot size-1.5 rounded-full bg-[#e4c17b]"
-                      style={{ animationDelay: "0.16s" }}
-                    />
-                    <span
-                      className="vh-dot size-1.5 rounded-full bg-[#e4c17b]"
-                      style={{ animationDelay: "0.32s" }}
-                    />
-                  </span>
+                  <Loader2 aria-hidden="true" className="animate-spin text-[#e4c17b]" size={17} />
+                  Signing in...
                 </span>
               ) : (
                 "Continue"
@@ -310,7 +300,6 @@ export default function AdminLoginPage() {
         @keyframes vhGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(216,182,109,0); } 50% { box-shadow: 0 0 0 6px rgba(216,182,109,0.16); } }
         @keyframes vhDrift { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(16px,-12px); } }
         @keyframes vhDriftSlow { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(-18px,14px); } }
-        @keyframes vhDots { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
 
         .vh-rise { animation: vhRise 0.7s ease-out both; }
         .vh-field { animation: vhFieldIn 0.6s ease-out both; }
@@ -318,10 +307,9 @@ export default function AdminLoginPage() {
         .vh-glow { animation: vhGlow 2.6s ease-in-out infinite; }
         .vh-drift { animation: vhDrift 11s ease-in-out infinite; }
         .vh-drift-slow { animation: vhDriftSlow 13s ease-in-out infinite; }
-        .vh-dot { animation: vhDots 1.1s ease-in-out infinite; }
 
         @media (prefers-reduced-motion: reduce) {
-          .vh-rise, .vh-field, .vh-sweep, .vh-glow, .vh-drift, .vh-drift-slow, .vh-dot {
+          .vh-rise, .vh-field, .vh-sweep, .vh-glow, .vh-drift, .vh-drift-slow {
             animation: none !important;
             opacity: 1 !important;
             transform: none !important;
