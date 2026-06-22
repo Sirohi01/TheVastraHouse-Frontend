@@ -1,5 +1,6 @@
 import { ArrowRight, Award, PackageCheck, RotateCcw, ShieldCheck, Truck } from "lucide-react";
 import { InstagramMarquee } from "@/components/home/InstagramMarquee";
+import { HomeHero } from "@/components/home/HomeHero";
 import { ProductMediaCarousel } from "@/components/catalog/ProductMediaCarousel";
 import { MobileHomeSearch } from "@/components/home/MobileHomeSearch";
 import { PreOrderAnnouncementModal } from "@/components/home/PreOrderAnnouncementModal";
@@ -70,7 +71,7 @@ export default async function HomePage() {
           <span className="h-px w-6 bg-[#caa14e]/70" />
         </div>
         <MobileHomeSearch />
-        <Hero slides={heroSlides} />
+        <HomeHero slides={heroSlides} />
         <SquareTileRail tiles={categoryTiles} />
         <StoryBand image={storyImage} imageAlt={storyImageAlt} />
         <CollectionGrid tiles={collectionTiles} />
@@ -135,7 +136,7 @@ async function loadHomeData(): Promise<HomeData> {
 const HERO_ASPECT_RATIO = "16 / 7";
 const TALL_TILE_ASPECT_RATIO = "9 / 16";
 
-function Hero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
+function LegacyHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
   return (
     <section className="relative border-b border-[#e1d6c4]">
       <div className="relative overflow-hidden" style={{ aspectRatio: HERO_ASPECT_RATIO }}>
@@ -236,6 +237,8 @@ function Hero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
     </section>
   );
 }
+
+void LegacyHero;
 
 function SquareTileRail({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
   if (!tiles.length) {
