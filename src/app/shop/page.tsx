@@ -15,6 +15,7 @@ export default async function ShopPage({ searchParams }: Readonly<ShopPageProps>
 
   return (
     <CatalogPage
+      bannerStyle={shop}
       description={shop.description ?? ""}
       eyebrow={shop.eyebrow}
       heroMedia={shop.media}

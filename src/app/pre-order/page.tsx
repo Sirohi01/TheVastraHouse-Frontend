@@ -9,6 +9,7 @@ export default async function PreOrderPage() {
 
   return (
     <CatalogPage
+      bannerStyle={preOrder}
       description={preOrder.description ?? ""}
       eyebrow={preOrder.eyebrow}
       heroMedia={preOrder.media}

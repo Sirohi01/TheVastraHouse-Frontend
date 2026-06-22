@@ -9,6 +9,8 @@ export type CmsLink = {
 
 export type CmsHeroSlide = {
   copy?: string;
+  copyFontSize?: "sm" | "md" | "lg";
+  contentPosition?: "left" | "center" | "right";
   eyebrow?: string;
   fontFamily?: "serif" | "sans";
   fontSize?: "sm" | "md" | "lg";
@@ -20,9 +22,14 @@ export type CmsHeroSlide = {
 };
 
 export type CmsCatalogPage = {
+  contentPosition?: "left" | "center" | "right";
+  copyFontSize?: "sm" | "md" | "lg";
   description?: string;
   eyebrow?: string;
+  fontFamily?: "serif" | "sans";
+  fontSize?: "sm" | "md" | "lg";
   media?: MediaReference | null;
+  textColor?: string;
   title?: string;
 };
 
@@ -210,7 +217,9 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
         primaryCta: sanitizeLink(mergedHero.primaryCta),
         secondaryCta: sanitizeLink(mergedHero.secondaryCta),
         slides: (mergedHero.slides ?? []).map((slide) => ({
-          copy: slide.copy,
+        copy: slide.copy,
+          copyFontSize: slide.copyFontSize ?? "md",
+          contentPosition: slide.contentPosition ?? "left",
           eyebrow: slide.eyebrow,
           fontFamily: slide.fontFamily ?? "serif",
           fontSize: slide.fontSize ?? "lg",
@@ -240,15 +249,25 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       })),
     },
     shop: {
+      contentPosition: mergedShop.contentPosition ?? "left",
+      copyFontSize: mergedShop.copyFontSize ?? "md",
       description: mergedShop.description,
       eyebrow: mergedShop.eyebrow,
+      fontFamily: mergedShop.fontFamily ?? "serif",
+      fontSize: mergedShop.fontSize ?? "lg",
       media: sanitizeMediaReference(mergedShop.media),
+      textColor: mergedShop.textColor ?? "#ffffff",
       title: mergedShop.title,
     },
     preOrder: {
+      contentPosition: mergedPreOrder.contentPosition ?? "left",
+      copyFontSize: mergedPreOrder.copyFontSize ?? "md",
       description: mergedPreOrder.description,
       eyebrow: mergedPreOrder.eyebrow,
+      fontFamily: mergedPreOrder.fontFamily ?? "serif",
+      fontSize: mergedPreOrder.fontSize ?? "lg",
       media: sanitizeMediaReference(mergedPreOrder.media),
+      textColor: mergedPreOrder.textColor ?? "#ffffff",
       title: mergedPreOrder.title,
     },
     navigation: (content.navigation ?? []).map((link) => sanitizeLink(link)).filter(isPresent),

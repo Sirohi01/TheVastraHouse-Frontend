@@ -4,6 +4,7 @@ import { Pagination } from "@/components/catalog/Pagination";
 import { ProductGrid } from "@/components/catalog/ProductGrid";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { ErrorState } from "@/components/states/ErrorState";
+import type { CmsCatalogPage } from "@/lib/cms";
 import {
   getCatalogFilters,
   getProducts,
@@ -17,6 +18,7 @@ const heroImage = "/images/home-hero.jpg";
 export async function CatalogPage({
   description,
   eyebrow,
+  bannerStyle,
   heroMedia,
   imageOnlyBanners = false,
   query,
@@ -24,6 +26,7 @@ export async function CatalogPage({
 }: Readonly<{
   description: string;
   eyebrow?: string;
+  bannerStyle?: CmsCatalogPage;
   heroMedia?: MediaReference | null;
   imageOnlyBanners?: boolean;
   query: CatalogQuery & { view?: string };
@@ -91,8 +94,13 @@ export async function CatalogPage({
                 imageOnlyBanners ? "hidden" : "absolute inset-0 hidden items-center px-7 md:flex md:px-10"
               }
             >
-              <div className="max-w-xl text-white">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
+              <div
+                className={`max-w-xl ${catalogContentAlignment(bannerStyle?.contentPosition)} ${
+                  bannerStyle?.fontFamily === "sans" ? "" : "font-serif"
+                }`}
+                style={{ color: bannerStyle?.textColor ?? "#ffffff" }}
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-current opacity-80">
                   {eyebrow ?? "The Vastra House"}
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-[#caa14e]">
@@ -100,10 +108,12 @@ export async function CatalogPage({
                   <span aria-hidden="true">✦</span>
                   <span className="h-px w-6 bg-[#caa14e]/60" />
                 </div>
-                <h1 className="mt-3 font-serif text-4xl uppercase leading-tight drop-shadow-sm sm:text-5xl">
+                <h1 className={`mt-3 uppercase leading-tight drop-shadow-sm ${catalogTitleSize(bannerStyle?.fontSize)}`}>
                   {title}
                 </h1>
-                <p className="mt-4 max-w-md leading-7 text-white/88">{description}</p>
+                <p className={`mt-4 max-w-md leading-7 text-current opacity-[.88] ${catalogCopySize(bannerStyle?.copyFontSize)}`}>
+                  {description}
+                </p>
               </div>
             </div>
           </div>
@@ -366,6 +376,24 @@ function colorToSwatch(color: string) {
   };
 
   return map[color.toLowerCase()] ?? "#a88968";
+}
+
+function catalogContentAlignment(position?: CmsCatalogPage["contentPosition"]) {
+  if (position === "center") return "mx-auto text-center";
+  if (position === "right") return "ml-auto text-right";
+  return "text-left";
+}
+
+function catalogTitleSize(size?: CmsCatalogPage["fontSize"]) {
+  if (size === "sm") return "text-3xl sm:text-4xl";
+  if (size === "md") return "text-4xl sm:text-5xl";
+  return "text-4xl sm:text-5xl";
+}
+
+function catalogCopySize(size?: CmsCatalogPage["copyFontSize"]) {
+  if (size === "sm") return "text-sm";
+  if (size === "lg") return "text-lg";
+  return "text-base";
 }
 
 function PromoBand({ imageOnly = false }: Readonly<{ imageOnly?: boolean }>) {

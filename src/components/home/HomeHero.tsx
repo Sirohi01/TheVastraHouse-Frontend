@@ -66,9 +66,9 @@ export function HomeHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
         </div>
 
         <div className="absolute inset-0 flex items-center">
-          <div className="mx-auto w-full max-w-7xl px-6 sm:px-12">
+          <div className={`mx-auto flex w-full max-w-7xl px-6 sm:px-12 ${positionClass(slide.contentPosition)}`}>
             <div
-              className={`max-w-xl text-white transition-opacity duration-300 ${
+              className={`w-full max-w-xl text-white transition-opacity duration-300 ${
                 slide.fontFamily === "sans" ? "" : "font-serif"
               }`}
               key={`${activeSlide}-${slide.title}`}
@@ -80,7 +80,7 @@ export function HomeHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
               <h1 className={`mt-3 font-semibold leading-[1.06] drop-shadow-sm sm:mt-5 ${titleSize(slide.fontSize)}`}>
                 {slide.title ?? "Timeless Style, Rooted in Heritage"}
               </h1>
-              <p className="mt-2 max-w-md font-sans text-xs leading-5 text-white/90 sm:mt-4 sm:text-base sm:leading-7">
+              <p className={`mt-2 max-w-md font-sans leading-5 text-current opacity-90 sm:mt-4 sm:leading-7 ${copySize(slide.copyFontSize)}`}>
                 {slide.copy ?? "Premium tops, suits and clothing crafted for the modern you."}
               </p>
               {slide.primaryCta?.href ? (
@@ -104,4 +104,16 @@ function titleSize(size: CmsHeroSlide["fontSize"]) {
   if (size === "sm") return "text-xl sm:text-4xl";
   if (size === "md") return "text-2xl sm:text-5xl";
   return "text-2xl sm:text-5xl lg:text-6xl";
+}
+
+function copySize(size: CmsHeroSlide["copyFontSize"]) {
+  if (size === "sm") return "text-[11px] sm:text-sm";
+  if (size === "lg") return "text-sm sm:text-lg";
+  return "text-xs sm:text-base";
+}
+
+function positionClass(position: CmsHeroSlide["contentPosition"]) {
+  if (position === "center") return "justify-center text-left";
+  if (position === "right") return "justify-end text-left";
+  return "justify-start text-left";
 }

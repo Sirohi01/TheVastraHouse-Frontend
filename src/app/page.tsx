@@ -276,11 +276,11 @@ function SquareTileRail({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
                   />
                   <span className="pointer-events-none absolute inset-2 border border-white/0 transition-colors duration-200 group-hover:border-[#caa14e]/60" />
                 </div>
-                <div className="border-t border-[#e1d6c4] px-3 py-3 text-center">
-                  <h2 className="font-serif text-lg uppercase tracking-wide text-[#3d1620]">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(0deg,rgb(32_22_12/0.9),transparent)] px-3 pb-4 pt-14 text-center text-white">
+                  <h2 className="font-serif text-lg uppercase tracking-wide">
                     {tile.title}
                   </h2>
-                  <span className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#9b6d35] transition-transform duration-200 group-hover:translate-x-0.5">
+                  <span className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#f0d9a4] transition-transform duration-200 group-hover:translate-x-0.5">
                     Shop Now <ArrowRight aria-hidden="true" size={14} />
                   </span>
                 </div>
@@ -341,35 +341,36 @@ function CollectionGrid({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
   return (
     <section className="relative z-0 isolate mx-auto max-w-7xl border-b border-[#e1d6c4] px-5 pb-6 pt-5">
       <SectionTitle title="Our Collections" />
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
-        {tiles.slice(0, 3).map((tile) => (
+      <div className="-mx-5 mt-4 overflow-x-auto px-5 pb-1">
+        <div className="grid min-w-max grid-cols-3 gap-3">
+          {tiles.slice(0, 3).map((tile) => (
           <a
-            className="group relative block overflow-hidden rounded-sm"
+            className="group relative w-44 overflow-hidden rounded-sm sm:w-52"
             href={tile.href}
             key={tile.href}
           >
-            <div className="relative aspect-[4/5] max-h-[430px] overflow-hidden md:aspect-[5/6]">
+            <div className="relative aspect-[9/16] max-h-[560px] overflow-hidden">
               <ResponsiveImage
                 alt={tile.media.alt}
-                aspectRatio="5 / 6"
+                aspectRatio={TALL_TILE_ASPECT_RATIO}
                 className="z-0 transition-transform duration-500 group-hover:scale-105"
                 sizes="(max-width: 768px) 100vw, 33vw"
                 src={tile.media.src}
               />
               <div className="absolute inset-0 z-10 bg-[linear-gradient(0deg,rgb(32_22_12/0.82),transparent_56%)]" />
-              {/* Signature: cusped ogee arch window (jharokha) */}
               <ArchMatte className="absolute inset-0 z-20" />
-              <div className="absolute bottom-0 left-0 z-30 p-6 text-white">
-                <h3 className="font-serif text-2xl uppercase leading-tight tracking-wide pl-2">
-                  {tile.title}
-                </h3>
-                <span className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#f0d9a4] transition-transform duration-200 group-hover:translate-x-0.5 pl-2">
-                  Explore Collection <ArrowRight aria-hidden="true" size={14} />
-                </span>
-              </div>
+            </div>
+            <div className="absolute inset-x-0 bottom-0 z-30 px-6 pb-6 pt-16 text-center text-white">
+              <h3 className="font-serif text-2xl uppercase leading-tight tracking-wide">
+                {tile.title}
+              </h3>
+              <span className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#f0d9a4] transition-transform duration-200 group-hover:translate-x-0.5">
+                Explore Collection <ArrowRight aria-hidden="true" size={14} />
+              </span>
             </div>
           </a>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -569,13 +570,11 @@ function CornerFiligree({ className = "" }: Readonly<{ className?: string }>) {
 function ArchMatte({ className = "" }: Readonly<{ className?: string }>) {
   return (
     <svg aria-hidden="true" className={className} preserveAspectRatio="none" viewBox="0 0 400 500">
-      {/* Cream matte everywhere except a cusped ogee arch window */}
       <path
         d="M0 0 H400 V500 H0 Z M30 476 L30 210 C30 110 150 130 200 34 C250 130 370 110 370 210 L370 476 Z"
         fill="#fbf7ef"
         fillRule="evenodd"
       />
-      {/* Gold arch outline (double rule) */}
       <path
         d="M30 476 L30 210 C30 110 150 130 200 34 C250 130 370 110 370 210 L370 476"
         fill="none"

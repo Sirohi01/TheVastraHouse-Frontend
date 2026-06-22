@@ -156,7 +156,7 @@ function NavContent({
 
             if (item.href === "/admin/content") {
               return (
-                <details className="group mb-0.5" key={item.href} open={active}>
+                <details className="group mb-0.5" key={item.href}>
                   <summary
                     className={`flex h-8 cursor-pointer list-none items-center gap-2 rounded-md px-2.5 text-[13px] font-semibold transition ${
                       active

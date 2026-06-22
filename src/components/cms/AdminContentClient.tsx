@@ -136,7 +136,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
 
   function updateCatalogPage(
     page: "preOrder" | "shop",
-    field: "description" | "eyebrow" | "title",
+    field: Exclude<keyof CmsCatalogPage, "media">,
     value: string,
   ) {
     updateContent((current) => ({
@@ -314,6 +314,8 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
       : [
           {
             copy: content.home?.hero?.copy,
+            copyFontSize: "md" as const,
+            contentPosition: "left" as const,
             eyebrow: content.home?.hero?.eyebrow,
             fontFamily: "serif" as const,
             fontSize: "lg" as const,
@@ -376,6 +378,8 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
             ...heroSlides(),
             {
               copy: "",
+              copyFontSize: "md",
+              contentPosition: "left",
               eyebrow: "New Season Edit",
               fontFamily: "serif",
               fontSize: "lg",
@@ -782,7 +786,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                         onChange={(value) => updateHeroSlide(index, { copy: value })}
                         value={slide.copy ?? ""}
                       />
-                      <div className="mt-3 grid gap-3 md:grid-cols-3">
+                      <div className="mt-3 grid gap-3 md:grid-cols-5">
                         <label className="text-sm font-medium">
                           Font family
                           <select
@@ -819,6 +823,38 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                           onChange={(value) => updateHeroSlide(index, { textColor: value })}
                           value={slide.textColor ?? "#ffffff"}
                         />
+                        <label className="text-sm font-medium">
+                          Content position
+                          <select
+                            className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                            onChange={(event) =>
+                              updateHeroSlide(index, {
+                                contentPosition: event.target.value as "left" | "center" | "right",
+                              })
+                            }
+                            value={slide.contentPosition ?? "left"}
+                          >
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                          </select>
+                        </label>
+                        <label className="text-sm font-medium">
+                          Body text size
+                          <select
+                            className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                            onChange={(event) =>
+                              updateHeroSlide(index, {
+                                copyFontSize: event.target.value as "sm" | "md" | "lg",
+                              })
+                            }
+                            value={slide.copyFontSize ?? "md"}
+                          >
+                            <option value="sm">Small</option>
+                            <option value="md">Medium</option>
+                            <option value="lg">Large</option>
+                          </select>
+                        </label>
                       </div>
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <CtaEditor
@@ -1335,7 +1371,7 @@ function CatalogPageContentEditor({
 }: Readonly<{
   heading: string;
   media: MediaItem[];
-  onChange: (field: "description" | "eyebrow" | "title", value: string) => void;
+  onChange: (field: Exclude<keyof CmsCatalogPage, "media">, value: string) => void;
   onClearMedia: () => void;
   onSelectMedia: (item: MediaItem) => void;
   page?: CmsCatalogPage;
@@ -1363,6 +1399,60 @@ function CatalogPageContentEditor({
             onChange={(value) => onChange("description", value)}
             value={page?.description ?? ""}
           />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <label className="text-sm font-medium">
+              Content position
+              <select
+                className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                onChange={(event) => onChange("contentPosition", event.target.value)}
+                value={page?.contentPosition ?? "left"}
+              >
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </label>
+            <label className="text-sm font-medium">
+              Font family
+              <select
+                className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                onChange={(event) => onChange("fontFamily", event.target.value)}
+                value={page?.fontFamily ?? "serif"}
+              >
+                <option value="serif">Serif</option>
+                <option value="sans">Sans</option>
+              </select>
+            </label>
+            <label className="text-sm font-medium">
+              Title size
+              <select
+                className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                onChange={(event) => onChange("fontSize", event.target.value)}
+                value={page?.fontSize ?? "lg"}
+              >
+                <option value="sm">Small</option>
+                <option value="md">Medium</option>
+                <option value="lg">Large</option>
+              </select>
+            </label>
+            <label className="text-sm font-medium">
+              Body text size
+              <select
+                className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                onChange={(event) => onChange("copyFontSize", event.target.value)}
+                value={page?.copyFontSize ?? "md"}
+              >
+                <option value="sm">Small</option>
+                <option value="md">Medium</option>
+                <option value="lg">Large</option>
+              </select>
+            </label>
+            <Field
+              label="Text colour"
+              onChange={(value) => onChange("textColor", value)}
+              value={page?.textColor ?? "#ffffff"}
+            />
+          </div>
         </div>
       </div>
 
@@ -1603,6 +1693,8 @@ function cleanMediaReference(
 function cleanHeroSlide(slide: CmsHeroSlide): CmsHeroSlide {
   return {
     copy: slide.copy,
+    copyFontSize: slide.copyFontSize ?? "md",
+    contentPosition: slide.contentPosition ?? "left",
     eyebrow: slide.eyebrow,
     fontFamily: slide.fontFamily ?? "serif",
     fontSize: slide.fontSize ?? "lg",
@@ -1684,15 +1776,25 @@ function normalizeContent(content: CmsContent): CmsContent {
       })),
     },
     shop: {
+      contentPosition: shop.contentPosition ?? "left",
+      copyFontSize: shop.copyFontSize ?? "md",
       description: shop.description,
       eyebrow: shop.eyebrow,
+      fontFamily: shop.fontFamily ?? "serif",
+      fontSize: shop.fontSize ?? "lg",
       media: cleanMediaReference(shop.media),
+      textColor: shop.textColor ?? "#ffffff",
       title: shop.title,
     },
     preOrder: {
+      contentPosition: preOrder.contentPosition ?? "left",
+      copyFontSize: preOrder.copyFontSize ?? "md",
       description: preOrder.description,
       eyebrow: preOrder.eyebrow,
+      fontFamily: preOrder.fontFamily ?? "serif",
+      fontSize: preOrder.fontSize ?? "lg",
       media: cleanMediaReference(preOrder.media),
+      textColor: preOrder.textColor ?? "#ffffff",
       title: preOrder.title,
     },
     navigation: (content.navigation ?? []).map((link) => cleanLink(link)).filter(isPresent),
