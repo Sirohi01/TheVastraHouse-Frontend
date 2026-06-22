@@ -80,6 +80,18 @@ const enabledSections: SidebarSection<EnabledItem>[] = [
   },
 ];
 
+const cmsContentSections = [
+  { href: "/admin/content/home", label: "Home" },
+  { href: "/admin/content/about", label: "About" },
+  { href: "/admin/content/shop", label: "Shop" },
+  { href: "/admin/content/preOrder", label: "Pre-Order" },
+  { href: "/admin/content/navigation", label: "Navigation" },
+  { href: "/admin/content/footer", label: "Footer" },
+  { href: "/admin/content/testimonials", label: "Testimonials" },
+  { href: "/admin/content/faqs", label: "FAQs" },
+  { href: "/admin/content/policies", label: "Policies" },
+];
+
 const plannedSections: SidebarSection<DisabledItem>[] = [
   {
     label: "Commerce & Content",
@@ -141,6 +153,44 @@ function NavContent({
             const active =
               pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
             const Icon = item.icon;
+
+            if (item.href === "/admin/content") {
+              return (
+                <details className="group mb-0.5" key={item.href} open={active}>
+                  <summary
+                    className={`flex h-8 cursor-pointer list-none items-center gap-2 rounded-md px-2.5 text-[13px] font-semibold transition ${
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <Icon aria-hidden="true" size={16} />
+                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <ChevronRight
+                      aria-hidden="true"
+                      className="transition-transform group-open:rotate-90"
+                      size={14}
+                    />
+                  </summary>
+                  <div className="ml-5 mt-1 grid border-l border-border pl-2">
+                    {cmsContentSections.map((contentItem) => (
+                      <a
+                        className={`rounded px-2 py-1 text-xs font-medium transition ${
+                          pathname === contentItem.href
+                            ? "bg-muted text-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        }`}
+                        href={contentItem.href}
+                        key={contentItem.href}
+                        onClick={onNavigate}
+                      >
+                        {contentItem.label}
+                      </a>
+                    ))}
+                  </div>
+                </details>
+              );
+            }
 
             return (
               <a

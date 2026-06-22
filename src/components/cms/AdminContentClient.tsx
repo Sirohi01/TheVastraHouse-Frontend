@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MediaPicker, type MediaItem } from "@/components/media/MediaPicker";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
-import { Tabs } from "@/components/ui/Tabs";
 import { errorMessage, useToast } from "@/components/ui/Toast";
 import { apiBaseUrl, apiFetch } from "@/lib/api";
 import type { MediaReference } from "@/lib/catalog";
@@ -20,19 +19,16 @@ import {
 } from "@/lib/cms";
 import { useAuthStore } from "@/stores/authStore";
 
-const contentTabs = [
-  { label: "Home", value: "home" },
-  { label: "About", value: "about" },
-  { label: "Shop", value: "shop" },
-  { label: "Pre-Order", value: "preOrder" },
-  { label: "Navigation", value: "navigation" },
-  { label: "Footer", value: "footer" },
-  { label: "Testimonials", value: "testimonials" },
-  { label: "FAQs", value: "faqs" },
-  { label: "Policies", value: "policies" },
-] as const;
-
-type ContentTab = (typeof contentTabs)[number]["value"];
+export type ContentTab =
+  | "home"
+  | "about"
+  | "shop"
+  | "preOrder"
+  | "navigation"
+  | "footer"
+  | "testimonials"
+  | "faqs"
+  | "policies";
 type CmsList =
   | "navigation"
   | "testimonials"
@@ -41,14 +37,14 @@ type CmsList =
   | "aboutValues"
   | "instagramPosts";
 
-export function AdminContentClient() {
+export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTab?: ContentTab }>) {
   const accessToken = useAuthStore((state) => state.accessToken);
   const toast = useToast();
   const heroUploadRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState<CmsContent>(defaultCmsContent);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [message, setMessage] = useState("");
-  const [tab, setTab] = useState<ContentTab>("home");
+  const [tab, setTab] = useState<ContentTab>(initialTab);
   const [uploadingHero, setUploadingHero] = useState(false);
 
   const heroMedia = content.home?.hero?.media;
@@ -61,6 +57,10 @@ export function AdminContentClient() {
       void loadMedia();
     }
   }, [accessToken]);
+
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
 
   async function load() {
     try {
@@ -696,24 +696,6 @@ export function AdminContentClient() {
         </div>
 
         {message ? <p className="mb-3 text-sm text-muted-foreground">{message}</p> : null}
-
-        <label className="block text-xs font-medium sm:hidden">
-          Content section
-          <select
-            className="mt-1 h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
-            onChange={(event) => setTab(event.target.value as ContentTab)}
-            value={tab}
-          >
-            {contentTabs.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="hidden sm:block">
-          <Tabs active={tab} items={contentTabs} onChange={setTab} />
-        </div>
 
         <div className="mt-4">
           {tab === "home" ? (

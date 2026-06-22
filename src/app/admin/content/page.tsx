@@ -1,5 +1,5 @@
-import { AdminContentClient } from "@/components/cms/AdminContentClient";
+import { redirect } from "next/navigation";
 
 export default function AdminContentPage() {
-  return <AdminContentClient />;
+  redirect("/admin/content/home");
 }
