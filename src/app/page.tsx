@@ -404,6 +404,9 @@ function ProductGrid({ products }: Readonly<{ products: VisualTile[] }>) {
                     Sale
                   </span>
                 ) : null}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(0deg,rgb(32_22_12/0.88),transparent)] px-3 pb-3 pt-14 text-white transition-opacity duration-200 group-hover:opacity-0">
+                  <h3 className="font-serif text-[15px] font-medium leading-tight">{product.title}</h3>
+                </div>
                 {product.sizes?.length ? (
                   <div className="absolute inset-x-2 bottom-2 translate-y-2 rounded-sm border border-[#caa14e]/50 bg-white/95 px-2 py-2 opacity-0 shadow-soft transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#9b6d35]">
@@ -423,9 +426,6 @@ function ProductGrid({ products }: Readonly<{ products: VisualTile[] }>) {
                 ) : null}
               </div>
               <div className="pt-3">
-                <h3 className="font-serif text-[15px] font-medium text-[#3d1620]">
-                  {product.title}
-                </h3>
                 {product.subtitle ? (
                   <p className="mt-1.5 flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-semibold text-[#3d2a18]">
