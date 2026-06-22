@@ -571,18 +571,18 @@ function ArchMatte({ className = "" }: Readonly<{ className?: string }>) {
   return (
     <svg aria-hidden="true" className={className} preserveAspectRatio="none" viewBox="0 0 400 500">
       <path
-        d="M0 0 H400 V500 H0 Z M30 476 L30 210 C30 110 150 130 200 34 C250 130 370 110 370 210 L370 476 Z"
+        d="M0 0 H400 V500 H0 Z M30 500 L30 210 C30 110 150 130 200 34 C250 130 370 110 370 210 L370 500 Z"
         fill="#fbf7ef"
         fillRule="evenodd"
       />
       <path
-        d="M30 476 L30 210 C30 110 150 130 200 34 C250 130 370 110 370 210 L370 476"
+        d="M30 500 L30 210 C30 110 150 130 200 34 C250 130 370 110 370 210 L370 500"
         fill="none"
         stroke="#caa14e"
         strokeWidth="3"
       />
       <path
-        d="M40 476 L40 214 C40 122 152 140 200 50 C248 140 360 122 360 214 L360 476"
+        d="M40 500 L40 214 C40 122 152 140 200 50 C248 140 360 122 360 214 L360 500"
         fill="none"
         stroke="#caa14e"
         strokeOpacity="0.35"
