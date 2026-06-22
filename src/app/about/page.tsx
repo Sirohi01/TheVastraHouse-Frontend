@@ -29,20 +29,20 @@ export default async function AboutPage() {
     >
       <section className="overflow-hidden rounded-md border border-[#e5dac7] bg-[#fffaf1] shadow-[0_24px_60px_-44px_rgba(46,12,18,0.5)]">
         <div className="h-[3px] bg-[linear-gradient(90deg,#6e1423,#caa14e,#6e1423)]" />
-        <div className="grid lg:grid-cols-[42%_58%]">
-          <div className="flex items-center p-6 sm:p-8">
-            <div className="vh-rise">
-              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#9b6d35]">
+        <div className="grid min-w-0 lg:grid-cols-[42%_58%]">
+          <div className="flex min-w-0 items-center p-5 sm:p-8 lg:p-10">
+            <div className="min-w-0 vh-rise">
+              <p className="flex items-center gap-2 break-words text-xs font-semibold uppercase tracking-[0.18em] text-[#9b6d35] sm:tracking-[0.24em]">
                 <span aria-hidden="true" className="text-sm text-[#caa14e]">
                   ❖
                 </span>
                 {about?.storyEyebrow ?? "The Vastra House"}
               </p>
-              <h2 className="mt-4 font-serif text-3xl uppercase leading-tight text-[#3d1620] sm:text-[34px]">
+              <h2 className="mt-4 break-words font-serif text-2xl uppercase leading-tight text-[#3d1620] sm:text-[34px]">
                 {about?.storyTitle ?? "Clothing that feels rooted, refined, and ready."}
               </h2>
               <FiligreeDivider align="start" className="my-5" />
-              <p className="text-sm leading-7 text-[#6f6256]">
+              <p className="break-words text-sm leading-7 text-[#6f6256]">
                 {about?.storyCopy ??
                   "We design for customers who want familiar craft language with a cleaner, more international shopping experience."}
               </p>
@@ -63,7 +63,7 @@ export default async function AboutPage() {
               ) : null}
             </div>
           </div>
-          <div className="relative min-h-[260px]">
+          <div className="relative min-h-[220px] min-w-0 sm:min-h-[320px] lg:min-h-0">
             <ResponsiveImage
               alt={about?.media?.altText ?? "The Vastra House embroidered ethnic wear story image"}
               aspectRatio={about?.media?.aspectRatio ?? "16 / 9"}
@@ -90,22 +90,22 @@ export default async function AboutPage() {
               What We Stand For
             </h2>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-4">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {(about?.values ?? []).map((item) => {
               const Icon = iconMap[item.icon ?? "sparkles"] ?? Sparkles;
 
               return (
                 <article
-                  className="group relative rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#caa14e] hover:shadow-[0_16px_34px_-22px_rgba(110,20,35,0.6)]"
+                  className="group relative min-w-0 rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#caa14e] hover:shadow-[0_16px_34px_-22px_rgba(110,20,35,0.6)]"
                   key={item.title}
                 >
                   <span className="grid size-12 place-items-center rounded-full border border-[#caa14e] bg-[#fdf6e8] shadow-[inset_0_0_0_3px_rgba(202,161,78,0.18)]">
                     <Icon aria-hidden="true" className="text-[#6e1423]" size={22} />
                   </span>
-                  <h3 className="mt-4 font-serif text-sm font-semibold uppercase tracking-wide text-[#3d1620]">
+                  <h3 className="mt-4 break-words font-serif text-sm font-semibold uppercase tracking-wide text-[#3d1620]">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-6 text-[#6f6256]">{item.text}</p>
+                  <p className="mt-2 break-words text-sm leading-6 text-[#6f6256]">{item.text}</p>
                   <span className="pointer-events-none absolute right-3 top-3 text-xs text-[#caa14e]/0 transition-colors duration-200 group-hover:text-[#caa14e]/70">
                     ✦
                   </span>

@@ -18,12 +18,14 @@ export async function CatalogPage({
   description,
   eyebrow,
   heroMedia,
+  imageOnlyBanners = false,
   query,
   title,
 }: Readonly<{
   description: string;
   eyebrow?: string;
   heroMedia?: MediaReference | null;
+  imageOnlyBanners?: boolean;
   query: CatalogQuery & { view?: string };
   title: string;
 }>) {
@@ -62,17 +64,33 @@ export async function CatalogPage({
               sizes="100vw"
               src={heroMedia?.url ?? heroImage}
             />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(46_12_18/0.86),rgb(46_12_18/0.42)_50%,transparent)]" />
+            <div
+              className={
+                imageOnlyBanners
+                  ? "hidden"
+                  : "absolute inset-0 hidden bg-[linear-gradient(90deg,rgb(46_12_18/0.86),rgb(46_12_18/0.42)_50%,transparent)] md:block"
+              }
+            />
 
             {/* Royal inset frame + corner filigree */}
-            <div className="pointer-events-none absolute inset-3 border border-[#caa14e]/45 sm:inset-5">
+            <div
+              className={
+                imageOnlyBanners
+                  ? "hidden"
+                  : "pointer-events-none absolute inset-3 hidden border border-[#caa14e]/45 md:block md:inset-5"
+              }
+            >
               <CornerFiligree className="absolute -left-px -top-px text-[#caa14e]/85" />
               <CornerFiligree className="absolute -right-px -top-px rotate-90 text-[#caa14e]/85" />
               <CornerFiligree className="absolute -bottom-px -right-px rotate-180 text-[#caa14e]/85" />
               <CornerFiligree className="absolute -bottom-px -left-px -rotate-90 text-[#caa14e]/85" />
             </div>
 
-            <div className="absolute inset-0 flex items-center px-7 sm:px-10">
+            <div
+              className={
+                imageOnlyBanners ? "hidden" : "absolute inset-0 hidden items-center px-7 md:flex md:px-10"
+              }
+            >
               <div className="max-w-xl text-white">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
                   {eyebrow ?? "The Vastra House"}
@@ -119,7 +137,7 @@ export async function CatalogPage({
               <FilterSidebar filters={filters} query={catalogQuery} />
               <div className="p-5">
                 <ProductGrid products={products.data} view={view} />
-                {products.data.length ? <PromoBand /> : null}
+                {products.data.length ? <PromoBand imageOnly={imageOnlyBanners} /> : null}
                 <Pagination meta={products.meta} query={{ ...catalogQuery, view }} />
               </div>
             </div>
@@ -298,7 +316,7 @@ function FilterSidebar({
 
 function FilterGroup({ children, title }: Readonly<{ children: React.ReactNode; title: string }>) {
   return (
-    <details className="group px-5 py-4" open>
+    <details className="group px-5 py-4">
       <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold uppercase tracking-wide text-[#3d1620]">
         {title}
         <ChevronDown
@@ -350,7 +368,7 @@ function colorToSwatch(color: string) {
   return map[color.toLowerCase()] ?? "#a88968";
 }
 
-function PromoBand() {
+function PromoBand({ imageOnly = false }: Readonly<{ imageOnly?: boolean }>) {
   return (
     <a
       className="group relative mt-8 block overflow-hidden rounded-sm border border-[#e1d6c4]"
@@ -363,9 +381,21 @@ function PromoBand() {
         sizes="100vw"
         src={heroImage}
       />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(46_12_18/0.82),rgb(46_12_18/0.25))]" />
-      <div className="pointer-events-none absolute inset-3 border border-[#caa14e]/40" />
-      <div className="absolute inset-0 flex items-center px-6 text-white sm:px-8">
+      <div
+        className={
+          imageOnly
+            ? "hidden"
+            : "absolute inset-0 hidden bg-[linear-gradient(90deg,rgb(46_12_18/0.82),rgb(46_12_18/0.25))] md:block"
+        }
+      />
+      <div
+        className={
+          imageOnly ? "hidden" : "pointer-events-none absolute inset-3 hidden border border-[#caa14e]/40 md:block"
+        }
+      />
+      <div
+        className={imageOnly ? "hidden" : "absolute inset-0 hidden items-center px-6 text-white md:flex md:px-8"}
+      >
         <div>
           <h2 className="font-serif text-2xl uppercase leading-tight">
             Crafted with Heritage, Worn with Pride.

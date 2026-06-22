@@ -180,10 +180,10 @@ export function AdminOrdersClient() {
 
   return (
     <ProtectedRoute>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <section className="rounded-md border border-border bg-card p-3">
-          <div className="mb-3 flex flex-wrap items-end gap-2">
-            <label className="min-w-40 text-xs font-medium">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="min-w-0 rounded-md border border-border bg-card p-3">
+          <div className="mb-3 grid gap-2 sm:grid-cols-[minmax(10rem,0.45fr)_minmax(0,1fr)_auto] sm:items-end">
+            <label className="min-w-0 text-xs font-medium">
               Status
               <select
                 className="mt-1 h-9 w-full rounded-md border border-border px-2.5 text-sm"
@@ -198,7 +198,7 @@ export function AdminOrdersClient() {
                 ))}
               </select>
             </label>
-            <label className="min-w-48 flex-1 text-xs font-medium">
+            <label className="min-w-0 text-xs font-medium">
               Search
               <input
                 className="mt-1 h-9 w-full rounded-md border border-border px-2.5 text-sm"
@@ -209,7 +209,7 @@ export function AdminOrdersClient() {
               />
             </label>
             <button
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-semibold"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-border px-3 text-sm font-semibold"
               onClick={() => void loadOrders()}
               type="button"
             >
@@ -220,7 +220,7 @@ export function AdminOrdersClient() {
 
           <form
             action={bulkUpdate}
-            className="mb-3 grid gap-2 rounded-md border border-border p-2.5 md:grid-cols-[1fr_1fr_auto]"
+            className="mb-3 grid gap-2 rounded-md border border-border p-2.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
           >
             <label className="text-xs font-medium">
               Bulk Status
@@ -282,12 +282,12 @@ export function AdminOrdersClient() {
           )}
         </section>
 
-        <aside className="grid h-fit gap-3">
+        <aside className="grid min-w-0 gap-3 xl:h-fit">
           {selected ? (
             <section className="rounded-md border border-border bg-card p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold">{selected.order.orderNumber}</h2>
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="break-words text-lg font-semibold">{selected.order.orderNumber}</h2>
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     {labelStatus(selected.order.status)}
                   </p>

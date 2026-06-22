@@ -199,6 +199,11 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
   const pathname = usePathname();
   const clearSession = useAuthStore((state) => state.clearSession);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const currentPage =
+    enabledSections
+      .flatMap((section) => section.items)
+      .find((item) => pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)))
+      ?.label ?? "Admin";
 
   return (
     <div className="min-h-screen bg-[#f6f3ee]">
@@ -236,9 +241,9 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
         </div>
       ) : null}
 
-      <div className="lg:pl-56">
-        <header className="sticky top-0 z-20 flex h-12 items-center justify-between border-b border-border bg-white/92 px-3 backdrop-blur sm:px-4">
-          <div className="flex items-center gap-2">
+      <div className="min-w-0 lg:pl-56">
+        <header className="sticky top-0 z-20 flex h-12 items-center justify-between gap-3 border-b border-border bg-white/92 px-3 backdrop-blur sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               aria-label="Open menu"
               className="inline-flex size-8 items-center justify-center rounded-md border border-border lg:hidden"
@@ -247,23 +252,23 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
             >
               <Menu aria-hidden="true" size={16} />
             </button>
-            <a className="font-semibold lg:hidden" href="/admin">
-              Admin
+            <a className="min-w-0 truncate font-semibold lg:hidden" href="/admin">
+              {currentPage}
             </a>
             <div className="hidden text-sm text-muted-foreground lg:block">
               Operations workspace
             </div>
           </div>
           <button
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-white px-2.5 text-sm font-semibold"
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border bg-white px-2.5 text-sm font-semibold"
             onClick={() => clearSession()}
             type="button"
           >
             <LogOut aria-hidden="true" size={15} />
-            Logout
+            <span className="max-[380px]:hidden">Logout</span>
           </button>
         </header>
-        <main className="px-3 py-3 sm:px-4 lg:px-5">{children}</main>
+        <main className="min-w-0 overflow-x-hidden px-3 py-3 sm:px-4 lg:px-5">{children}</main>
       </div>
     </div>
   );

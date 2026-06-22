@@ -8,15 +8,15 @@ type PublicPageFrameProps = Readonly<{
 export function PublicPageFrame({ children, description, eyebrow, title }: PublicPageFrameProps) {
   return (
     <main className="bg-[#fbf7ef]">
-      <section className="mx-auto max-w-7xl px-5 py-8">
-        <div className="mb-6 border-t-2 border-[#caa14e] bg-[#fffaf1] px-6 py-7">
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-5 sm:py-8">
+        <div className="mb-6 border-t-2 border-[#caa14e] bg-[#fffaf1] px-4 py-6 sm:px-6 sm:py-7">
           {eyebrow ? (
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#caa14e]">
               <span className="h-px w-6 bg-[#caa14e]" />
               {eyebrow}
             </p>
           ) : null}
-          <h1 className="mt-2 font-serif text-4xl uppercase leading-tight text-[#3d1620]">
+          <h1 className="mt-2 break-words font-serif text-3xl uppercase leading-tight text-[#3d1620] sm:text-4xl">
             {title}
           </h1>
           {description ? (

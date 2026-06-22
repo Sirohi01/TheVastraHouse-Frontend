@@ -666,18 +666,18 @@ export function AdminContentClient() {
 
   return (
     <ProtectedRoute>
-      <div>
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">CMS Content</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+      <div className="min-w-0">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold sm:text-2xl">CMS Content</h1>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
               Edit website text, CTAs, hero media, navigation, footer, FAQs, policies, and
               testimonials.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             <button
-              className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-3 text-sm font-semibold"
               onClick={() => void load()}
               type="button"
             >
@@ -685,7 +685,7 @@ export function AdminContentClient() {
               Refresh
             </button>
             <button
-              className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
               onClick={() => void save()}
               type="button"
             >
@@ -697,12 +697,28 @@ export function AdminContentClient() {
 
         {message ? <p className="mb-3 text-sm text-muted-foreground">{message}</p> : null}
 
-        <Tabs active={tab} items={contentTabs} onChange={setTab} />
+        <label className="block text-xs font-medium sm:hidden">
+          Content section
+          <select
+            className="mt-1 h-10 w-full rounded-md border border-border bg-card px-3 text-sm"
+            onChange={(event) => setTab(event.target.value as ContentTab)}
+            value={tab}
+          >
+            {contentTabs.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="hidden sm:block">
+          <Tabs active={tab} items={contentTabs} onChange={setTab} />
+        </div>
 
         <div className="mt-4">
           {tab === "home" ? (
-            <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="rounded-lg border border-border bg-card p-5 shadow-soft">
+            <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-soft sm:p-5">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold">Home Hero</h2>
                   <button
@@ -864,7 +880,7 @@ export function AdminContentClient() {
                 </div>
               </div>
 
-              <aside className="rounded-lg border border-border bg-card p-5 shadow-soft">
+              <aside className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-soft sm:p-5">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <ImagePlus aria-hidden="true" size={16} />
                   Hero Media
