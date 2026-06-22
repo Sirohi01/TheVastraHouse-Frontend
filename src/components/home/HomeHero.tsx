@@ -61,9 +61,11 @@ export function HomeHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
           </div>
         ))}
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(46_12_18/0.58),rgb(46_12_18/0.28)_48%,rgb(46_12_18/0.04))]" />
-        <div className="pointer-events-none absolute inset-3 border border-[#caa14e]/45 sm:inset-5 md:inset-6">
-          <div className="absolute inset-[3px] border border-[#caa14e]/20" />
-        </div>
+        {slide.showOutline !== false ? (
+          <div className="pointer-events-none absolute inset-3 border border-[#caa14e]/45 sm:inset-5 md:inset-6">
+            <div className="absolute inset-[3px] border border-[#caa14e]/20" />
+          </div>
+        ) : null}
 
         <div className="absolute inset-0 flex items-center">
           <div className={`mx-auto flex w-full max-w-7xl px-6 sm:px-12 ${positionClass(slide.contentPosition)}`}>

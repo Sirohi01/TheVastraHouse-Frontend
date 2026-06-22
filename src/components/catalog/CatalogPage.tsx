@@ -78,7 +78,7 @@ export async function CatalogPage({
             {/* Royal inset frame + corner filigree */}
             <div
               className={
-                imageOnlyBanners
+                imageOnlyBanners || bannerStyle?.showOutline === false
                   ? "hidden"
                   : "pointer-events-none absolute inset-3 hidden border border-[#caa14e]/45 md:block md:inset-5"
               }

@@ -123,7 +123,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
 
   function updateAbout(
     field: "description" | "eyebrow" | "storyCopy" | "storyEyebrow" | "storyTitle" | "title",
-    value: string,
+    value: string | boolean,
   ) {
     updateContent((current) => ({
       ...current,
@@ -137,7 +137,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
   function updateCatalogPage(
     page: "preOrder" | "shop",
     field: Exclude<keyof CmsCatalogPage, "media">,
-    value: string,
+    value: string | boolean,
   ) {
     updateContent((current) => ({
       ...current,
@@ -855,6 +855,15 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                             <option value="lg">Large</option>
                           </select>
                         </label>
+                        <label className="flex h-10 items-center gap-2 self-end rounded-md border border-border px-3 text-sm font-medium">
+                          <input
+                            checked={slide.showOutline !== false}
+                            className="size-4 accent-primary"
+                            onChange={(event) => updateHeroSlide(index, { showOutline: event.target.checked })}
+                            type="checkbox"
+                          />
+                          Show outline
+                        </label>
                       </div>
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <CtaEditor
@@ -1371,7 +1380,7 @@ function CatalogPageContentEditor({
 }: Readonly<{
   heading: string;
   media: MediaItem[];
-  onChange: (field: Exclude<keyof CmsCatalogPage, "media">, value: string) => void;
+  onChange: (field: Exclude<keyof CmsCatalogPage, "media">, value: string | boolean) => void;
   onClearMedia: () => void;
   onSelectMedia: (item: MediaItem) => void;
   page?: CmsCatalogPage;
@@ -1452,6 +1461,15 @@ function CatalogPageContentEditor({
               onChange={(value) => onChange("textColor", value)}
               value={page?.textColor ?? "#ffffff"}
             />
+            <label className="flex h-10 items-center gap-2 self-end rounded-md border border-border px-3 text-sm font-medium">
+              <input
+                checked={page?.showOutline !== false}
+                className="size-4 accent-primary"
+                onChange={(event) => onChange("showOutline", event.target.checked)}
+                type="checkbox"
+              />
+              Show outline
+            </label>
           </div>
         </div>
       </div>
@@ -1701,6 +1719,7 @@ function cleanHeroSlide(slide: CmsHeroSlide): CmsHeroSlide {
     media: cleanMediaReference(slide.media),
     primaryCta: cleanLink(slide.primaryCta),
     secondaryCta: cleanLink(slide.secondaryCta),
+    showOutline: slide.showOutline !== false,
     textColor: slide.textColor ?? "#ffffff",
     title: slide.title,
   };
@@ -1783,6 +1802,7 @@ function normalizeContent(content: CmsContent): CmsContent {
       fontFamily: shop.fontFamily ?? "serif",
       fontSize: shop.fontSize ?? "lg",
       media: cleanMediaReference(shop.media),
+      showOutline: shop.showOutline !== false,
       textColor: shop.textColor ?? "#ffffff",
       title: shop.title,
     },
@@ -1794,6 +1814,7 @@ function normalizeContent(content: CmsContent): CmsContent {
       fontFamily: preOrder.fontFamily ?? "serif",
       fontSize: preOrder.fontSize ?? "lg",
       media: cleanMediaReference(preOrder.media),
+      showOutline: preOrder.showOutline !== false,
       textColor: preOrder.textColor ?? "#ffffff",
       title: preOrder.title,
     },

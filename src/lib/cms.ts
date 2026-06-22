@@ -17,6 +17,7 @@ export type CmsHeroSlide = {
   media?: MediaReference | null;
   primaryCta?: CmsLink;
   secondaryCta?: CmsLink;
+  showOutline?: boolean;
   textColor?: string;
   title?: string;
 };
@@ -29,6 +30,7 @@ export type CmsCatalogPage = {
   fontFamily?: "serif" | "sans";
   fontSize?: "sm" | "md" | "lg";
   media?: MediaReference | null;
+  showOutline?: boolean;
   textColor?: string;
   title?: string;
 };
@@ -226,6 +228,7 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
           media: sanitizeMediaReference(slide.media),
           primaryCta: sanitizeLink(slide.primaryCta),
           secondaryCta: sanitizeLink(slide.secondaryCta),
+          showOutline: slide.showOutline !== false,
           textColor: slide.textColor ?? "#ffffff",
           title: slide.title,
         })),
@@ -256,6 +259,7 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       fontFamily: mergedShop.fontFamily ?? "serif",
       fontSize: mergedShop.fontSize ?? "lg",
       media: sanitizeMediaReference(mergedShop.media),
+      showOutline: mergedShop.showOutline !== false,
       textColor: mergedShop.textColor ?? "#ffffff",
       title: mergedShop.title,
     },
@@ -267,6 +271,7 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       fontFamily: mergedPreOrder.fontFamily ?? "serif",
       fontSize: mergedPreOrder.fontSize ?? "lg",
       media: sanitizeMediaReference(mergedPreOrder.media),
+      showOutline: mergedPreOrder.showOutline !== false,
       textColor: mergedPreOrder.textColor ?? "#ffffff",
       title: mergedPreOrder.title,
     },
