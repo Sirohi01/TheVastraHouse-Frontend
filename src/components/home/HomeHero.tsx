@@ -67,7 +67,7 @@ export function HomeHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
           </div>
         ) : null}
 
-        <div className="absolute inset-0 flex items-center">
+        <div className="absolute inset-0 hidden items-center md:flex">
           <div className={`mx-auto flex w-full max-w-7xl px-6 sm:px-12 ${positionClass(slide.contentPosition)}`}>
             <div
               className={`w-full max-w-xl text-white transition-opacity duration-300 ${
