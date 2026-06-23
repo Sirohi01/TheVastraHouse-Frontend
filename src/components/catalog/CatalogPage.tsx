@@ -400,7 +400,7 @@ function PromoBand({
     >
       <ResponsiveImage
         alt={promo?.media?.altText ?? "Crafted heritage fabric banner"}
-        aspectRatio="16 / 5"
+        aspectRatio="16 / 7"
         className="transition-transform duration-500 group-hover:scale-105"
         sizes="100vw"
         src={promo?.media?.url ?? heroImage}

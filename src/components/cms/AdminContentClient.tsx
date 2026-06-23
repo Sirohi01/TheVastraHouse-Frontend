@@ -1168,7 +1168,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
               onPromoChange={(patch) => updateCatalogPromo("shop", patch)}
               onPromoSelectMedia={(item) =>
                 updateCatalogPromo("shop", {
-                  media: toMediaReference(item, "Shop promotional banner", "16:5"),
+                  media: toMediaReference(item, "Shop promotional banner", "16:7"),
                 })
               }
               onClearMedia={() => clearCatalogPageMedia("shop")}
@@ -1185,7 +1185,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
               onPromoChange={(patch) => updateCatalogPromo("preOrder", patch)}
               onPromoSelectMedia={(item) =>
                 updateCatalogPromo("preOrder", {
-                  media: toMediaReference(item, "Pre-order promotional banner", "16:5"),
+                  media: toMediaReference(item, "Pre-order promotional banner", "16:7"),
                 })
               }
               onClearMedia={() => clearCatalogPageMedia("preOrder")}
