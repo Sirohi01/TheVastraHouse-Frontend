@@ -13,7 +13,6 @@ export default async function PreOrderPage() {
       description={preOrder.description ?? ""}
       eyebrow={preOrder.eyebrow}
       heroMedia={preOrder.media}
-      imageOnlyBanners
       query={{ preOrder: "true", sort: "-newest" }}
       title={preOrder.title ?? "Pre-Order"}
     />

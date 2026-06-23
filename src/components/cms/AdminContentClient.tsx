@@ -148,6 +148,25 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     }));
   }
 
+  function updateCatalogPromo(page: "preOrder" | "shop", patch: Partial<CmsHeroSlide>) {
+    updateContent((current) => ({
+      ...current,
+      [page]: {
+        ...current[page],
+        promo: {
+          copyFontSize: "md",
+          contentPosition: "left",
+          fontFamily: "serif",
+          fontSize: "lg",
+          textColor: "#ffffff",
+          title: "Explore Collection",
+          ...current[page]?.promo,
+          ...patch,
+        },
+      },
+    }));
+  }
+
   function setCatalogPageMedia(page: "preOrder" | "shop", item: MediaItem) {
     updateContent((current) => ({
       ...current,
@@ -1146,6 +1165,12 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
               heading="Shop Page"
               media={imageMedia}
               onChange={(field, value) => updateCatalogPage("shop", field, value)}
+              onPromoChange={(patch) => updateCatalogPromo("shop", patch)}
+              onPromoSelectMedia={(item) =>
+                updateCatalogPromo("shop", {
+                  media: toMediaReference(item, "Shop promotional banner", "16:5"),
+                })
+              }
               onClearMedia={() => clearCatalogPageMedia("shop")}
               onSelectMedia={(item) => setCatalogPageMedia("shop", item)}
               page={content.shop}
@@ -1157,6 +1182,12 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
               heading="Pre-Order Page"
               media={imageMedia}
               onChange={(field, value) => updateCatalogPage("preOrder", field, value)}
+              onPromoChange={(patch) => updateCatalogPromo("preOrder", patch)}
+              onPromoSelectMedia={(item) =>
+                updateCatalogPromo("preOrder", {
+                  media: toMediaReference(item, "Pre-order promotional banner", "16:5"),
+                })
+              }
               onClearMedia={() => clearCatalogPageMedia("preOrder")}
               onSelectMedia={(item) => setCatalogPageMedia("preOrder", item)}
               page={content.preOrder}
@@ -1375,6 +1406,8 @@ function CatalogPageContentEditor({
   media,
   onChange,
   onClearMedia,
+  onPromoChange,
+  onPromoSelectMedia,
   onSelectMedia,
   page,
 }: Readonly<{
@@ -1382,6 +1415,8 @@ function CatalogPageContentEditor({
   media: MediaItem[];
   onChange: (field: Exclude<keyof CmsCatalogPage, "media">, value: string | boolean) => void;
   onClearMedia: () => void;
+  onPromoChange: (patch: Partial<CmsHeroSlide>) => void;
+  onPromoSelectMedia: (item: MediaItem) => void;
   onSelectMedia: (item: MediaItem) => void;
   page?: CmsCatalogPage;
 }>) {
@@ -1470,6 +1505,36 @@ function CatalogPageContentEditor({
               />
               Show outline
             </label>
+          </div>
+          <div className="mt-5 border-t border-border pt-5">
+            <h3 className="text-base font-semibold">Lower Promotional Banner</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Controls the image and content shown below the product grid.
+            </p>
+            <div className="mt-3 grid gap-3">
+              <Field
+                label="Promo title"
+                onChange={(value) => onPromoChange({ title: value })}
+                value={page?.promo?.title ?? "Explore Collection"}
+              />
+              <TextEditor
+                label="Promo description"
+                onChange={(value) => onPromoChange({ copy: value })}
+                value={page?.promo?.copy ?? "Explore our handpicked premium collection."}
+              />
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <label className="text-sm font-medium">Position<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => onPromoChange({ contentPosition: event.target.value as "left" | "center" | "right" })} value={page?.promo?.contentPosition ?? "left"}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label>
+                <label className="text-sm font-medium">Font family<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => onPromoChange({ fontFamily: event.target.value as "serif" | "sans" })} value={page?.promo?.fontFamily ?? "serif"}><option value="serif">Serif</option><option value="sans">Sans</option></select></label>
+                <label className="text-sm font-medium">Title size<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => onPromoChange({ fontSize: event.target.value as "sm" | "md" | "lg" })} value={page?.promo?.fontSize ?? "lg"}><option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option></select></label>
+              </div>
+              <Field label="Text colour" onChange={(value) => onPromoChange({ textColor: value })} value={page?.promo?.textColor ?? "#ffffff"} />
+              <Field label="Button label" onChange={(value) => onPromoChange({ primaryCta: { enabled: true, href: page?.promo?.primaryCta?.href ?? "/shop", label: value } })} value={page?.promo?.primaryCta?.label ?? "Explore Collection"} />
+              <Field label="Button link" onChange={(value) => onPromoChange({ primaryCta: { enabled: true, href: value, label: page?.promo?.primaryCta?.label ?? "Explore Collection" } })} value={page?.promo?.primaryCta?.href ?? "/shop"} />
+              <div>
+                <p className="mb-2 text-xs font-semibold">Promo image</p>
+                <MediaPicker media={media} onSelect={onPromoSelectMedia} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1802,6 +1867,7 @@ function normalizeContent(content: CmsContent): CmsContent {
       fontFamily: shop.fontFamily ?? "serif",
       fontSize: shop.fontSize ?? "lg",
       media: cleanMediaReference(shop.media),
+      promo: shop.promo ? cleanHeroSlide(shop.promo) : undefined,
       showOutline: shop.showOutline !== false,
       textColor: shop.textColor ?? "#ffffff",
       title: shop.title,
@@ -1814,6 +1880,7 @@ function normalizeContent(content: CmsContent): CmsContent {
       fontFamily: preOrder.fontFamily ?? "serif",
       fontSize: preOrder.fontSize ?? "lg",
       media: cleanMediaReference(preOrder.media),
+      promo: preOrder.promo ? cleanHeroSlide(preOrder.promo) : undefined,
       showOutline: preOrder.showOutline !== false,
       textColor: preOrder.textColor ?? "#ffffff",
       title: preOrder.title,

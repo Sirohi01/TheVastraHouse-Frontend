@@ -30,6 +30,7 @@ export type CmsCatalogPage = {
   fontFamily?: "serif" | "sans";
   fontSize?: "sm" | "md" | "lg";
   media?: MediaReference | null;
+  promo?: CmsHeroSlide;
   showOutline?: boolean;
   textColor?: string;
   title?: string;
@@ -259,6 +260,9 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       fontFamily: mergedShop.fontFamily ?? "serif",
       fontSize: mergedShop.fontSize ?? "lg",
       media: sanitizeMediaReference(mergedShop.media),
+      promo: mergedShop.promo
+        ? { ...mergedShop.promo, media: sanitizeMediaReference(mergedShop.promo.media) }
+        : undefined,
       showOutline: mergedShop.showOutline !== false,
       textColor: mergedShop.textColor ?? "#ffffff",
       title: mergedShop.title,
@@ -271,6 +275,9 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       fontFamily: mergedPreOrder.fontFamily ?? "serif",
       fontSize: mergedPreOrder.fontSize ?? "lg",
       media: sanitizeMediaReference(mergedPreOrder.media),
+      promo: mergedPreOrder.promo
+        ? { ...mergedPreOrder.promo, media: sanitizeMediaReference(mergedPreOrder.promo.media) }
+        : undefined,
       showOutline: mergedPreOrder.showOutline !== false,
       textColor: mergedPreOrder.textColor ?? "#ffffff",
       title: mergedPreOrder.title,

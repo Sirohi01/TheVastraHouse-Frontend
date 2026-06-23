@@ -67,13 +67,6 @@ export async function CatalogPage({
               sizes="100vw"
               src={heroMedia?.url ?? heroImage}
             />
-            <div
-              className={
-                imageOnlyBanners
-                  ? "hidden"
-                  : "absolute inset-0 hidden bg-[linear-gradient(90deg,rgb(46_12_18/0.86),rgb(46_12_18/0.42)_50%,transparent)] md:block"
-              }
-            />
 
             {/* Royal inset frame + corner filigree */}
             <div
@@ -147,7 +140,7 @@ export async function CatalogPage({
               <FilterSidebar filters={filters} query={catalogQuery} />
               <div className="p-5">
                 <ProductGrid products={products.data} view={view} />
-                {products.data.length ? <PromoBand imageOnly={imageOnlyBanners} /> : null}
+                {products.data.length ? <PromoBand imageOnly={imageOnlyBanners} promo={bannerStyle?.promo} /> : null}
                 <Pagination meta={products.meta} query={{ ...catalogQuery, view }} />
               </div>
             </div>
@@ -379,8 +372,8 @@ function colorToSwatch(color: string) {
 }
 
 function catalogContentAlignment(position?: CmsCatalogPage["contentPosition"]) {
-  if (position === "center") return "mx-auto text-center";
-  if (position === "right") return "ml-auto text-right";
+  if (position === "center") return "mx-auto text-left";
+  if (position === "right") return "ml-auto text-left";
   return "text-left";
 }
 
@@ -396,25 +389,21 @@ function catalogCopySize(size?: CmsCatalogPage["copyFontSize"]) {
   return "text-base";
 }
 
-function PromoBand({ imageOnly = false }: Readonly<{ imageOnly?: boolean }>) {
+function PromoBand({
+  imageOnly = false,
+  promo,
+}: Readonly<{ imageOnly?: boolean; promo?: CmsCatalogPage["promo"] }>) {
   return (
     <a
       className="group relative mt-8 block overflow-hidden rounded-sm border border-[#e1d6c4]"
-      href="/shop?sort=-bestSelling"
+      href={promo?.primaryCta?.href ?? "/shop?sort=-bestSelling"}
     >
       <ResponsiveImage
-        alt="Crafted heritage fabric banner"
+        alt={promo?.media?.altText ?? "Crafted heritage fabric banner"}
         aspectRatio="16 / 5"
         className="transition-transform duration-500 group-hover:scale-105"
         sizes="100vw"
-        src={heroImage}
-      />
-      <div
-        className={
-          imageOnly
-            ? "hidden"
-            : "absolute inset-0 hidden bg-[linear-gradient(90deg,rgb(46_12_18/0.82),rgb(46_12_18/0.25))] md:block"
-        }
+        src={promo?.media?.url ?? heroImage}
       />
       <div
         className={
@@ -424,13 +413,18 @@ function PromoBand({ imageOnly = false }: Readonly<{ imageOnly?: boolean }>) {
       <div
         className={imageOnly ? "hidden" : "absolute inset-0 hidden items-center px-6 text-white md:flex md:px-8"}
       >
-        <div>
-          <h2 className="font-serif text-2xl uppercase leading-tight">
-            Crafted with Heritage, Worn with Pride.
+        <div
+          className={`${promo?.contentPosition === "right" ? "ml-auto text-left" : promo?.contentPosition === "center" ? "mx-auto text-center" : "text-left"} ${promo?.fontFamily === "sans" ? "" : "font-serif"}`}
+          style={{ color: promo?.textColor ?? "#ffffff" }}
+        >
+          <h2 className={`uppercase leading-tight ${catalogTitleSize(promo?.fontSize)}`}>
+            {promo?.title ?? "Crafted with Heritage, Worn with Pride."}
           </h2>
-          <p className="mt-2 text-sm text-white/80">Explore our handpicked premium collection.</p>
-          <span className="relative mt-4 inline-flex h-10 items-center gap-2 border border-[#caa14e] bg-[#6e1423] px-5 text-xs font-semibold uppercase tracking-[0.1em] transition-colors group-hover:bg-[#84182c]">
-            Explore Collection <Search aria-hidden="true" size={14} />
+          <p className={`mt-2 text-current opacity-80 ${catalogCopySize(promo?.copyFontSize)}`}>
+            {promo?.copy ?? "Explore our handpicked premium collection."}
+          </p>
+          <span className="relative mt-4 inline-flex h-10 items-center gap-2 border border-[#caa14e] bg-[#6e1423] px-5 text-xs font-semibold uppercase tracking-[0.1em] text-white transition-colors group-hover:bg-[#84182c]">
+            {promo?.primaryCta?.label ?? "Explore Collection"} <Search aria-hidden="true" size={14} />
           </span>
         </div>
       </div>
