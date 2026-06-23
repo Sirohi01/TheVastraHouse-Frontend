@@ -73,7 +73,7 @@ export default async function HomePage() {
         <MobileHomeSearch />
         <HomeHero slides={heroSlides} />
         <SquareTileRail tiles={categoryTiles} />
-        <StoryBand image={storyImage} imageAlt={storyImageAlt} />
+        <StoryBand image={storyImage} imageAlt={storyImageAlt} story={cms?.home?.story} />
         <CollectionGrid tiles={collectionTiles} />
         <ProductGrid products={productTiles} />
         <TrustStrip />
@@ -293,34 +293,40 @@ function SquareTileRail({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
   );
 }
 
-function StoryBand({ image, imageAlt }: Readonly<{ image: string; imageAlt: string }>) {
+function StoryBand({
+  image,
+  imageAlt,
+  story,
+}: Readonly<{ image: string; imageAlt: string; story?: CmsHeroSlide }>) {
   return (
     <section className="grid border-y border-[#e1d6c4] bg-[#fffdf8] lg:grid-cols-[40%_60%]">
-      <div className="flex items-center px-6 py-10 lg:justify-center">
-        <div className="max-w-md">
+      <div className={`flex items-center px-6 py-10 lg:justify-center ${story?.contentPosition === "right" ? "lg:order-2" : ""}`}>
+        <div
+          className={`max-w-md ${story?.fontFamily === "sans" ? "" : "font-serif"}`}
+          style={{ color: story?.textColor ?? "#3d1620" }}
+        >
           <div className="flex items-center gap-2 text-[#9b6d35]">
             <span aria-hidden="true" className="text-sm text-[#caa14e]">
               ❖
             </span>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em]">Our Story</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em]">{story?.eyebrow ?? "Our Story"}</p>
           </div>
-          <h2 className="mt-3 font-serif text-3xl leading-tight text-[#3d1620] sm:text-4xl">
-            Crafted with Passion, Worn with Pride.
+          <h2 className={`mt-3 leading-tight ${storyTitleSize(story?.fontSize)}`}>
+            {story?.title ?? "Crafted with Passion, Worn with Pride."}
           </h2>
           <FiligreeDivider align="start" className="my-5" />
-          <p className="text-sm leading-7 text-muted-foreground">
-            We blend timeless tradition with contemporary designs to bring premium quality clothing
-            that celebrates your individuality.
+          <p className={`${storyCopySize(story?.copyFontSize)} leading-7 opacity-75`}>
+            {story?.copy ?? "We blend timeless tradition with contemporary designs to bring premium quality clothing that celebrates your individuality."}
           </p>
           <a
             className="mt-6 inline-flex h-10 items-center gap-2 border border-[#6e1423] px-5 text-xs font-semibold uppercase tracking-[0.1em] text-[#6e1423] transition-colors duration-200 hover:bg-[#6e1423] hover:text-white"
-            href="/about"
+            href={story?.primaryCta?.href ?? "/about"}
           >
-            Know More About Us <ArrowRight aria-hidden="true" size={14} />
+            {story?.primaryCta?.label ?? "Know More About Us"} <ArrowRight aria-hidden="true" size={14} />
           </a>
         </div>
       </div>
-      <div className="relative">
+      <div className={`relative ${story?.contentPosition === "right" ? "lg:order-1" : ""}`}>
         <ResponsiveImage
           alt={imageAlt}
           aspectRatio="16 / 7"
@@ -331,6 +337,18 @@ function StoryBand({ image, imageAlt }: Readonly<{ image: string; imageAlt: stri
       </div>
     </section>
   );
+}
+
+function storyTitleSize(size: CmsHeroSlide["fontSize"]) {
+  if (size === "sm") return "text-2xl sm:text-3xl";
+  if (size === "md") return "text-3xl sm:text-4xl";
+  return "text-3xl sm:text-4xl";
+}
+
+function storyCopySize(size: CmsHeroSlide["copyFontSize"]) {
+  if (size === "sm") return "text-xs";
+  if (size === "lg") return "text-base";
+  return "text-sm";
 }
 
 function CollectionGrid({ tiles }: Readonly<{ tiles: VisualTile[] }>) {

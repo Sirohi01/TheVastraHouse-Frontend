@@ -52,6 +52,7 @@ export type CmsContent = {
       slides?: CmsHeroSlide[];
       title?: string;
     };
+    story?: CmsHeroSlide;
     storyMedia?: MediaReference | null;
   };
   about?: {
@@ -236,6 +237,9 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
         title: mergedHero.title,
       },
       storyMedia: sanitizeMediaReference(content.home?.storyMedia),
+      story: content.home?.story
+        ? { ...content.home.story, media: sanitizeMediaReference(content.home.story.media) }
+        : undefined,
     },
     about: {
       description: mergedAbout.description,
