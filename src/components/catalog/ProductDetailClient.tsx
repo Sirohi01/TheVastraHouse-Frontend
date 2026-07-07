@@ -29,9 +29,14 @@ export function ProductDetailClient({
   const product = pdp.product;
   const media = getProductMedia(product);
   const variant = product.variants[selectedVariant] ?? product.variants[0];
-  const canPreOrder = Boolean(
-    variant?.preOrder?.enabled && (variant.preOrder.remainingQuantity ?? 0) > 0,
-  );
+  const canPreOrder = useMemo(() => {
+    const p = variant?.preOrder;
+    if (!p?.enabled) return false;
+    const now = Date.now();
+    if (p.startAt && new Date(p.startAt).getTime() > now) return false;
+    if (p.endAt && new Date(p.endAt).getTime() < now) return false;
+    return (p.remainingQuantity ?? 0) > 0;
+  }, [variant?.preOrder]);
   const pricing = getProductPricing({ ...product, variants: [variant] });
   const storedProduct = useMemo(
     () => ({

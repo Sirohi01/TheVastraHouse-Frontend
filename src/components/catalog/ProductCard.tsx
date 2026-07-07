@@ -20,9 +20,14 @@ export function ProductCard({
   const price = getProductPrice(product);
   const pricing = getProductPricing(product);
   const sizes = [...new Set(product.variants.map((variant) => variant.size).filter(isString))];
-  const hasPreOrder = product.variants.some(
-    (variant) => variant.preOrder?.enabled && (variant.preOrder.remainingQuantity ?? 0) > 0,
-  );
+  const hasPreOrder = product.variants.some((variant) => {
+    const p = variant.preOrder;
+    if (!p?.enabled) return false;
+    const now = Date.now();
+    if (p.startAt && new Date(p.startAt).getTime() > now) return false;
+    if (p.endAt && new Date(p.endAt).getTime() < now) return false;
+    return (p.remainingQuantity ?? 0) > 0;
+  });
   const storedProduct = {
     imageUrl: media[0]?.url,
     name: product.name,
