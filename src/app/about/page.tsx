@@ -63,7 +63,7 @@ export default async function AboutPage() {
               ) : null}
             </div>
           </div>
-          <div className="relative min-h-[220px] min-w-0 sm:min-h-[320px] lg:min-h-0">
+          <div className="relative min-w-0">
             <ResponsiveImage
               alt={about?.media?.altText ?? "The Vastra House embroidered ethnic wear story image"}
               aspectRatio={about?.media?.aspectRatio ?? "16 / 9"}

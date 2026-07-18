@@ -298,42 +298,65 @@ function StoryBand({
   imageAlt,
   story,
 }: Readonly<{ image: string; imageAlt: string; story?: CmsHeroSlide }>) {
+  const isRight = story?.contentPosition === "right";
+
   return (
-    <section className="grid border-y border-[#e1d6c4] bg-[#fffdf8] lg:grid-cols-[40%_60%]">
-      <div className={`flex items-center px-6 py-10 lg:justify-center ${story?.contentPosition === "right" ? "lg:order-2" : ""}`}>
-        <div
-          className={`max-w-md ${story?.fontFamily === "sans" ? "" : "font-serif"}`}
-          style={{ color: story?.textColor ?? "#3d1620" }}
-        >
-          <div className="flex items-center gap-2 text-[#9b6d35]">
-            <span aria-hidden="true" className="text-sm text-[#caa14e]">
-              ❖
-            </span>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em]">{story?.eyebrow ?? "Our Story"}</p>
-          </div>
-          <h2 className={`mt-3 leading-tight ${storyTitleSize(story?.fontSize)}`}>
-            {story?.title ?? "Crafted with Passion, Worn with Pride."}
-          </h2>
-          <FiligreeDivider align="start" className="my-5" />
-          <p className={`${storyCopySize(story?.copyFontSize)} leading-7 opacity-75`}>
-            {story?.copy ?? "We blend timeless tradition with contemporary designs to bring premium quality clothing that celebrates your individuality."}
-          </p>
-          <a
-            className="mt-6 inline-flex h-10 items-center gap-2 border border-[#6e1423] px-5 text-xs font-semibold uppercase tracking-[0.1em] text-[#6e1423] transition-colors duration-200 hover:bg-[#6e1423] hover:text-white"
-            href={story?.primaryCta?.href ?? "/about"}
-          >
-            {story?.primaryCta?.label ?? "Know More About Us"} <ArrowRight aria-hidden="true" size={14} />
-          </a>
-        </div>
-      </div>
-      <div className={`relative ${story?.contentPosition === "right" ? "lg:order-1" : ""}`}>
+    <section className="relative flex min-h-[500px] lg:min-h-0 lg:aspect-[21/9] items-center overflow-hidden border-y border-[#e1d6c4] bg-[#fffdf8]">
+      {/* Background Image - No color overlays */}
+      <div className="absolute inset-0 z-0">
         <ResponsiveImage
           alt={imageAlt}
-          aspectRatio="16 / 7"
-          sizes="(max-width: 1024px) 100vw, 60vw"
+          aspectRatio="auto"
+          className="h-full w-full"
+          objectFit="cover"
+          sizes="100vw"
           src={image}
         />
-        <span className="pointer-events-none absolute inset-4 border border-[#caa14e]/40" />
+      </div>
+
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-16 sm:px-12">
+        <div
+          className={`flex flex-col ${isRight ? "text-right lg:items-end" : "text-left lg:items-start"}`}
+        >
+          <div
+            className={`max-w-md rounded-sm bg-white/40 p-6 backdrop-blur-md lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${story?.fontFamily === "sans" ? "" : "font-serif"}`}
+            style={{ color: story?.textColor ?? "#3d1620" }}
+          >
+            <div
+              className={`flex items-center gap-2 ${isRight ? "justify-end" : ""}`}
+            >
+              <span aria-hidden="true" className="text-sm opacity-80">
+                ❖
+              </span>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-90">
+                {story?.eyebrow ?? "Our Story"}
+              </p>
+            </div>
+
+            <h2 className={`mt-3 leading-tight ${storyTitleSize(story?.fontSize)}`}>
+              {story?.title ?? "Crafted with Passion, Worn with Pride."}
+            </h2>
+
+            <FiligreeDivider
+              align={isRight ? "center" : "start"}
+              className={`my-5 ${isRight ? "justify-end" : ""}`}
+            />
+
+            <p className={`${storyCopySize(story?.copyFontSize)} leading-7 opacity-90`}>
+              {story?.copy ??
+                "We blend timeless tradition with contemporary designs to bring premium quality clothing that celebrates your individuality."}
+            </p>
+
+            <a
+              className="group mt-6 inline-flex h-10 items-center gap-2 border px-5 text-xs font-semibold uppercase tracking-[0.1em] transition-all duration-200 hover:opacity-70"
+              href={story?.primaryCta?.href ?? "/about"}
+              style={{ color: story?.textColor ?? "#3d1620", borderColor: story?.textColor ?? "#3d1620" }}
+            >
+              {story?.primaryCta?.label ?? "Know More About Us"} 
+              <ArrowRight aria-hidden="true" className="transition-transform group-hover:translate-x-1" size={14} />
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );
