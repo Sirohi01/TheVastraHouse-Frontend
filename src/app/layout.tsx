@@ -15,8 +15,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const cms = await loadCms();
 
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <AppProviders>
           <RootChrome cms={cms}>{children}</RootChrome>
         </AppProviders>
