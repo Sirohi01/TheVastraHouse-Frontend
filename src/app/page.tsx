@@ -301,9 +301,9 @@ function StoryBand({
   const isRight = story?.contentPosition === "right";
 
   return (
-    <section className="relative flex min-h-[500px] lg:min-h-0 lg:aspect-[21/9] items-center overflow-hidden border-y border-[#e1d6c4] bg-[#fffdf8]">
-      {/* Background Image - No color overlays */}
-      <div className="absolute inset-0 z-0">
+    <section className="relative flex flex-col lg:block min-h-0 lg:aspect-[21/9] overflow-hidden border-y border-[#e1d6c4] bg-[#fffdf8]">
+      {/* Background Image - Stacked on Mobile, Absolute on Desktop */}
+      <div className="relative z-0 w-full aspect-[4/3] sm:aspect-video lg:absolute lg:inset-0 lg:h-full lg:w-full lg:aspect-auto">
         <ResponsiveImage
           alt={imageAlt}
           aspectRatio="auto"
@@ -314,16 +314,16 @@ function StoryBand({
         />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-16 sm:px-12">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-center px-6 py-12 sm:px-12 lg:absolute lg:inset-0 lg:py-16">
         <div
-          className={`flex flex-col ${isRight ? "text-right lg:items-end" : "text-left lg:items-start"}`}
+          className={`flex w-full flex-col ${isRight ? "text-center lg:text-right lg:items-end" : "text-center lg:text-left lg:items-start"}`}
         >
           <div
-            className={`max-w-md rounded-sm bg-white/40 p-6 backdrop-blur-md lg:bg-transparent lg:p-0 lg:backdrop-blur-none ${story?.fontFamily === "sans" ? "" : "font-serif"}`}
-            style={{ color: story?.textColor ?? "#3d1620" }}
+            className={`mx-auto max-w-md lg:mx-0 text-[#3d1620] lg:text-[var(--story-color)] ${story?.fontFamily === "sans" ? "" : "font-serif"}`}
+            style={{ "--story-color": story?.textColor ?? "#3d1620" } as React.CSSProperties}
           >
             <div
-              className={`flex items-center gap-2 ${isRight ? "justify-end" : ""}`}
+              className={`flex items-center justify-center gap-2 lg:justify-start ${isRight ? "lg:justify-end" : ""}`}
             >
               <span aria-hidden="true" className="text-sm opacity-80">
                 ❖
@@ -338,8 +338,8 @@ function StoryBand({
             </h2>
 
             <FiligreeDivider
-              align={isRight ? "center" : "start"}
-              className={`my-5 ${isRight ? "justify-end" : ""}`}
+              align="center"
+              className={`my-5 lg:justify-start ${isRight ? "lg:justify-end" : ""}`}
             />
 
             <p className={`${storyCopySize(story?.copyFontSize)} leading-7 opacity-90`}>
@@ -348,9 +348,8 @@ function StoryBand({
             </p>
 
             <a
-              className="group mt-6 inline-flex h-10 items-center gap-2 border px-5 text-xs font-semibold uppercase tracking-[0.1em] transition-all duration-200 hover:opacity-70"
+              className="group mt-6 inline-flex h-10 items-center gap-2 border border-[#3d1620] px-5 text-xs font-semibold uppercase tracking-[0.1em] transition-all duration-200 hover:opacity-70 lg:border-[var(--story-color)]"
               href={story?.primaryCta?.href ?? "/about"}
-              style={{ color: story?.textColor ?? "#3d1620", borderColor: story?.textColor ?? "#3d1620" }}
             >
               {story?.primaryCta?.label ?? "Know More About Us"} 
               <ArrowRight aria-hidden="true" className="transition-transform group-hover:translate-x-1" size={14} />
