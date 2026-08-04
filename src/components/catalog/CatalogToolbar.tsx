@@ -14,7 +14,7 @@ export function CatalogToolbar({
   return (
     <div className="grid min-h-14 items-center border-b border-[#e1d6c4] text-sm md:grid-cols-[260px_1fr]">
       <button
-        className="flex w-full items-center justify-between gap-2 border-[#e1d6c4] px-5 py-4 md:border-r"
+        className="flex w-full items-center justify-between gap-2 border-[#e1d6c4] px-4 py-3 sm:px-5 sm:py-4 md:border-r"
         onClick={() => setOpen((current) => !current)}
         type="button"
       >
@@ -34,7 +34,7 @@ export function CatalogToolbar({
       </button>
 
       <form
-        className={`${open ? "grid" : "hidden"} gap-3 px-5 py-3 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center`}
+        className={`${open ? "grid" : "hidden"} gap-3 px-4 py-3 sm:px-5 md:grid md:grid-cols-[1fr_auto_auto_auto] md:items-center`}
       >
         <label className="flex h-10 items-center gap-2 rounded-sm border border-[#e1d6c4] bg-white px-3 transition-[border-color,box-shadow] duration-200 focus-within:border-[#caa14e] focus-within:shadow-[0_0_0_3px_rgba(202,161,78,0.16)] md:rounded-none md:border-0 md:border-l md:bg-transparent md:px-4 md:focus-within:shadow-none">
           <Search aria-hidden="true" className="text-[#9b6d35]" size={17} />

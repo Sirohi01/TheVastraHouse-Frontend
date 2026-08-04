@@ -17,7 +17,7 @@ export function FilterSidebar({
         <input name="sort" type="hidden" value={query.sort ?? "-newest"} />
         <input name="view" type="hidden" value={query.view ?? "grid"} />
         {query.preOrder ? <input name="preOrder" type="hidden" value={query.preOrder} /> : null}
-        <div className="flex items-center justify-between bg-[#fdf6e8] px-5 py-4">
+        <div className="flex items-center justify-between bg-[#fdf6e8] px-4 py-3 sm:px-5 sm:py-4">
           <button
             className="flex items-center gap-2 font-serif text-sm font-semibold uppercase tracking-wide text-[#3d1620]"
             onClick={() => setOpen((current) => !current)}
@@ -156,7 +156,7 @@ export function FilterSidebar({
               ))}
             </FilterGroup>
           ) : null}
-          <div className="grid grid-cols-2 gap-3 p-5">
+          <div className="grid grid-cols-2 gap-3 p-4 sm:p-5">
             <a
               className="grid h-10 place-items-center border border-[#6e1423] text-sm font-semibold uppercase tracking-wide text-[#6e1423] transition-colors hover:bg-[#6e1423] hover:text-white"
               href="/shop"
@@ -177,7 +177,7 @@ export function FilterSidebar({
 
 function FilterGroup({ children, title }: Readonly<{ children: React.ReactNode; title: string }>) {
   return (
-    <details className="group px-5 py-4">
+    <details className="group px-4 py-3 sm:px-5 sm:py-4">
       <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold uppercase tracking-wide text-[#3d1620]">
         {title}
         <ChevronDown

@@ -52,7 +52,7 @@ export async function CatalogPage({
 
     return (
       <main className="bg-[#fbf7ef]">
-        <section className="mx-auto max-w-7xl px-5 py-6">
+        <section className="mx-auto max-w-7xl px-3 py-4 sm:px-5 sm:py-6">
           <div className="relative overflow-hidden rounded-sm border border-[#e1d6c4] shadow-[0_24px_60px_-46px_rgba(46,12,18,0.6)]">
             <ResponsiveImage
               alt={heroMedia?.altText ?? `${title} banner`}
@@ -113,8 +113,8 @@ export async function CatalogPage({
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 pb-10">
-          <div className="mb-4 rounded-sm border border-[#caa14e]/50 bg-[#fffaf1] p-4 text-sm leading-6 text-[#6f6256]">
+        <section className="mx-auto max-w-7xl px-3 pb-8 sm:px-5 sm:pb-10">
+          <div className="mb-4 rounded-sm border border-[#caa14e]/50 bg-[#fffaf1] p-3 text-sm leading-6 text-[#6f6256] sm:p-4">
             <p className="font-serif text-lg uppercase tracking-wide text-[#3d1620]">
               Pre-orders only right now
             </p>
@@ -128,7 +128,7 @@ export async function CatalogPage({
 
             <div className="grid md:grid-cols-[260px_1fr]">
               <FilterSidebar filters={filters} query={catalogQuery} />
-              <div className="p-5">
+              <div className="p-3 sm:p-5">
                 <ProductGrid products={products.data} view={view} />
                 {products.data.length ? (
                   <PromoBand imageOnly={imageOnlyBanners} promo={bannerStyle?.promo} />
