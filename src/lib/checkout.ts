@@ -87,6 +87,7 @@ export type CheckoutPayload = {
   };
   upiReference?: string;
   notes?: string;
+  whatsappOptIn?: boolean;
 };
 
 export type CheckoutOrder = {

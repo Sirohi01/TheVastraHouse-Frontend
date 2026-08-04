@@ -11,6 +11,7 @@ export type AuthUser = {
   lastName?: string;
   roleSlug?: string;
   customerType?: "retail" | "wholesale";
+  whatsappOptIn?: boolean;
 };
 
 type AuthState = {

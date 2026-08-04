@@ -73,6 +73,8 @@ const enabledSections: SidebarSection<EnabledItem>[] = [
       { href: "/admin/content", icon: FileText, label: "CMS Content" },
       { href: "/admin/instagram", icon: Instagram, label: "Instagram Feed" },
       { href: "/admin/notifications", icon: Bell, label: "Notifications" },
+      { href: "/admin/documents", icon: ReceiptText, label: "Invoicing" },
+      { href: "/admin/access", icon: UserCog, label: "Roles / Users" },
       { href: "/admin/loyalty", icon: Gift, label: "Loyalty / Gift Cards" },
       { href: "/admin/settings", icon: Settings, label: "Settings" },
     ],
@@ -105,7 +107,6 @@ const plannedSections: SidebarSection<DisabledItem>[] = [
     label: "Operations",
     items: [
       { icon: Factory, label: "Manufacturing", phase: "Phase 16" },
-      { icon: ReceiptText, label: "Invoicing", phase: "Phase 17" },
       { icon: Truck, label: "Logistics / Courier", phase: "Docs Module 24" },
       { icon: LifeBuoy, label: "Support / Helpdesk", phase: "Docs Module 22" },
     ],
@@ -122,7 +123,6 @@ const plannedSections: SidebarSection<DisabledItem>[] = [
   {
     label: "Platform & Governance",
     items: [
-      { icon: UserCog, label: "Roles / Users", phase: "Docs Module 11" },
       { icon: KeyRound, label: "Admin Sessions", phase: "Phase 29" },
       { icon: ShieldAlert, label: "Fraud & Risk", phase: "Docs Module 21" },
       { icon: LockKeyhole, label: "Data Privacy", phase: "Docs Module 23" },
@@ -242,6 +242,7 @@ function NavContent({
 export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const clearSession = useAuthStore((state) => state.clearSession);
+  const refreshToken = useAuthStore((state) => state.refreshToken);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const currentPage =
     enabledSections
@@ -307,7 +308,20 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
           </div>
           <button
             className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border bg-white px-2.5 text-sm font-semibold"
-            onClick={() => clearSession()}
+            onClick={async () => {
+              try {
+                if (refreshToken) {
+                  await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1"}/auth/logout`, {
+                    body: JSON.stringify({ refreshToken }),
+                    headers: { "Content-Type": "application/json" },
+                    method: "POST",
+                  });
+                }
+              } finally {
+                clearSession();
+                window.location.assign("/admin/login");
+              }
+            }}
             type="button"
           >
             <LogOut aria-hidden="true" size={15} />

@@ -1045,6 +1045,7 @@ function buildPayload(
     shippingMethod,
     storeCreditRequested: numberOrUndefined(formData, "storeCreditRequested"),
     upiReference: text(formData, "upiReference") || undefined,
+    whatsappOptIn: false,
   };
 }
 
