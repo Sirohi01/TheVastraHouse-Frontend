@@ -175,11 +175,21 @@ export function ProductDetailClient({
                   variantId={String(variant?._id)}
                 />
               ) : canDirectOrder ? (
-                <AddToCartButton
-                  productId={product._id}
-                  purchaseMode="regular"
-                  variantId={String(variant?._id)}
-                />
+                <>
+                  <AddToCartButton
+                    productId={product._id}
+                    purchaseMode="regular"
+                    variantId={String(variant?._id)}
+                  />
+                  <AddToCartButton
+                    afterAddPath="/checkout"
+                    appearance="secondary"
+                    label="Buy Now"
+                    productId={product._id}
+                    purchaseMode="regular"
+                    variantId={String(variant?._id)}
+                  />
+                </>
               ) : (
                 <button
                   className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-md border border-[#e1d6c4] px-5 text-sm font-semibold text-muted-foreground"

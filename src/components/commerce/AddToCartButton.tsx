@@ -1,22 +1,30 @@
 "use client";
 
 import { ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { commerceFetch, type Cart } from "@/lib/commerce";
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 
 export function AddToCartButton({
+  afterAddPath,
+  appearance = "primary",
+  label = "Add to Cart",
   productId,
   purchaseMode = "regular",
   quantity = 1,
   variantId,
 }: Readonly<{
+  afterAddPath?: string;
+  appearance?: "primary" | "secondary";
+  label?: string;
   productId: string;
   purchaseMode?: "regular" | "pre_order";
   quantity?: number;
   variantId: string;
 }>) {
+  const router = useRouter();
   const accessToken = useAuthStore((state) => state.accessToken);
   const setCart = useCartStore((state) => state.setCart);
   const [message, setMessage] = useState("");
@@ -33,6 +41,10 @@ export function AddToCartButton({
         method: "POST",
       });
       setCart(payload.cart);
+      if (afterAddPath) {
+        router.push(afterAddPath);
+        return;
+      }
       setMessage("Added to cart");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Add to cart failed");
@@ -44,13 +56,17 @@ export function AddToCartButton({
   return (
     <div>
       <button
-        className="inline-flex h-12 items-center gap-2 rounded-md bg-primary px-5 font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+        className={`inline-flex h-12 items-center gap-2 rounded-md px-5 font-semibold transition-opacity hover:opacity-90 disabled:opacity-60 ${
+          appearance === "secondary"
+            ? "border border-primary bg-white text-primary"
+            : "bg-primary text-primary-foreground"
+        }`}
         disabled={submitting}
         onClick={addToCart}
         type="button"
       >
         <ShoppingBag aria-hidden="true" size={18} />
-        {submitting ? "Adding" : "Add to Cart"}
+        {submitting ? (afterAddPath ? "Opening checkout" : "Adding") : label}
       </button>
       {message ? <p className="mt-2 text-sm font-semibold text-accent">{message}</p> : null}
     </div>
