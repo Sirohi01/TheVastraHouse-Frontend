@@ -10,6 +10,7 @@ import {
   type CatalogProduct,
 } from "@/lib/catalog";
 import { ComparisonToggle } from "@/components/catalog/ComparisonToggle";
+import { SizeChartButton } from "@/components/catalog/SizeChartButton";
 import { WishlistButton } from "@/components/commerce/WishlistButton";
 
 export function ProductCard({
@@ -125,6 +126,12 @@ export function ProductCard({
               </>
             ) : null}
           </span>
+          <SizeChartButton
+            className="w-full"
+            productName={product.name}
+            sizeGuide={product.sizeGuide}
+            sizeGuideMedia={product.sizeGuideMedia}
+          />
           <div className="grid grid-cols-2 gap-2">
             <ComparisonToggle className="w-full min-w-0 px-2" product={storedProduct} />
             {product.variants[0]?._id ? (
