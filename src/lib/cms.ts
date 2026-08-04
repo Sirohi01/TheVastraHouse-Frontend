@@ -172,7 +172,9 @@ export const defaultCmsContent: CmsContent = {
 };
 
 export async function fetchCmsContent(key: string) {
-  const response = await fetch(`${apiBaseUrl}/cms/content/${key}`, { cache: "no-store" });
+  const response = await fetch(`${apiBaseUrl}/cms/content/${key}`, {
+    next: { revalidate: 60, tags: [`cms:${key}`] },
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to load CMS content (${response.status})`);

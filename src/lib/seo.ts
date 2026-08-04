@@ -43,7 +43,9 @@ export async function getSeoSettings(): Promise<SeoSettings> {
   };
 
   try {
-    const response = await fetch(`${apiBaseUrl}/catalog/seo-settings`, { cache: "no-store" });
+    const response = await fetch(`${apiBaseUrl}/catalog/seo-settings`, {
+      next: { revalidate: 300, tags: ["seo:settings"] },
+    });
 
     if (!response.ok) {
       return fallback;

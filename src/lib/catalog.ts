@@ -165,11 +165,17 @@ export async function getCatalogFilters() {
 }
 
 export async function getCatalogHome() {
-  return catalogFetch<{
+  const response = await fetch(`${apiBaseUrl}/catalog/home`, {
+    next: { revalidate: 60, tags: ["catalog:home"] },
+  });
+  if (!response.ok) {
+    throw new Error((await response.text()) || "Catalog home request failed");
+  }
+  return response.json() as Promise<{
     categories: CatalogTile[];
     collections: CatalogTile[];
     products: CatalogProduct[];
-  }>("/catalog/home");
+  }>;
 }
 
 export async function getProduct(slug: string) {

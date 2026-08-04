@@ -17,7 +17,7 @@ import {
 import { fetchCmsContent, type CmsHeroSlide } from "@/lib/cms";
 import { homeContent } from "@/lib/cms/homeContent";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 type HomeData = {
   categories: CatalogTile[];

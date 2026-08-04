@@ -29,39 +29,31 @@ export function HomeHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
   return (
     <section className="relative border-b border-[#e1d6c4]">
       <div className="relative overflow-hidden" style={{ aspectRatio: HERO_ASPECT_RATIO }}>
-        {slides.map((item, index) => (
-          <div
-            aria-hidden={index !== activeSlide}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              index === activeSlide ? "opacity-100" : "opacity-0"
-            }`}
-            key={`${item.title}-${index}`}
-          >
-            {item.media?.type === "video" ? (
+        {slide ? (
+          <div className="absolute inset-0" key={`${slide.title}-${activeSlide}`}>
+            {slide.media?.type === "video" ? (
               <video
-                aria-label={item.media.altText ?? item.title ?? "The Vastra House hero video"}
+                aria-label={slide.media.altText ?? slide.title ?? "The Vastra House hero video"}
                 autoPlay
                 className="size-full object-cover"
                 loop
                 muted
                 playsInline
-                src={item.media.url}
+                src={slide.media.url}
               />
             ) : (
               <ResponsiveImage
                 alt={
-                  item.media?.altText ?? "The Vastra House heritage inspired fashion hero banner"
+                  slide.media?.altText ?? "The Vastra House heritage inspired fashion hero banner"
                 }
                 aspectRatio={HERO_ASPECT_RATIO}
-                priority={index === 0}
-                quality={95}
+                priority={activeSlide === 0}
                 sizes="100vw"
-                src={item.media?.url ?? "/images/home-hero.jpg"}
-                unoptimized
+                src={slide.media?.url ?? "/images/home-hero.jpg"}
               />
             )}
           </div>
-        ))}
+        ) : null}
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(46_12_18/0.58),rgb(46_12_18/0.28)_48%,rgb(46_12_18/0.04))]" />
         {slide.showOutline !== false ? (
           <div className="pointer-events-none absolute inset-3 border border-[#caa14e]/45 sm:inset-5 md:inset-6">

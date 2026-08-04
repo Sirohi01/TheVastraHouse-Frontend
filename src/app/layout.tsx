@@ -6,7 +6,7 @@ import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd, getSeoSettings } from "@/lib/seo";
 import "./globals.css";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoSettings();

@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { ToastProvider } from "@/components/ui/Toast";
 import { captureAndSendAttribution } from "@/lib/commerce";
 
 export function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -24,5 +25,9 @@ export function AppProviders({ children }: Readonly<{ children: React.ReactNode 
     void captureAndSendAttribution();
   }, []);
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>{children}</ToastProvider>
+    </QueryClientProvider>
+  );
 }
