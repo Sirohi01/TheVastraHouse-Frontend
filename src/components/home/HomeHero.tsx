@@ -49,7 +49,9 @@ export function HomeHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
               />
             ) : (
               <ResponsiveImage
-                alt={item.media?.altText ?? "The Vastra House heritage inspired fashion hero banner"}
+                alt={
+                  item.media?.altText ?? "The Vastra House heritage inspired fashion hero banner"
+                }
                 aspectRatio={HERO_ASPECT_RATIO}
                 priority={index === 0}
                 quality={95}
@@ -68,7 +70,9 @@ export function HomeHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
         ) : null}
 
         <div className="absolute inset-0 hidden items-center md:flex">
-          <div className={`mx-auto flex w-full max-w-7xl px-6 sm:px-12 ${positionClass(slide.contentPosition)}`}>
+          <div
+            className={`mx-auto flex w-full max-w-7xl px-6 sm:px-12 ${positionClass(slide.contentPosition)}`}
+          >
             <div
               className={`w-full max-w-xl text-white transition-opacity duration-300 ${
                 slide.fontFamily === "sans" ? "" : "font-serif"
@@ -79,10 +83,14 @@ export function HomeHero({ slides }: Readonly<{ slides: CmsHeroSlide[] }>) {
               <span className="inline-flex items-center gap-2 border border-[#caa14e]/70 bg-[#2e0c12]/40 px-2 py-1 font-sans text-[9px] font-semibold uppercase tracking-[0.18em] text-[#f0d9a4] backdrop-blur-sm sm:px-3 sm:text-[11px] sm:tracking-[0.26em]">
                 {slide.eyebrow ?? "New Season Edit"}
               </span>
-              <h1 className={`mt-3 font-semibold leading-[1.06] drop-shadow-sm sm:mt-5 ${titleSize(slide.fontSize)}`}>
+              <h1
+                className={`mt-3 font-semibold leading-[1.06] drop-shadow-sm sm:mt-5 ${titleSize(slide.fontSize)}`}
+              >
                 {slide.title ?? "Timeless Style, Rooted in Heritage"}
               </h1>
-              <p className={`mt-2 max-w-md font-sans leading-5 text-current opacity-90 sm:mt-4 sm:leading-7 ${copySize(slide.copyFontSize)}`}>
+              <p
+                className={`mt-2 max-w-md font-sans leading-5 text-current opacity-90 sm:mt-4 sm:leading-7 ${copySize(slide.copyFontSize)}`}
+              >
                 {slide.copy ?? "Premium tops, suits and clothing crafted for the modern you."}
               </p>
               {slide.primaryCta?.href ? (

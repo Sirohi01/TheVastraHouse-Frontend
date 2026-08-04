@@ -84,7 +84,9 @@ export async function CatalogPage({
 
             <div
               className={
-                imageOnlyBanners ? "hidden" : "absolute inset-0 hidden items-center px-7 md:flex md:px-10"
+                imageOnlyBanners
+                  ? "hidden"
+                  : "absolute inset-0 hidden items-center px-7 md:flex md:px-10"
               }
             >
               <div
@@ -101,10 +103,14 @@ export async function CatalogPage({
                   <span aria-hidden="true">✦</span>
                   <span className="h-px w-6 bg-[#caa14e]/60" />
                 </div>
-                <h1 className={`mt-3 uppercase leading-tight drop-shadow-sm ${catalogTitleSize(bannerStyle?.fontSize)}`}>
+                <h1
+                  className={`mt-3 uppercase leading-tight drop-shadow-sm ${catalogTitleSize(bannerStyle?.fontSize)}`}
+                >
                   {title}
                 </h1>
-                <p className={`mt-4 max-w-md leading-7 text-current opacity-[.88] ${catalogCopySize(bannerStyle?.copyFontSize)}`}>
+                <p
+                  className={`mt-4 max-w-md leading-7 text-current opacity-[.88] ${catalogCopySize(bannerStyle?.copyFontSize)}`}
+                >
                   {description}
                 </p>
               </div>
@@ -140,7 +146,9 @@ export async function CatalogPage({
               <FilterSidebar filters={filters} query={catalogQuery} />
               <div className="p-5">
                 <ProductGrid products={products.data} view={view} />
-                {products.data.length ? <PromoBand imageOnly={imageOnlyBanners} promo={bannerStyle?.promo} /> : null}
+                {products.data.length ? (
+                  <PromoBand imageOnly={imageOnlyBanners} promo={bannerStyle?.promo} />
+                ) : null}
                 <Pagination meta={products.meta} query={{ ...catalogQuery, view }} />
               </div>
             </div>
@@ -407,11 +415,17 @@ function PromoBand({
       />
       <div
         className={
-          imageOnly ? "hidden" : "pointer-events-none absolute inset-3 hidden border border-[#caa14e]/40 md:block"
+          imageOnly
+            ? "hidden"
+            : "pointer-events-none absolute inset-3 hidden border border-[#caa14e]/40 md:block"
         }
       />
       <div
-        className={imageOnly ? "hidden" : "absolute inset-0 hidden items-center px-6 text-white md:flex md:px-8"}
+        className={
+          imageOnly
+            ? "hidden"
+            : "absolute inset-0 hidden items-center px-6 text-white md:flex md:px-8"
+        }
       >
         <div
           className={`${promo?.contentPosition === "right" ? "ml-auto text-left" : promo?.contentPosition === "center" ? "mx-auto text-center" : "text-left"} ${promo?.fontFamily === "sans" ? "" : "font-serif"}`}
@@ -424,7 +438,8 @@ function PromoBand({
             {promo?.copy ?? "Explore our handpicked premium collection."}
           </p>
           <span className="relative mt-4 inline-flex h-10 items-center gap-2 border border-[#caa14e] bg-[#6e1423] px-5 text-xs font-semibold uppercase tracking-[0.1em] text-white transition-colors group-hover:bg-[#84182c]">
-            {promo?.primaryCta?.label ?? "Explore Collection"} <Search aria-hidden="true" size={14} />
+            {promo?.primaryCta?.label ?? "Explore Collection"}{" "}
+            <Search aria-hidden="true" size={14} />
           </span>
         </div>
       </div>

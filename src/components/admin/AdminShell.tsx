@@ -70,6 +70,7 @@ const enabledSections: SidebarSection<EnabledItem>[] = [
       { href: "/admin/payments", icon: WalletCards, label: "Payments" },
       { href: "/admin/returns", icon: RotateCcw, label: "Returns" },
       { href: "/admin/pre-orders", icon: Package, label: "Pre-Orders" },
+      { href: "/admin/manufacturing", icon: Factory, label: "Manufacturing" },
       { href: "/admin/content", icon: FileText, label: "CMS Content" },
       { href: "/admin/instagram", icon: Instagram, label: "Instagram Feed" },
       { href: "/admin/notifications", icon: Bell, label: "Notifications" },
@@ -106,7 +107,6 @@ const plannedSections: SidebarSection<DisabledItem>[] = [
   {
     label: "Operations",
     items: [
-      { icon: Factory, label: "Manufacturing", phase: "Phase 16" },
       { icon: Truck, label: "Logistics / Courier", phase: "Docs Module 24" },
       { icon: LifeBuoy, label: "Support / Helpdesk", phase: "Docs Module 22" },
     ],
@@ -311,11 +311,14 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
             onClick={async () => {
               try {
                 if (refreshToken) {
-                  await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1"}/auth/logout`, {
-                    body: JSON.stringify({ refreshToken }),
-                    headers: { "Content-Type": "application/json" },
-                    method: "POST",
-                  });
+                  await fetch(
+                    `${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1"}/auth/logout`,
+                    {
+                      body: JSON.stringify({ refreshToken }),
+                      headers: { "Content-Type": "application/json" },
+                      method: "POST",
+                    },
+                  );
                 }
               } finally {
                 clearSession();

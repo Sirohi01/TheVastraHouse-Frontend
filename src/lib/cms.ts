@@ -221,7 +221,7 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
         primaryCta: sanitizeLink(mergedHero.primaryCta),
         secondaryCta: sanitizeLink(mergedHero.secondaryCta),
         slides: (mergedHero.slides ?? []).map((slide) => ({
-        copy: slide.copy,
+          copy: slide.copy,
           copyFontSize: slide.copyFontSize ?? "md",
           contentPosition: slide.contentPosition ?? "left",
           eyebrow: slide.eyebrow,

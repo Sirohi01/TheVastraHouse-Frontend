@@ -35,7 +35,11 @@ export function createAdminUser(input: Record<string, string>, accessToken?: str
   });
 }
 
-export function updateAdminUser(id: string, input: { roleSlug?: string; status?: string }, accessToken?: string) {
+export function updateAdminUser(
+  id: string,
+  input: { roleSlug?: string; status?: string },
+  accessToken?: string,
+) {
   return apiFetch<{ user: AdminUser }>(`/access-control/users/${id}`, {
     accessToken,
     body: JSON.stringify(input),

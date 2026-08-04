@@ -895,7 +895,9 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                           <input
                             checked={slide.showOutline !== false}
                             className="size-4 accent-primary"
-                            onChange={(event) => updateHeroSlide(index, { showOutline: event.target.checked })}
+                            onChange={(event) =>
+                              updateHeroSlide(index, { showOutline: event.target.checked })
+                            }
                             type="checkbox"
                           />
                           Show outline
@@ -1042,18 +1044,115 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                   </div>
                   <div className="mt-5 grid gap-3 border-t border-border pt-5">
                     <p className="text-sm font-semibold">Our Story Content</p>
-                    <Field label="Eyebrow" onChange={(value) => updateHomeStory({ eyebrow: value })} value={content.home?.story?.eyebrow ?? "Our Story"} />
-                    <Field label="Title" onChange={(value) => updateHomeStory({ title: value })} value={content.home?.story?.title ?? "Crafted with Passion, Worn with Pride."} />
-                    <TextEditor label="Description" onChange={(value) => updateHomeStory({ copy: value })} value={content.home?.story?.copy ?? "We blend timeless tradition with contemporary designs to bring premium quality clothing that celebrates your individuality."} />
+                    <Field
+                      label="Eyebrow"
+                      onChange={(value) => updateHomeStory({ eyebrow: value })}
+                      value={content.home?.story?.eyebrow ?? "Our Story"}
+                    />
+                    <Field
+                      label="Title"
+                      onChange={(value) => updateHomeStory({ title: value })}
+                      value={content.home?.story?.title ?? "Crafted with Passion, Worn with Pride."}
+                    />
+                    <TextEditor
+                      label="Description"
+                      onChange={(value) => updateHomeStory({ copy: value })}
+                      value={
+                        content.home?.story?.copy ??
+                        "We blend timeless tradition with contemporary designs to bring premium quality clothing that celebrates your individuality."
+                      }
+                    />
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="text-sm font-medium">Content position<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => updateHomeStory({ contentPosition: event.target.value as "left" | "right" })} value={content.home?.story?.contentPosition ?? "left"}><option value="left">Text left, image right</option><option value="right">Text right, image left</option></select></label>
-                      <label className="text-sm font-medium">Font family<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => updateHomeStory({ fontFamily: event.target.value as "serif" | "sans" })} value={content.home?.story?.fontFamily ?? "serif"}><option value="serif">Serif</option><option value="sans">Sans</option></select></label>
-                      <label className="text-sm font-medium">Title size<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => updateHomeStory({ fontSize: event.target.value as "sm" | "md" | "lg" })} value={content.home?.story?.fontSize ?? "lg"}><option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option></select></label>
-                      <label className="text-sm font-medium">Body text size<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => updateHomeStory({ copyFontSize: event.target.value as "sm" | "md" | "lg" })} value={content.home?.story?.copyFontSize ?? "md"}><option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option></select></label>
+                      <label className="text-sm font-medium">
+                        Content position
+                        <select
+                          className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                          onChange={(event) =>
+                            updateHomeStory({
+                              contentPosition: event.target.value as "left" | "right",
+                            })
+                          }
+                          value={content.home?.story?.contentPosition ?? "left"}
+                        >
+                          <option value="left">Text left, image right</option>
+                          <option value="right">Text right, image left</option>
+                        </select>
+                      </label>
+                      <label className="text-sm font-medium">
+                        Font family
+                        <select
+                          className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                          onChange={(event) =>
+                            updateHomeStory({ fontFamily: event.target.value as "serif" | "sans" })
+                          }
+                          value={content.home?.story?.fontFamily ?? "serif"}
+                        >
+                          <option value="serif">Serif</option>
+                          <option value="sans">Sans</option>
+                        </select>
+                      </label>
+                      <label className="text-sm font-medium">
+                        Title size
+                        <select
+                          className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                          onChange={(event) =>
+                            updateHomeStory({ fontSize: event.target.value as "sm" | "md" | "lg" })
+                          }
+                          value={content.home?.story?.fontSize ?? "lg"}
+                        >
+                          <option value="sm">Small</option>
+                          <option value="md">Medium</option>
+                          <option value="lg">Large</option>
+                        </select>
+                      </label>
+                      <label className="text-sm font-medium">
+                        Body text size
+                        <select
+                          className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                          onChange={(event) =>
+                            updateHomeStory({
+                              copyFontSize: event.target.value as "sm" | "md" | "lg",
+                            })
+                          }
+                          value={content.home?.story?.copyFontSize ?? "md"}
+                        >
+                          <option value="sm">Small</option>
+                          <option value="md">Medium</option>
+                          <option value="lg">Large</option>
+                        </select>
+                      </label>
                     </div>
-                    <Field label="Text colour" onChange={(value) => updateHomeStory({ textColor: value })} value={content.home?.story?.textColor ?? "#3d1620"} />
-                    <Field label="Button label" onChange={(value) => updateHomeStory({ primaryCta: { enabled: true, href: content.home?.story?.primaryCta?.href ?? "/about", label: value } })} value={content.home?.story?.primaryCta?.label ?? "Know More About Us"} />
-                    <Field label="Button link" onChange={(value) => updateHomeStory({ primaryCta: { enabled: true, href: value, label: content.home?.story?.primaryCta?.label ?? "Know More About Us" } })} value={content.home?.story?.primaryCta?.href ?? "/about"} />
+                    <Field
+                      label="Text colour"
+                      onChange={(value) => updateHomeStory({ textColor: value })}
+                      value={content.home?.story?.textColor ?? "#3d1620"}
+                    />
+                    <Field
+                      label="Button label"
+                      onChange={(value) =>
+                        updateHomeStory({
+                          primaryCta: {
+                            enabled: true,
+                            href: content.home?.story?.primaryCta?.href ?? "/about",
+                            label: value,
+                          },
+                        })
+                      }
+                      value={content.home?.story?.primaryCta?.label ?? "Know More About Us"}
+                    />
+                    <Field
+                      label="Button link"
+                      onChange={(value) =>
+                        updateHomeStory({
+                          primaryCta: {
+                            enabled: true,
+                            href: value,
+                            label: content.home?.story?.primaryCta?.label ?? "Know More About Us",
+                          },
+                        })
+                      }
+                      value={content.home?.story?.primaryCta?.href ?? "/about"}
+                    />
                   </div>
                 </div>
               </aside>
@@ -1555,13 +1654,81 @@ function CatalogPageContentEditor({
                 value={page?.promo?.copy ?? "Explore our handpicked premium collection."}
               />
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                <label className="text-sm font-medium">Position<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => onPromoChange({ contentPosition: event.target.value as "left" | "center" | "right" })} value={page?.promo?.contentPosition ?? "left"}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label>
-                <label className="text-sm font-medium">Font family<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => onPromoChange({ fontFamily: event.target.value as "serif" | "sans" })} value={page?.promo?.fontFamily ?? "serif"}><option value="serif">Serif</option><option value="sans">Sans</option></select></label>
-                <label className="text-sm font-medium">Title size<select className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" onChange={(event) => onPromoChange({ fontSize: event.target.value as "sm" | "md" | "lg" })} value={page?.promo?.fontSize ?? "lg"}><option value="sm">Small</option><option value="md">Medium</option><option value="lg">Large</option></select></label>
+                <label className="text-sm font-medium">
+                  Position
+                  <select
+                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    onChange={(event) =>
+                      onPromoChange({
+                        contentPosition: event.target.value as "left" | "center" | "right",
+                      })
+                    }
+                    value={page?.promo?.contentPosition ?? "left"}
+                  >
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </label>
+                <label className="text-sm font-medium">
+                  Font family
+                  <select
+                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    onChange={(event) =>
+                      onPromoChange({ fontFamily: event.target.value as "serif" | "sans" })
+                    }
+                    value={page?.promo?.fontFamily ?? "serif"}
+                  >
+                    <option value="serif">Serif</option>
+                    <option value="sans">Sans</option>
+                  </select>
+                </label>
+                <label className="text-sm font-medium">
+                  Title size
+                  <select
+                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    onChange={(event) =>
+                      onPromoChange({ fontSize: event.target.value as "sm" | "md" | "lg" })
+                    }
+                    value={page?.promo?.fontSize ?? "lg"}
+                  >
+                    <option value="sm">Small</option>
+                    <option value="md">Medium</option>
+                    <option value="lg">Large</option>
+                  </select>
+                </label>
               </div>
-              <Field label="Text colour" onChange={(value) => onPromoChange({ textColor: value })} value={page?.promo?.textColor ?? "#ffffff"} />
-              <Field label="Button label" onChange={(value) => onPromoChange({ primaryCta: { enabled: true, href: page?.promo?.primaryCta?.href ?? "/shop", label: value } })} value={page?.promo?.primaryCta?.label ?? "Explore Collection"} />
-              <Field label="Button link" onChange={(value) => onPromoChange({ primaryCta: { enabled: true, href: value, label: page?.promo?.primaryCta?.label ?? "Explore Collection" } })} value={page?.promo?.primaryCta?.href ?? "/shop"} />
+              <Field
+                label="Text colour"
+                onChange={(value) => onPromoChange({ textColor: value })}
+                value={page?.promo?.textColor ?? "#ffffff"}
+              />
+              <Field
+                label="Button label"
+                onChange={(value) =>
+                  onPromoChange({
+                    primaryCta: {
+                      enabled: true,
+                      href: page?.promo?.primaryCta?.href ?? "/shop",
+                      label: value,
+                    },
+                  })
+                }
+                value={page?.promo?.primaryCta?.label ?? "Explore Collection"}
+              />
+              <Field
+                label="Button link"
+                onChange={(value) =>
+                  onPromoChange({
+                    primaryCta: {
+                      enabled: true,
+                      href: value,
+                      label: page?.promo?.primaryCta?.label ?? "Explore Collection",
+                    },
+                  })
+                }
+                value={page?.promo?.primaryCta?.href ?? "/shop"}
+              />
               <div>
                 <p className="mb-2 text-xs font-semibold">Promo image</p>
                 <MediaPicker media={media} onSelect={onPromoSelectMedia} />

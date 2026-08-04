@@ -277,9 +277,7 @@ function SquareTileRail({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
                   <span className="pointer-events-none absolute inset-2 border border-white/0 transition-colors duration-200 group-hover:border-[#caa14e]/60" />
                 </div>
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(0deg,rgb(32_22_12/0.9),transparent)] px-3 pb-4 pt-14 text-center text-white">
-                  <h2 className="font-serif text-lg uppercase tracking-wide">
-                    {tile.title}
-                  </h2>
+                  <h2 className="font-serif text-lg uppercase tracking-wide">{tile.title}</h2>
                   <span className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#f0d9a4] transition-transform duration-200 group-hover:translate-x-0.5">
                     Shop Now <ArrowRight aria-hidden="true" size={14} />
                   </span>
@@ -351,8 +349,12 @@ function StoryBand({
               className="group mt-6 inline-flex h-10 items-center gap-2 border border-[#3d1620] px-5 text-xs font-semibold uppercase tracking-[0.1em] transition-all duration-200 hover:opacity-70 lg:border-[var(--story-color)]"
               href={story?.primaryCta?.href ?? "/about"}
             >
-              {story?.primaryCta?.label ?? "Know More About Us"} 
-              <ArrowRight aria-hidden="true" className="transition-transform group-hover:translate-x-1" size={14} />
+              {story?.primaryCta?.label ?? "Know More About Us"}
+              <ArrowRight
+                aria-hidden="true"
+                className="transition-transform group-hover:translate-x-1"
+                size={14}
+              />
             </a>
           </div>
         </div>
@@ -384,31 +386,31 @@ function CollectionGrid({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
       <div className="-mx-5 mt-4 overflow-x-auto px-5 pb-1">
         <div className="grid min-w-max grid-cols-3 gap-3">
           {tiles.slice(0, 3).map((tile) => (
-          <a
-            className="group relative w-44 overflow-hidden rounded-sm sm:w-52"
-            href={tile.href}
-            key={tile.href}
-          >
-            <div className="relative aspect-[9/16] max-h-[560px] overflow-hidden">
-              <ResponsiveImage
-                alt={tile.media.alt}
-                aspectRatio={TALL_TILE_ASPECT_RATIO}
-                className="z-0 transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 33vw"
-                src={tile.media.src}
-              />
-              <div className="absolute inset-0 z-10 bg-[linear-gradient(0deg,rgb(32_22_12/0.82),transparent_56%)]" />
-              <ArchMatte className="absolute inset-0 z-20" />
-            </div>
-            <div className="absolute inset-x-0 bottom-0 z-30 px-6 pb-6 pt-16 text-center text-white">
-              <h3 className="font-serif text-2xl uppercase leading-tight tracking-wide">
-                {tile.title}
-              </h3>
-              <span className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#f0d9a4] transition-transform duration-200 group-hover:translate-x-0.5">
-                Explore Collection <ArrowRight aria-hidden="true" size={14} />
-              </span>
-            </div>
-          </a>
+            <a
+              className="group relative w-44 overflow-hidden rounded-sm sm:w-52"
+              href={tile.href}
+              key={tile.href}
+            >
+              <div className="relative aspect-[9/16] max-h-[560px] overflow-hidden">
+                <ResponsiveImage
+                  alt={tile.media.alt}
+                  aspectRatio={TALL_TILE_ASPECT_RATIO}
+                  className="z-0 transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  src={tile.media.src}
+                />
+                <div className="absolute inset-0 z-10 bg-[linear-gradient(0deg,rgb(32_22_12/0.82),transparent_56%)]" />
+                <ArchMatte className="absolute inset-0 z-20" />
+              </div>
+              <div className="absolute inset-x-0 bottom-0 z-30 px-6 pb-6 pt-16 text-center text-white">
+                <h3 className="font-serif text-2xl uppercase leading-tight tracking-wide">
+                  {tile.title}
+                </h3>
+                <span className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#f0d9a4] transition-transform duration-200 group-hover:translate-x-0.5">
+                  Explore Collection <ArrowRight aria-hidden="true" size={14} />
+                </span>
+              </div>
+            </a>
           ))}
         </div>
       </div>
@@ -445,7 +447,9 @@ function ProductGrid({ products }: Readonly<{ products: VisualTile[] }>) {
                   </span>
                 ) : null}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(0deg,rgb(32_22_12/0.88),transparent)] px-3 pb-3 pt-14 text-white transition-opacity duration-200 group-hover:opacity-0">
-                  <h3 className="font-serif text-[15px] font-medium leading-tight">{product.title}</h3>
+                  <h3 className="font-serif text-[15px] font-medium leading-tight">
+                    {product.title}
+                  </h3>
                 </div>
                 {product.sizes?.length ? (
                   <div className="absolute inset-x-2 bottom-2 translate-y-2 rounded-sm border border-[#caa14e]/50 bg-white/95 px-2 py-2 opacity-0 shadow-soft transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">

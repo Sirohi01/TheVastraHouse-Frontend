@@ -287,7 +287,9 @@ export function AdminOrdersClient() {
             <section className="rounded-md border border-border bg-card p-3">
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="break-words text-lg font-semibold">{selected.order.orderNumber}</h2>
+                  <h2 className="break-words text-lg font-semibold">
+                    {selected.order.orderNumber}
+                  </h2>
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     {labelStatus(selected.order.status)}
                   </p>

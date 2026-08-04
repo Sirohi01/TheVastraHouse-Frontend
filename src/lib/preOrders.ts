@@ -16,6 +16,8 @@ export type ProductionStage = (typeof productionStages)[number];
 
 export type ProductionTracker = {
   _id: string;
+  productId: string;
+  variantId: string;
   orderNumber: string;
   productName: string;
   quantity: number;
