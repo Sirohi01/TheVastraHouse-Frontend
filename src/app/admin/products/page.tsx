@@ -10,7 +10,6 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DataTable } from "@/components/ui/DataTable";
 import { Field } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
-import { Select } from "@/components/ui/Select";
 import { Tabs } from "@/components/ui/Tabs";
 import { Textarea } from "@/components/ui/Textarea";
 import { errorMessage, useToast } from "@/components/ui/Toast";
@@ -895,23 +894,6 @@ export default function AdminProductsPage() {
                             onChange={(value) => updateVariant(index, "expectedDeliveryAt", value)}
                             type="date"
                             value={variant.expectedDeliveryAt}
-                          />
-                          <Select
-                            label="Payment mode"
-                            onChange={(value) => updateVariant(index, "preOrderPaymentMode", value)}
-                            options={[
-                              { label: "Full", value: "full" },
-                              { label: "Advance", value: "advance" },
-                            ]}
-                            value={variant.preOrderPaymentMode}
-                          />
-                          <Field
-                            label="Advance %"
-                            onChange={(value) =>
-                              updateVariant(index, "preOrderAdvancePercent", value)
-                            }
-                            type="number"
-                            value={variant.preOrderAdvancePercent}
                           />
                           <Field
                             label="Quantity cap"

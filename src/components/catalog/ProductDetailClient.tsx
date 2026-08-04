@@ -282,10 +282,7 @@ function PreOrderPanel({
         <p>Dispatch: {formatDate(preOrder.expectedDispatchAt)}</p>
         <p>Delivery: {formatDate(preOrder.expectedDeliveryAt)}</p>
         <p className="sm:col-span-2">
-          Payment:{" "}
-          {preOrder.paymentMode === "advance"
-            ? `${preOrder.advancePercent ?? 50}% advance`
-            : "Full payment"}
+          Payment: full amount online, or 50% Razorpay advance with COD
         </p>
       </div>
     </div>

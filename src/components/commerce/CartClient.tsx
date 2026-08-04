@@ -84,10 +84,6 @@ export function CartClient() {
 
   const taxBreakdown = cart.totals.taxBreakdown?.filter((tax) => tax.gstAmount > 0) ?? [];
   const giftCardDiscount = cart.totals.giftCardDiscount;
-  const payableNow = calculateCartPayableNow(cart);
-  const showPayableNow = payableNow < cart.totals.grandTotal;
-  const balanceLater = Math.max(0, cart.totals.grandTotal - payableNow);
-
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="grid gap-4">
@@ -119,11 +115,7 @@ export function CartClient() {
                   <p className="mt-1 text-sm text-muted-foreground">{item.sku}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {item.purchaseMode === "pre_order" || item.preOrder?.enabled
-                      ? `Pre-order${
-                          item.preOrder?.paymentMode === "advance" || item.preOrder?.advancePercent
-                            ? ` · ${item.preOrder?.advancePercent ?? 0}% advance`
-                            : " · full payment"
-                        }`
+                      ? "Pre-order"
                       : "Ready stock · direct order"}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -216,35 +208,15 @@ export function CartClient() {
             />
           ) : null}
           <div className="border-t border-border pt-3">
-            {showPayableNow ? (
-              <>
-                <p className="mb-3 rounded-md bg-primary/5 p-3 text-xs leading-5 text-muted-foreground">
-                  This cart has a pre-order item. Pay the advance now; the remaining balance will be
-                  collected before dispatch.
-                </p>
-                <TotalRow
-                  label="Full order value"
-                  value={formatMoney(cart.totals.grandTotal, cart.totals.currencyCode)}
-                />
-                <TotalRow
-                  label="Balance later"
-                  value={formatMoney(balanceLater, cart.totals.currencyCode)}
-                />
-                <div className="mt-2">
-                  <TotalRow
-                    label="Pre-order advance due now"
-                    strong
-                    value={formatMoney(payableNow, cart.totals.currencyCode)}
-                  />
-                </div>
-              </>
-            ) : (
-              <TotalRow
-                label="Total"
-                strong
-                value={formatMoney(cart.totals.grandTotal, cart.totals.currencyCode)}
-              />
-            )}
+            <TotalRow
+              label="Total"
+              strong
+              value={formatMoney(cart.totals.grandTotal, cart.totals.currencyCode)}
+            />
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              Choose payment at checkout: pay the full amount online, or select COD and pay a 50%
+              Razorpay advance.
+            </p>
           </div>
         </dl>
         <Link
@@ -256,24 +228,6 @@ export function CartClient() {
       </aside>
     </div>
   );
-}
-
-function calculateCartPayableNow(cart: Cart) {
-  const itemPayable = cart.items.reduce((total, item) => {
-    const lineTotal = item.unitPrice * item.quantity;
-    if (!item.preOrder?.enabled) {
-      return total + lineTotal;
-    }
-
-    const isAdvance =
-      item.preOrder.paymentMode === "advance" || Boolean(item.preOrder.advancePercent);
-    const percent = isAdvance ? (item.preOrder.advancePercent ?? 0) : 100;
-
-    return total + Math.round((lineTotal * percent) / 100);
-  }, 0);
-  const payable = itemPayable + cart.totals.giftPackagingFee - cart.totals.giftCardDiscount;
-
-  return Math.max(0, Math.min(cart.totals.grandTotal, Math.round(payable)));
 }
 
 function TotalRow({

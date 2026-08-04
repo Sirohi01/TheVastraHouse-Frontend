@@ -142,6 +142,10 @@ export function fetchTrackedOrder(orderNumber: string) {
   return apiFetch<OrderDetailPayload>(`/orders/track/${encodeURIComponent(orderNumber)}`);
 }
 
+export function fetchMyOrders(accessToken?: string, page = 1, limit = 50) {
+  return apiFetch<PaginatedOrders>(`/orders/me?page=${page}&limit=${limit}`, { accessToken });
+}
+
 export function formatOrderMoney(value?: number, currencyCode = "INR") {
   return new Intl.NumberFormat("en-IN", {
     currency: currencyCode,

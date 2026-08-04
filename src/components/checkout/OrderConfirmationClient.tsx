@@ -141,7 +141,7 @@ export function OrderConfirmationClient({ orderNumber }: Readonly<{ orderNumber:
           <section className="rounded-lg border border-border bg-card p-6 shadow-soft">
             <CheckCircle2 aria-hidden="true" className="text-success" size={34} />
             <h1 className="mt-4 font-serif text-3xl uppercase tracking-wide text-[#3d1620]">
-              Order Confirmed
+              {order.status === "pending_payment" ? "Payment Pending" : "Order Confirmed"}
             </h1>
             <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
               <InfoRow label="Order" value={order.orderNumber} />
@@ -224,14 +224,21 @@ export function OrderConfirmationClient({ orderNumber }: Readonly<{ orderNumber:
                         paymentSession.currencyCode,
                       )}
                     />
-                    {paymentSession.outstandingAmount > 0 && order.paymentMethod === "razorpay" ? (
+                    {paymentSession.outstandingAmount > 0 &&
+                    (order.paymentMethod === "razorpay" || paymentSession.paidAmount === 0) ? (
                       <button
                         className="mt-3 h-10 w-full rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                         disabled={isPayingBalance}
                         onClick={() => void payBalanceNow()}
                         type="button"
                       >
-                        {isPayingBalance ? "Starting payment..." : "Pay Balance Now"}
+                        {isPayingBalance
+                          ? "Starting payment..."
+                          : paymentSession.paidAmount === 0 && order.paymentMethod === "cod"
+                            ? "Pay 50% COD Advance"
+                            : paymentSession.paidAmount === 0
+                              ? "Retry Payment"
+                              : "Pay Balance Now"}
                       </button>
                     ) : null}
                   </>

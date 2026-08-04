@@ -39,6 +39,10 @@ export function createReturnRequest(
   });
 }
 
+export function fetchMyReturns(accessToken?: string) {
+  return apiFetch<{ returns: ReturnRequest[] }>("/returns/me", { accessToken });
+}
+
 export function fetchAdminReturns(accessToken?: string) {
   return apiFetch<{ returns: ReturnRequest[] }>("/returns/admin", { accessToken });
 }

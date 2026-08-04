@@ -158,6 +158,7 @@ export function confirmCheckoutRazorpayPayment(payload: RazorpayConfirmPayload) 
     "/checkout/razorpay/confirm",
     {
       body: JSON.stringify(payload),
+      headers: { "X-Guest-Session-Id": getGuestSessionId() },
       method: "POST",
     },
   );
@@ -166,7 +167,7 @@ export function confirmCheckoutRazorpayPayment(payload: RazorpayConfirmPayload) 
 export function fetchCheckoutOrder(orderNumber: string, accessToken?: string) {
   return apiFetch<{ order: CheckoutOrder; paymentSession?: PaymentSession | null }>(
     `/checkout/orders/${orderNumber}`,
-    { accessToken },
+    { accessToken, headers: { "X-Guest-Session-Id": getGuestSessionId() } },
   );
 }
 
@@ -192,6 +193,7 @@ export function createOrderBalancePayment(
     {
       accessToken,
       body: JSON.stringify({ guestEmail }),
+      headers: { "X-Guest-Session-Id": getGuestSessionId() },
       method: "POST",
     },
   );
