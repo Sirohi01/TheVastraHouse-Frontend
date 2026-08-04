@@ -9,11 +9,13 @@ import { useAuthStore } from "@/stores/authStore";
 export function WishlistButton({
   buttonClassName = "",
   className = "",
+  iconOnly = true,
   productId,
   variantId,
 }: Readonly<{
   buttonClassName?: string;
   className?: string;
+  iconOnly?: boolean;
   productId: string;
   variantId: string;
 }>) {
@@ -38,7 +40,8 @@ export function WishlistButton({
       <button
         aria-label="Add to wishlist"
         className={cn(
-          "inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-semibold hover:border-primary hover:text-primary",
+          "inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-card font-semibold hover:border-primary hover:text-primary",
+          iconOnly ? "w-10 shrink-0 px-0" : "w-full px-3 text-sm",
           buttonClassName,
         )}
         onClick={addToWishlist}
@@ -46,7 +49,7 @@ export function WishlistButton({
         type="button"
       >
         <Heart aria-hidden="true" size={16} />
-        Wishlist
+        {iconOnly ? null : "Wishlist"}
       </button>
       {message ? <p className="mt-2 text-xs font-semibold text-accent">{message}</p> : null}
     </div>

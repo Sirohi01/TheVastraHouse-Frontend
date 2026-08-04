@@ -38,38 +38,56 @@ export function CartClient() {
       return;
     }
 
-    const payload = await commerceFetch<{ cart: Cart }>(`/commerce/cart/items/${lineItemId}`, {
-      accessToken,
-      body: JSON.stringify({ quantity }),
-      method: "PATCH",
-    });
-    applyCart(payload.cart);
+    try {
+      const payload = await commerceFetch<{ cart: Cart }>(`/commerce/cart/items/${lineItemId}`, {
+        accessToken,
+        body: JSON.stringify({ quantity }),
+        method: "PATCH",
+      });
+      applyCart(payload.cart);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not update quantity");
+      void loadCart();
+    }
   }
 
   async function removeLine(lineItemId: string) {
-    const payload = await commerceFetch<{ cart: Cart }>(`/commerce/cart/items/${lineItemId}`, {
-      accessToken,
-      method: "DELETE",
-    });
-    applyCart(payload.cart);
+    try {
+      const payload = await commerceFetch<{ cart: Cart }>(`/commerce/cart/items/${lineItemId}`, {
+        accessToken,
+        method: "DELETE",
+      });
+      applyCart(payload.cart);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not remove item");
+      void loadCart();
+    }
   }
 
   async function setGiftPackaging(enabled: boolean) {
-    const payload = await commerceFetch<{ cart: Cart }>("/commerce/cart/gift-packaging", {
-      accessToken,
-      body: JSON.stringify({ enabled }),
-      method: "PATCH",
-    });
-    applyCart(payload.cart);
+    try {
+      const payload = await commerceFetch<{ cart: Cart }>("/commerce/cart/gift-packaging", {
+        accessToken,
+        body: JSON.stringify({ enabled }),
+        method: "PATCH",
+      });
+      applyCart(payload.cart);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not update gift packaging");
+    }
   }
 
   async function applyGiftCard(formData: FormData) {
-    const payload = await commerceFetch<{ cart: Cart }>("/commerce/cart/gift-cards/validate", {
-      accessToken,
-      body: JSON.stringify({ code: formData.get("code") }),
-      method: "POST",
-    });
-    applyCart(payload.cart);
+    try {
+      const payload = await commerceFetch<{ cart: Cart }>("/commerce/cart/gift-cards/validate", {
+        accessToken,
+        body: JSON.stringify({ code: formData.get("code") }),
+        method: "POST",
+      });
+      applyCart(payload.cart);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Gift card could not be applied");
+    }
   }
 
   if (!cart) {
@@ -86,6 +104,11 @@ export function CartClient() {
   const giftCardDiscount = cart.totals.giftCardDiscount;
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      {message ? (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-semibold text-destructive lg:col-span-2">
+          {message}
+        </p>
+      ) : null}
       <div className="grid gap-4">
         {cart.items.map((item) => (
           <article

@@ -123,18 +123,20 @@ export function ProductCard({
             sizeGuide={product.sizeGuide}
             sizeGuideMedia={product.sizeGuideMedia}
           />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-stretch gap-2">
             {cartVariant ? (
-              <AddToCartButton
-                className="h-10 min-w-0 gap-1.5 rounded-sm border border-[#6e1423] bg-[#6e1423] px-2 text-sm text-white hover:bg-[#84182c]"
-                iconSize={15}
-                productId={product._id}
-                purchaseMode={preOrderVariant ? "pre_order" : "regular"}
-                variantId={cartVariant._id}
-              />
+              <div className="min-w-0 flex-1">
+                <AddToCartButton
+                  className="h-10 w-full gap-1.5 rounded-sm border border-[#6e1423] bg-[#6e1423] px-2 text-sm text-white hover:bg-[#84182c]"
+                  iconSize={15}
+                  productId={product._id}
+                  purchaseMode={preOrderVariant ? "pre_order" : "regular"}
+                  variantId={cartVariant._id}
+                />
+              </div>
             ) : (
               <button
-                className="inline-flex h-10 min-w-0 cursor-not-allowed items-center justify-center gap-1.5 rounded-sm border border-[#e1d6c4] px-2 text-sm font-semibold text-muted-foreground"
+                className="inline-flex h-10 w-full min-w-0 flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-sm border border-[#e1d6c4] px-2 text-sm font-semibold text-muted-foreground"
                 disabled
                 type="button"
               >
@@ -144,7 +146,7 @@ export function ProductCard({
             {product.variants[0]?._id ? (
               <WishlistButton
                 buttonClassName="h-10 rounded-sm border-[#e1d6c4] bg-white hover:border-[#caa14e] hover:text-[#6e1423]"
-                className="min-w-0"
+                iconOnly
                 productId={product._id}
                 variantId={product.variants[0]._id}
               />
