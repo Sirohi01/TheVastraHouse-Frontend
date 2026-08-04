@@ -4,8 +4,6 @@ import type { CatalogQuery } from "@/lib/catalog";
 import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
 import { getSiteUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
-
 type ShopPageProps = {
   searchParams?: Promise<CatalogQuery & { view?: string }>;
 };

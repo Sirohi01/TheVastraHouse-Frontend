@@ -254,7 +254,7 @@ function formatMoney(price: number, currency: string) {
 }
 
 async function catalogFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, { cache: "no-store" });
+  const response = await fetch(`${apiBaseUrl}${path}`, { next: { revalidate: 30 } });
 
   if (!response.ok) {
     throw new Error((await response.text()) || "Catalog request failed");

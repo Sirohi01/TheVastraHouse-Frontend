@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/states/ErrorState";
 import { getProductPdp, getProductReviews } from "@/lib/catalog";
 import { buildBreadcrumbJsonLd, buildProductJsonLd, getSiteUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;

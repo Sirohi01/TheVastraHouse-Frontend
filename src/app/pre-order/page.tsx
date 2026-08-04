@@ -1,7 +1,7 @@
 import { CatalogPage } from "@/components/catalog/CatalogPage";
 import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30;
 
 export default async function PreOrderPage() {
   const content = await loadCmsContent();

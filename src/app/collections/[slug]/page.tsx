@@ -5,8 +5,6 @@ import { ErrorState } from "@/components/states/ErrorState";
 import { getCollection, type CatalogQuery } from "@/lib/catalog";
 import { buildBreadcrumbJsonLd, getSiteUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
-
 type CollectionPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<CatalogQuery & { view?: string }>;

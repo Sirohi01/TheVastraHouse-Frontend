@@ -4,7 +4,7 @@ import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { defaultCmsContent, fetchCmsContent, type CmsContent } from "@/lib/cms";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const iconMap: Record<string, LucideIcon> = {
   award: Award,
