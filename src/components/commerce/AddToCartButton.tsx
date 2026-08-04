@@ -59,7 +59,7 @@ export function AddToCartButton({
   }
 
   return (
-    <div>
+    <div className="inline-flex flex-col items-start">
       <button
         className={cn(
           "inline-flex h-12 items-center justify-center gap-2 rounded-md px-5 font-semibold transition-opacity hover:opacity-90 disabled:opacity-60",

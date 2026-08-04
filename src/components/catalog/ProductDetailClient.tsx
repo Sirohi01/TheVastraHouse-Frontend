@@ -1,17 +1,14 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { CheckCircle2, ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AddToCartButton } from "@/components/commerce/AddToCartButton";
-import { WishlistButton } from "@/components/commerce/WishlistButton";
-import { ComparisonToggle } from "@/components/catalog/ComparisonToggle";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { RecentlyViewed } from "@/components/catalog/RecentlyViewed";
 import { ReviewForm } from "@/components/catalog/ReviewForm";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import {
   getProductMedia,
-  getProductPrice,
   getProductPricing,
   type CatalogProduct,
   type MediaReference,
@@ -38,15 +35,12 @@ export function ProductDetailClient({
   }, [variant?.preOrder]);
   const canDirectOrder = (variant?.stockPlaceholder ?? 0) > 0;
   const pricing = getProductPricing({ ...product, variants: [variant] });
-  const storedProduct = useMemo(
-    () => ({
-      imageUrl: media[0]?.url,
-      name: product.name,
-      price: getProductPrice(product),
-      slug: product.slug,
-    }),
-    [media, product],
-  );
+  const storedProduct = {
+    imageUrl: media[0]?.url,
+    name: product.name,
+    price: pricing.price,
+    slug: product.slug,
+  };
 
   return (
     <main className="bg-[#fbf7ef]">
@@ -143,33 +137,25 @@ export function ProductDetailClient({
               />
             </div>
 
-            {canPreOrder ? (
-              <div className="mt-6 rounded-md border border-[#e1d6c4] bg-white p-3">
-                <p className="text-sm font-semibold text-[#3d1620]">Pre-order booking only</p>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  This storefront is currently accepting pre-order bookings only. Ready-stock
-                  checkout will be enabled later.
-                </p>
-              </div>
-            ) : canDirectOrder ? (
-              <div className="mt-6 rounded-md border border-[#e1d6c4] bg-white p-3">
-                <p className="text-sm font-semibold text-[#3d1620]">Ready stock available</p>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  This item is available for direct order and will follow the regular checkout flow.
-                </p>
-              </div>
-            ) : (
+            {!canPreOrder && !canDirectOrder ? (
               <div className="mt-6 rounded-md border border-[#e1d6c4] bg-white p-3">
                 <p className="text-sm font-semibold text-[#3d1620]">Out of stock</p>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
                   This variant is not currently available for direct order or pre-order.
                 </p>
               </div>
-            )}
+            ) : null}
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div
+              className={
+                canDirectOrder
+                  ? "mt-6 grid grid-cols-2 gap-3 sm:inline-grid"
+                  : "mt-6 flex flex-wrap gap-3"
+              }
+            >
               {canPreOrder ? (
                 <AddToCartButton
+                  label="Pre-order"
                   productId={product._id}
                   purchaseMode="pre_order"
                   variantId={String(variant?._id)}
@@ -177,6 +163,7 @@ export function ProductDetailClient({
               ) : canDirectOrder ? (
                 <>
                   <AddToCartButton
+                    className="w-full min-w-0 px-3 sm:min-w-40 sm:px-5"
                     productId={product._id}
                     purchaseMode="regular"
                     variantId={String(variant?._id)}
@@ -184,6 +171,7 @@ export function ProductDetailClient({
                   <AddToCartButton
                     afterAddPath="/checkout"
                     appearance="secondary"
+                    className="w-full min-w-0 px-3 sm:min-w-40 sm:px-5"
                     label="Buy Now"
                     productId={product._id}
                     purchaseMode="regular"
@@ -199,9 +187,15 @@ export function ProductDetailClient({
                   Out of stock
                 </button>
               )}
-              <ComparisonToggle product={storedProduct} />
-              <WishlistButton productId={product._id} variantId={String(variant?._id)} />
             </div>
+            {canPreOrder ? (
+              <AvailabilityStrip
+                label="Pre-order booking"
+                value="Reserve now, production tracker included"
+              />
+            ) : canDirectOrder ? (
+              <AvailabilityStrip label="Ready stock" value="Direct checkout available" />
+            ) : null}
 
             <div className="mt-8 divide-y divide-[#e1d6c4] rounded-sm border border-[#e1d6c4] bg-white">
               <DetailSection title="Highlights">
@@ -378,6 +372,16 @@ function VariantSelector({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function AvailabilityStrip({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="mt-3 inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+      <CheckCircle2 aria-hidden="true" className="shrink-0" size={16} />
+      <span className="font-semibold">{label}</span>
+      <span className="text-emerald-700">{value}</span>
     </div>
   );
 }
