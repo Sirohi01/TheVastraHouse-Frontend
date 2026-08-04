@@ -43,7 +43,7 @@ export function CatalogToolbar({
         />
         <ViewLink active={view === "list"} icon={<List size={17} />} query={query} view="list" />
       </div>
-      <button className="inline-flex h-10 items-center justify-center gap-2 rounded-sm border border-[#6e1423] px-4 text-sm font-semibold uppercase tracking-wide text-[#6e1423] transition-colors hover:bg-[#6e1423] hover:text-white md:rounded-none md:border-0 md:border-l md:text-[#3d1620] md:hover:bg-transparent md:hover:text-[#6e1423]">
+      <button className="hidden h-10 items-center justify-center gap-2 rounded-none border-0 border-l border-[#e1d6c4] px-4 text-sm font-semibold uppercase tracking-wide text-[#3d1620] transition-colors hover:text-[#6e1423] md:inline-flex">
         Filters <Filter aria-hidden="true" size={17} />
       </button>
     </form>
