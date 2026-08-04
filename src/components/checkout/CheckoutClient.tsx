@@ -19,6 +19,7 @@ import {
   type CheckoutShippingMethod,
 } from "@/lib/checkout";
 import { commerceFetch, formatMoney, type Cart } from "@/lib/commerce";
+import { fetchLoyaltySummary, type LoyaltySummary } from "@/lib/loyalty";
 import {
   fetchPaymentSettings,
   uploadPaymentScreenshot,
@@ -51,7 +52,6 @@ export function CheckoutClient() {
   const [step, setStep] = useState(0);
   const [shippingMethod, setShippingMethod] = useState<CheckoutShippingMethod>("standard");
   const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>("razorpay");
-  const [paymentMode, setPaymentMode] = useState<"full" | "advance">("full");
   const [addressDraft, setAddressDraft] = useState({
     city: "",
     countryCode: "IN",
@@ -59,6 +59,7 @@ export function CheckoutClient() {
     region: "",
   });
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>();
+  const [loyalty, setLoyalty] = useState<LoyaltySummary>();
   const [preview, setPreview] = useState<CheckoutPreview>();
   const [message, setMessage] = useState("");
   const [pincodeMessage, setPincodeMessage] = useState("");
@@ -79,11 +80,8 @@ export function CheckoutClient() {
 
   const hasPreOrder = cart?.items.some((item) => item.preOrder?.enabled) ?? false;
   const hasReadyStock = cart?.items.some((item) => !item.preOrder?.enabled) ?? false;
-  const preOrderLine = cart?.items.find((item) => item.preOrder?.enabled);
-  const requiredPaymentMode =
-    preOrderLine?.preOrder?.paymentMode ??
-    (preOrderLine?.preOrder?.advancePercent ? "advance" : "full");
-  const payableNow = cart ? calculateCheckoutPayableNow(cart, preview) : undefined;
+  const paymentMode = paymentMethod === "cod" ? "advance" : "full";
+  const payableNow = cart ? calculateCheckoutPayableNow(cart, paymentMethod, preview) : undefined;
   const showPayableNow =
     Boolean(payableNow) &&
     (preview
@@ -120,6 +118,17 @@ export function CheckoutClient() {
 
     void loadPaymentSettings();
   }, []);
+
+  useEffect(() => {
+    if (!accessToken) {
+      setLoyalty(undefined);
+      return;
+    }
+
+    fetchLoyaltySummary(accessToken)
+      .then(setLoyalty)
+      .catch(() => setLoyalty(undefined));
+  }, [accessToken]);
 
   useEffect(() => {
     setMessage("");
@@ -163,17 +172,6 @@ export function CheckoutClient() {
     return () => window.clearTimeout(timeoutId);
   }, [addressDraft.postalCode]);
 
-  useEffect(() => {
-    if (!hasPreOrder) {
-      return;
-    }
-
-    setPaymentMode(requiredPaymentMode);
-    if (paymentMethod === "cod") {
-      setPaymentMethod("razorpay");
-    }
-  }, [hasPreOrder, paymentMethod, requiredPaymentMode]);
-
   async function refreshPreview(formData: FormData, automatic = false) {
     const requiredError = validateRequiredCheckoutFields(formData);
     if (requiredError) {
@@ -190,7 +188,7 @@ export function CheckoutClient() {
         defaultAddress,
         shippingMethod,
         paymentMethod,
-        hasPreOrder ? requiredPaymentMode : undefined,
+        paymentMode,
       );
       const result = await checkoutPreview(
         {
@@ -339,7 +337,7 @@ export function CheckoutClient() {
         defaultAddress,
         shippingMethod,
         paymentMethod,
-        hasPreOrder ? requiredPaymentMode : undefined,
+        paymentMode,
       );
       const file = formData.get("manualScreenshot");
 
@@ -366,7 +364,7 @@ export function CheckoutClient() {
       }
 
       const result = await createCheckoutOrder(payload, accessToken);
-      if (payload.paymentMethod === "razorpay") {
+      if (result.gatewayOrder) {
         await openRazorpayCheckout(result, payload);
         return;
       }
@@ -441,12 +439,7 @@ export function CheckoutClient() {
                         <p className="font-semibold">{item.productName}</p>
                         <p className="text-muted-foreground">
                           {item.sku} · Qty {item.quantity} ·{" "}
-                          {item.preOrder?.enabled
-                            ? `Pre-order, ${
-                                item.preOrder.paymentMode ??
-                                (item.preOrder.advancePercent ? "advance" : "full")
-                              } payment`
-                            : "Ready stock"}
+                          {item.preOrder?.enabled ? "Pre-order" : "Ready stock"}
                         </p>
                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           {item.color ? <span>Color: {item.color}</span> : null}
@@ -458,20 +451,6 @@ export function CheckoutClient() {
                         </div>
                         {item.preOrder?.enabled ? (
                           <div className="mt-2 grid gap-1 rounded-md bg-primary/5 p-2 text-xs text-muted-foreground sm:grid-cols-2">
-                            <span>
-                              Advance due now:{" "}
-                              {formatMoney(calculateLinePayableNow(item), item.currencyCode)}
-                            </span>
-                            <span>
-                              Balance later:{" "}
-                              {formatMoney(
-                                Math.max(
-                                  0,
-                                  item.unitPrice * item.quantity - calculateLinePayableNow(item),
-                                ),
-                                item.currencyCode,
-                              )}
-                            </span>
                             {item.preOrder.expectedDispatchAt ? (
                               <span>
                                 Dispatch: {formatCheckoutDate(item.preOrder.expectedDispatchAt)}
@@ -595,7 +574,7 @@ export function CheckoutClient() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {paymentMethods.map((method) => {
                 const Icon = method.icon;
-                const disabled = hasPreOrder && method.value === "cod";
+                const disabled = false;
 
                 return (
                   <label
@@ -632,31 +611,19 @@ export function CheckoutClient() {
                 );
               })}
             </div>
-            {hasPreOrder ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                COD is disabled for pre-order bookings. Payment mode is locked from the selected
-                product setup.
-              </p>
-            ) : null}
-
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="text-sm font-medium">
                 Payment mode
-                <select
-                  className="mt-2 h-10 w-full rounded-md border border-border px-3"
-                  disabled={hasPreOrder}
-                  name="paymentMode"
-                  onChange={(event) => setPaymentMode(event.target.value as "full" | "advance")}
-                  value={hasPreOrder ? requiredPaymentMode : paymentMode}
-                >
-                  <option value="full">Full</option>
-                  <option value="advance">Advance</option>
-                </select>
+                <input
+                  className="mt-2 h-10 w-full rounded-md border border-border bg-muted/40 px-3"
+                  readOnly
+                  value={
+                    paymentMethod === "cod" ? "50% advance + balance on delivery" : "Full payment"
+                  }
+                />
               </label>
-              {hasPreOrder ? (
-                <input name="paymentMode" type="hidden" value={requiredPaymentMode} />
-              ) : null}
-              {hasPreOrder && payableNow !== undefined ? (
+              <input name="paymentMode" type="hidden" value={paymentMode} />
+              {payableNow !== undefined ? (
                 <label className="text-sm font-medium">
                   Payable now
                   <input
@@ -667,9 +634,12 @@ export function CheckoutClient() {
                     value={payableNow}
                   />
                 </label>
-              ) : (
-                <Field label="Payable now" min={1} name="payableNow" type="number" />
-              )}
+              ) : null}
+              <p className="text-xs leading-5 text-muted-foreground sm:col-span-2">
+                {paymentMethod === "cod"
+                  ? "Pay 50% securely through Razorpay now. The remaining 50% is payable on delivery."
+                  : "The complete order amount will be paid securely through Razorpay."}
+              </p>
               {paymentMethod === "manual_bank_transfer" ? (
                 <>
                   <PaymentInstruction settings={paymentSettings} type="bank" />
@@ -696,6 +666,25 @@ export function CheckoutClient() {
             <SectionTitle icon={CreditCard} title="Review" />
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Coupon" name="couponCode" />
+              {loyalty && loyalty.storeCreditBalance > 0 ? (
+                <Field
+                  helperText={`Available: ${formatMoney(loyalty.storeCreditBalance)}`}
+                  label="Use store credit"
+                  max={loyalty.storeCreditBalance}
+                  min={0}
+                  name="storeCreditRequested"
+                  type="number"
+                />
+              ) : null}
+              {loyalty && loyalty.rewardPoints > 0 ? (
+                <Field
+                  helperText={`Available: ${loyalty.rewardPoints} points`}
+                  label="Reward value to redeem (₹)"
+                  min={0}
+                  name="rewardValueRequested"
+                  type="number"
+                />
+              ) : null}
               <label className="text-sm font-medium sm:col-span-2">
                 Notes
                 <textarea
@@ -768,8 +757,8 @@ export function CheckoutClient() {
               {showPayableNow && payableNow !== undefined ? (
                 <>
                   <p className="mb-3 rounded-md bg-primary/5 p-3 text-xs leading-5 text-muted-foreground">
-                    This checkout includes a pre-order. Pay the advance now; the remaining balance
-                    will be collected before dispatch.
+                    COD requires a 50% advance through Razorpay. The remaining balance is payable
+                    when the order is delivered.
                   </p>
                   <TotalRow
                     label="Full order value"
@@ -781,7 +770,7 @@ export function CheckoutClient() {
                   />
                   <div className="mt-2">
                     <TotalRow
-                      label="Pre-order advance due now"
+                      label="Razorpay advance due now"
                       strong
                       value={formatMoney(payableNow, preview.totals.currencyCode)}
                     />
@@ -929,11 +918,13 @@ function PaymentInstruction({
 
 function Field({
   className = "",
+  helperText,
   label,
   required,
   ...props
 }: Readonly<
   React.InputHTMLAttributes<HTMLInputElement> & {
+    helperText?: string;
     label: string;
   }
 >) {
@@ -946,6 +937,9 @@ function Field({
         required={required}
         {...props}
       />
+      {helperText ? (
+        <span className="mt-1 block text-xs font-normal text-muted-foreground">{helperText}</span>
+      ) : null}
     </label>
   );
 }
@@ -989,39 +983,13 @@ function OptionButton({
   );
 }
 
-function calculateCheckoutPayableNow(cart: Cart, preview?: CheckoutPreview) {
-  const itemPayable = cart.items.reduce((total, item) => {
-    return total + calculateLinePayableNow(item);
-  }, 0);
-
+function calculateCheckoutPayableNow(
+  cart: Cart,
+  paymentMethod: CheckoutPaymentMethod,
+  preview?: CheckoutPreview,
+) {
   const totals = preview?.totals ?? cart.totals;
-  const shippingFee = "shippingFee" in totals ? totals.shippingFee : 0;
-  const discountTotal = "discountTotal" in totals ? totals.discountTotal : 0;
-  const storeCreditApplied = "storeCreditApplied" in totals ? totals.storeCreditApplied : 0;
-  const rewardValueApplied = "rewardValueApplied" in totals ? totals.rewardValueApplied : 0;
-  const payable =
-    itemPayable +
-    totals.giftPackagingFee +
-    shippingFee -
-    totals.giftCardDiscount -
-    discountTotal -
-    storeCreditApplied -
-    rewardValueApplied;
-
-  return Math.max(0, Math.min(totals.grandTotal, Math.round(payable)));
-}
-
-function calculateLinePayableNow(item: Cart["items"][number]) {
-  const lineTotal = item.unitPrice * item.quantity;
-  if (!item.preOrder?.enabled) {
-    return lineTotal;
-  }
-
-  const isAdvance =
-    item.preOrder.paymentMode === "advance" || Boolean(item.preOrder.advancePercent);
-  const percent = isAdvance ? (item.preOrder.advancePercent ?? 0) : 100;
-
-  return Math.round((lineTotal * percent) / 100);
+  return paymentMethod === "cod" ? Math.round(totals.grandTotal * 0.5) : totals.grandTotal;
 }
 
 function formatCheckoutDate(value: string) {

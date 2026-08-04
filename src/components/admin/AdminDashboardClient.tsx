@@ -4,12 +4,14 @@ import {
   AlertTriangle,
   Boxes,
   ClipboardList,
+  Download,
   IndianRupee,
   Package,
   Receipt,
   RotateCcw,
   ShoppingBag,
   TrendingUp,
+  Users,
   WalletCards,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -17,6 +19,7 @@ import { AreaLineChart } from "@/components/admin/charts/AreaLineChart";
 import { DonutChart, type DonutChartSlice } from "@/components/admin/charts/DonutChart";
 import { HorizontalBarList } from "@/components/admin/charts/HorizontalBarList";
 import {
+  downloadAdminDashboardCsv,
   fetchAdminDashboard,
   type AdminDashboardCharts,
   type AdminDashboardSummary,
@@ -72,6 +75,18 @@ export function AdminDashboardClient() {
   const [summary, setSummary] = useState<AdminDashboardSummary>();
   const [charts, setCharts] = useState<AdminDashboardCharts>();
   const [message, setMessage] = useState("");
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await downloadAdminDashboardCsv(30);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     if (!accessToken) {
@@ -120,6 +135,27 @@ export function AdminDashboardClient() {
     sublabel: `${item.sku} - ${item.quantity} sold`,
     value: item.revenue,
   }));
+  const topCategoryBars = (charts?.topCategories ?? []).map((item) => ({
+    color: "var(--color-primary)",
+    key: item.name,
+    label: item.name,
+    sublabel: `${item.quantity} sold`,
+    value: item.revenue,
+  }));
+  const topCollectionBars = (charts?.topCollections ?? []).map((item) => ({
+    color: "var(--color-secondary)",
+    key: item.name,
+    label: item.name,
+    sublabel: `${item.quantity} sold`,
+    value: item.revenue,
+  }));
+  const trafficSourceBars = (charts?.trafficSourceBreakdown ?? []).map((item) => ({
+    color: "var(--color-accent)",
+    key: item.source,
+    label: labelStatus(item.source),
+    sublabel: `${item.count} order${item.count === 1 ? "" : "s"}`,
+    value: item.revenue,
+  }));
 
   return (
     <div>
@@ -130,10 +166,21 @@ export function AdminDashboardClient() {
             Live operational view for completed modules.
           </p>
         </div>
-        {message ? <p className="text-sm text-destructive">{message}</p> : null}
+        <div className="flex items-center gap-2">
+          {message ? <p className="text-sm text-destructive">{message}</p> : null}
+          <button
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-sm font-semibold disabled:opacity-60"
+            disabled={exporting}
+            onClick={() => void handleExport()}
+            type="button"
+          >
+            <Download aria-hidden="true" size={16} />
+            {exporting ? "Exporting..." : "Export CSV"}
+          </button>
+        </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
         <HeadlineCard
           icon={IndianRupee}
           label="Revenue (30 days)"
@@ -148,6 +195,16 @@ export function AdminDashboardClient() {
           icon={TrendingUp}
           label="Avg. Order Value (30 days)"
           value={formatPaymentMoney(charts?.averageOrderValue30d ?? 0)}
+        />
+        <HeadlineCard
+          icon={Users}
+          label="Repeat Customer Rate"
+          value={formatPercent(charts?.repeatCustomerRate ?? 0)}
+        />
+        <HeadlineCard
+          icon={ShoppingBag}
+          label="Abandoned Cart Rate"
+          value={formatPercent(charts?.abandonedCartRate ?? 0)}
         />
       </div>
 
@@ -186,6 +243,35 @@ export function AdminDashboardClient() {
             emptyMessage="No sales yet in this window."
             formatValue={(value) => formatPaymentMoney(value)}
             items={topProductBars}
+          />
+        </section>
+      </div>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+        <section className="rounded-md border border-border bg-card p-4 shadow-soft">
+          <h2 className="mb-3 text-lg font-semibold">Top Categories (30 days)</h2>
+          <HorizontalBarList
+            emptyMessage="No category sales yet in this window."
+            formatValue={(value) => formatPaymentMoney(value)}
+            items={topCategoryBars}
+          />
+        </section>
+
+        <section className="rounded-md border border-border bg-card p-4 shadow-soft">
+          <h2 className="mb-3 text-lg font-semibold">Top Collections (30 days)</h2>
+          <HorizontalBarList
+            emptyMessage="No collection sales yet in this window."
+            formatValue={(value) => formatPaymentMoney(value)}
+            items={topCollectionBars}
+          />
+        </section>
+
+        <section className="rounded-md border border-border bg-card p-4 shadow-soft">
+          <h2 className="mb-3 text-lg font-semibold">Traffic Sources (30 days)</h2>
+          <HorizontalBarList
+            emptyMessage="No attributed traffic yet in this window."
+            formatValue={(value) => formatPaymentMoney(value)}
+            items={trafficSourceBars}
           />
         </section>
       </div>
@@ -258,6 +344,10 @@ function labelStatus(value: string) {
     .split("_")
     .map((part) => part[0]?.toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatPercent(value: number) {
+  return `${(value * 100).toFixed(1)}%`;
 }
 
 function formatShortDate(value: string) {

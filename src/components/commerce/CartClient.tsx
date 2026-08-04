@@ -54,18 +54,6 @@ export function CartClient() {
     applyCart(payload.cart);
   }
 
-  async function updatePurchaseMode(lineItemId: string, purchaseMode: "regular" | "pre_order") {
-    const payload = await commerceFetch<{ cart: Cart }>(
-      `/commerce/cart/items/${lineItemId}/purchase-mode`,
-      {
-        accessToken,
-        body: JSON.stringify({ purchaseMode }),
-        method: "PATCH",
-      },
-    );
-    applyCart(payload.cart);
-  }
-
   async function setGiftPackaging(enabled: boolean) {
     const payload = await commerceFetch<{ cart: Cart }>("/commerce/cart/gift-packaging", {
       accessToken,
@@ -143,31 +131,6 @@ export function CartClient() {
                     {item.gstRate ? ` · GST ${item.gstRate}% included` : ""}
                     {item.hsnCode ? ` · HSN ${item.hsnCode}` : ""}
                   </p>
-                  {item.preOrder?.enabled || item.preOrderOption?.enabled ? (
-                    <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Purchase type
-                      <select
-                        className="mt-1 h-9 rounded-md border border-border bg-card px-2 text-sm normal-case tracking-normal text-foreground"
-                        onChange={(event) =>
-                          updatePurchaseMode(
-                            item._id,
-                            event.target.value as "regular" | "pre_order",
-                          )
-                        }
-                        value={
-                          item.purchaseMode ?? (item.preOrder?.enabled ? "pre_order" : "regular")
-                        }
-                      >
-                        <option disabled value="regular">
-                          Regular order disabled
-                        </option>
-                        <option value="pre_order">Pre-order</option>
-                      </select>
-                      <span className="mt-1 block text-[11px] font-medium normal-case tracking-normal text-muted-foreground">
-                        Current storefront checkout is open for pre-orders only.
-                      </span>
-                    </label>
-                  ) : null}
                 </div>
                 <p className="font-semibold">{formatMoney(item.unitPrice, item.currencyCode)}</p>
               </div>

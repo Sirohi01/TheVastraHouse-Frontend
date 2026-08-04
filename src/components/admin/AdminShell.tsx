@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BarChart3,
   Bell,
   Boxes,
   Building2,
@@ -11,7 +10,6 @@ import {
   Factory,
   FileText,
   Gift,
-  Globe2,
   Home,
   Image,
   Instagram,
@@ -31,7 +29,6 @@ import {
   Shield,
   ShieldAlert,
   ShoppingBag,
-  SlidersHorizontal,
   Store,
   Truck,
   UserCog,
@@ -75,6 +72,8 @@ const enabledSections: SidebarSection<EnabledItem>[] = [
       { href: "/admin/pre-orders", icon: Package, label: "Pre-Orders" },
       { href: "/admin/content", icon: FileText, label: "CMS Content" },
       { href: "/admin/instagram", icon: Instagram, label: "Instagram Feed" },
+      { href: "/admin/notifications", icon: Bell, label: "Notifications" },
+      { href: "/admin/loyalty", icon: Gift, label: "Loyalty / Gift Cards" },
       { href: "/admin/settings", icon: Settings, label: "Settings" },
     ],
   },
@@ -96,7 +95,6 @@ const plannedSections: SidebarSection<DisabledItem>[] = [
   {
     label: "Commerce & Content",
     items: [
-      { icon: Globe2, label: "SEO Management", phase: "Phase 18" },
       { icon: FileText, label: "Blog System", phase: "Phase 20" },
       { icon: FileText, label: "Static / Policy Pages", phase: "Phase 26" },
       { icon: Search, label: "Search & Discovery", phase: "Docs Module 20" },
@@ -109,7 +107,6 @@ const plannedSections: SidebarSection<DisabledItem>[] = [
       { icon: Factory, label: "Manufacturing", phase: "Phase 16" },
       { icon: ReceiptText, label: "Invoicing", phase: "Phase 17" },
       { icon: Truck, label: "Logistics / Courier", phase: "Docs Module 24" },
-      { icon: Bell, label: "Notifications", phase: "Phase 21" },
       { icon: LifeBuoy, label: "Support / Helpdesk", phase: "Docs Module 22" },
     ],
   },
@@ -120,20 +117,17 @@ const plannedSections: SidebarSection<DisabledItem>[] = [
       { icon: ContactRound, label: "Customer Account Admin", phase: "Phase 27" },
       { icon: Megaphone, label: "Marketing Automation", phase: "Phase 23" },
       { icon: Percent, label: "Coupons", phase: "Phase 23" },
-      { icon: Gift, label: "Loyalty / Gift Cards", phase: "Phase 24" },
     ],
   },
   {
     label: "Platform & Governance",
     items: [
-      { icon: BarChart3, label: "Analytics & Reports", phase: "Phase 28" },
       { icon: UserCog, label: "Roles / Users", phase: "Docs Module 11" },
       { icon: KeyRound, label: "Admin Sessions", phase: "Phase 29" },
       { icon: ShieldAlert, label: "Fraud & Risk", phase: "Docs Module 21" },
       { icon: LockKeyhole, label: "Data Privacy", phase: "Docs Module 23" },
       { icon: Shield, label: "Audit Logs", phase: "Phase 29" },
       { icon: Building2, label: "Company / GST Settings", phase: "Docs Module 11" },
-      { icon: SlidersHorizontal, label: "Notification Templates", phase: "Phase 21" },
     ],
   },
 ];
@@ -252,8 +246,10 @@ export function AdminShell({ children }: Readonly<{ children: React.ReactNode }>
   const currentPage =
     enabledSections
       .flatMap((section) => section.items)
-      .find((item) => pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)))
-      ?.label ?? "Admin";
+      .find(
+        (item) =>
+          pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href)),
+      )?.label ?? "Admin";
 
   return (
     <div className="min-h-screen bg-[#f6f3ee]">

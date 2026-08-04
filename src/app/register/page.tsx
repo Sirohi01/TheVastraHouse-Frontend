@@ -1,14 +1,18 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
 
 export default function RegisterPage() {
   const [message, setMessage] = useState("");
+  const searchParams = useSearchParams();
+  const referralCodeFromLink = searchParams.get("ref") ?? "";
 
   async function submit(formData: FormData) {
     setMessage("Creating account...");
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1";
+    const referralCode = String(formData.get("referralCode") ?? "").trim();
     const response = await fetch(`${apiBaseUrl}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -17,6 +21,7 @@ export default function RegisterPage() {
         password: formData.get("password"),
         firstName: formData.get("firstName"),
         lastName: formData.get("lastName"),
+        ...(referralCode ? { referralCode } : {}),
       }),
     });
 
@@ -58,6 +63,12 @@ export default function RegisterPage() {
             placeholder="Password"
             required
             type="password"
+          />
+          <input
+            className="mt-4 h-11 w-full rounded-md border border-border px-3"
+            defaultValue={referralCodeFromLink}
+            name="referralCode"
+            placeholder="Referral code (optional)"
           />
           <button className="mt-6 h-11 w-full rounded-md bg-primary px-4 font-semibold text-primary-foreground transition-opacity hover:opacity-90">
             Create Account

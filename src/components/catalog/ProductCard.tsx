@@ -28,6 +28,9 @@ export function ProductCard({
     if (p.endAt && new Date(p.endAt).getTime() < now) return false;
     return (p.remainingQuantity ?? 0) > 0;
   });
+  const hasReadyStock = product.variants.some(
+    (variant) => variant.active !== false && (variant.stockPlaceholder ?? 0) > 0,
+  );
   const storedProduct = {
     imageUrl: media[0]?.url,
     name: product.name,
@@ -76,7 +79,7 @@ export function ProductCard({
             </span>
           ))}
         <span className="absolute left-3 bottom-3 rounded-sm border border-[#f0d9a4]/50 bg-[#fffaf1]/95 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6e1423]">
-          {hasPreOrder ? "Pre-order available" : "Preview only"}
+          {hasPreOrder ? "Pre-order available" : hasReadyStock ? "Ready stock" : "Out of stock"}
         </span>
         {sizes.length ? (
           <div className="absolute inset-x-3 bottom-12 translate-y-2 rounded-sm border border-[#caa14e]/50 bg-white/95 px-2 py-2 opacity-0 shadow-soft transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">

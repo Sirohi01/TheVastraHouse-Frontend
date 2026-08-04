@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AddToCartButton } from "@/components/commerce/AddToCartButton";
 import { WishlistButton } from "@/components/commerce/WishlistButton";
 import { ComparisonToggle } from "@/components/catalog/ComparisonToggle";
@@ -24,7 +24,6 @@ export function ProductDetailClient({
   reviews,
 }: Readonly<{ pdp: PdpResponse; reviews: ProductReview[] }>) {
   const [selectedMedia, setSelectedMedia] = useState(0);
-  const [purchaseMode, setPurchaseMode] = useState<"pre_order">("pre_order");
   const [selectedVariant, setSelectedVariant] = useState(0);
   const product = pdp.product;
   const media = getProductMedia(product);
@@ -37,6 +36,7 @@ export function ProductDetailClient({
     if (p.endAt && new Date(p.endAt).getTime() < now) return false;
     return (p.remainingQuantity ?? 0) > 0;
   }, [variant?.preOrder]);
+  const canDirectOrder = (variant?.stockPlaceholder ?? 0) > 0;
   const pricing = getProductPricing({ ...product, variants: [variant] });
   const storedProduct = useMemo(
     () => ({
@@ -47,12 +47,6 @@ export function ProductDetailClient({
     }),
     [media, product],
   );
-
-  useEffect(() => {
-    if (canPreOrder) {
-      setPurchaseMode("pre_order");
-    }
-  }, [canPreOrder]);
 
   return (
     <main className="bg-[#fbf7ef]">
@@ -157,11 +151,18 @@ export function ProductDetailClient({
                   checkout will be enabled later.
                 </p>
               </div>
+            ) : canDirectOrder ? (
+              <div className="mt-6 rounded-md border border-[#e1d6c4] bg-white p-3">
+                <p className="text-sm font-semibold text-[#3d1620]">Ready stock available</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  This item is available for direct order and will follow the regular checkout flow.
+                </p>
+              </div>
             ) : (
               <div className="mt-6 rounded-md border border-[#e1d6c4] bg-white p-3">
-                <p className="text-sm font-semibold text-[#3d1620]">Preview only</p>
+                <p className="text-sm font-semibold text-[#3d1620]">Out of stock</p>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  This product is visible in the catalog, but booking is not open yet.
+                  This variant is not currently available for direct order or pre-order.
                 </p>
               </div>
             )}
@@ -170,7 +171,13 @@ export function ProductDetailClient({
               {canPreOrder ? (
                 <AddToCartButton
                   productId={product._id}
-                  purchaseMode={purchaseMode}
+                  purchaseMode="pre_order"
+                  variantId={String(variant?._id)}
+                />
+              ) : canDirectOrder ? (
+                <AddToCartButton
+                  productId={product._id}
+                  purchaseMode="regular"
                   variantId={String(variant?._id)}
                 />
               ) : (
@@ -179,7 +186,7 @@ export function ProductDetailClient({
                   disabled
                   type="button"
                 >
-                  Pre-order unavailable
+                  Out of stock
                 </button>
               )}
               <ComparisonToggle product={storedProduct} />

@@ -107,6 +107,35 @@ export async function commerceFetch<T>(
   return response.json() as Promise<T>;
 }
 
+const attributionSentKey = "vastra:attribution-sent";
+
+export async function captureAndSendAttribution() {
+  if (window.sessionStorage.getItem(attributionSentKey)) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const utmSource = params.get("utm_source") ?? undefined;
+  const utmMedium = params.get("utm_medium") ?? undefined;
+  const utmCampaign = params.get("utm_campaign") ?? undefined;
+  const referrer = document.referrer || undefined;
+
+  if (!utmSource && !utmMedium && !utmCampaign && !referrer) {
+    return;
+  }
+
+  window.sessionStorage.setItem(attributionSentKey, "true");
+
+  try {
+    await commerceFetch("/commerce/cart/attribution", {
+      body: JSON.stringify({ utmSource, utmMedium, utmCampaign, referrer }),
+      method: "PATCH",
+    });
+  } catch {
+    window.sessionStorage.removeItem(attributionSentKey);
+  }
+}
+
 export function formatMoney(value: number, currencyCode = "INR") {
   return new Intl.NumberFormat("en-IN", {
     currency: currencyCode,

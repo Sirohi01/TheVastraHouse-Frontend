@@ -857,7 +857,7 @@ export default function AdminProductsPage() {
                         value={variant.costPrice}
                       />
                       <Field
-                        label="Stock placeholder"
+                        label="Ready stock quantity"
                         onChange={(value) => updateVariant(index, "stockPlaceholder", value)}
                         value={variant.stockPlaceholder}
                       />

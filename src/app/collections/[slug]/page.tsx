@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { CatalogPage } from "@/components/catalog/CatalogPage";
 import { ErrorState } from "@/components/states/ErrorState";
 import { getCollection, type CatalogQuery } from "@/lib/catalog";
+import { buildBreadcrumbJsonLd, getSiteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +11,28 @@ type CollectionPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<CatalogQuery & { view?: string }>;
 };
+
+export async function generateMetadata({
+  params,
+}: Readonly<CollectionPageProps>): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const { collection } = await getCollection(slug);
+    const title = collection.seo?.title ?? collection.name;
+    const description = collection.seo?.description ?? collection.description;
+
+    return {
+      title,
+      description,
+      alternates: {
+        canonical: collection.seo?.canonicalUrl ?? `${getSiteUrl()}/collections/${slug}`,
+      },
+    };
+  } catch {
+    return {};
+  }
+}
 
 export default async function CollectionPage({
   params,
@@ -20,11 +45,19 @@ export default async function CollectionPage({
     const { collection } = await getCollection(slug);
 
     return (
-      <CatalogPage
-        description={collection.description ?? `Products in ${collection.name}.`}
-        query={{ ...query, collectionId: collection._id }}
-        title={collection.name}
-      />
+      <>
+        <JsonLd
+          data={buildBreadcrumbJsonLd([
+            { name: "Shop", path: "/shop" },
+            { name: collection.name, path: `/collections/${collection.slug}` },
+          ])}
+        />
+        <CatalogPage
+          description={collection.description ?? `Products in ${collection.name}.`}
+          query={{ ...query, collectionId: collection._id }}
+          title={collection.name}
+        />
+      </>
     );
   } catch (error) {
     return (

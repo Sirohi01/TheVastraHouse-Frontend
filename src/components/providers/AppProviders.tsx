@@ -1,7 +1,8 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { captureAndSendAttribution } from "@/lib/commerce";
 
 export function AppProviders({ children }: Readonly<{ children: React.ReactNode }>) {
   const [queryClient] = useState(
@@ -14,6 +15,14 @@ export function AppProviders({ children }: Readonly<{ children: React.ReactNode 
         },
       }),
   );
+
+  useEffect(() => {
+    if (window.location.pathname.startsWith("/admin")) {
+      return;
+    }
+
+    void captureAndSendAttribution();
+  }, []);
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

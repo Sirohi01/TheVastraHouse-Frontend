@@ -1,11 +1,17 @@
+import type { Metadata } from "next";
 import { CatalogPage } from "@/components/catalog/CatalogPage";
 import type { CatalogQuery } from "@/lib/catalog";
 import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
+import { getSiteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 type ShopPageProps = {
   searchParams?: Promise<CatalogQuery & { view?: string }>;
+};
+
+export const metadata: Metadata = {
+  alternates: { canonical: `${getSiteUrl()}/shop` },
 };
 
 export default async function ShopPage({ searchParams }: Readonly<ShopPageProps>) {

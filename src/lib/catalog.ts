@@ -34,11 +34,18 @@ export type ProductVariant = {
   };
 };
 
+export type SeoFields = {
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+};
+
 export type TaxonomyRef = {
   _id?: string;
   name: string;
   slug: string;
   description?: string;
+  seo?: SeoFields;
 };
 
 export type CatalogProduct = {
@@ -58,7 +65,7 @@ export type CatalogProduct = {
   collectionIds?: TaxonomyRef[];
   tagIds?: TaxonomyRef[];
   computedBadges?: Record<string, boolean>;
-  seo?: { title?: string; description?: string };
+  seo?: SeoFields;
 };
 
 export type CatalogTile = {
