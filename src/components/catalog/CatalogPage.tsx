@@ -124,18 +124,7 @@ export async function CatalogPage({
             </p>
           </div>
           <div className="overflow-hidden rounded-sm border border-[#e1d6c4] bg-[#fffdf8] shadow-[0_18px_50px_-40px_rgba(46,12,18,0.5)]">
-            <div className="grid min-h-14 items-center border-b border-[#e1d6c4] text-sm md:grid-cols-[260px_1fr]">
-              <div className="flex items-center gap-2 border-[#e1d6c4] px-5 py-4 md:border-r">
-                <span aria-hidden="true" className="text-xs text-[#caa14e]">
-                  ❖
-                </span>
-                <span className="font-serif text-[#3d1620]">
-                  <span className="font-semibold text-[#6e1423]">{products.meta.total}</span>{" "}
-                  Results
-                </span>
-              </div>
-              <CatalogToolbar query={catalogQuery} total={products.meta.total} view={view} />
-            </div>
+            <CatalogToolbar query={catalogQuery} total={products.meta.total} view={view} />
 
             <div className="grid md:grid-cols-[260px_1fr]">
               <FilterSidebar filters={filters} query={catalogQuery} />
