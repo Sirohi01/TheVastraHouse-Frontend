@@ -108,6 +108,20 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
             ))}
           </nav>
 
+          <a
+            aria-label="Cart"
+            className="relative inline-flex size-10 items-center justify-center rounded-md text-foreground transition hover:text-primary md:hidden"
+            href="/cart"
+            title="Cart"
+          >
+            <ShoppingBag aria-hidden="true" size={21} />
+            {itemCount > 0 ? (
+              <span className="absolute right-0.5 top-0.5 grid min-w-4 place-items-center rounded-full bg-[#6e1423] px-1 text-[10px] font-bold leading-4 text-white">
+                {itemCount}
+              </span>
+            ) : null}
+          </a>
+
           <details className="group relative xl:hidden">
             <summary
               aria-label="Menu"

@@ -3,14 +3,9 @@
 import { Eye, Heart } from "lucide-react";
 import Link from "next/link";
 import { ProductMediaCarousel } from "@/components/catalog/ProductMediaCarousel";
-import {
-  getProductMedia,
-  getProductPrice,
-  getProductPricing,
-  type CatalogProduct,
-} from "@/lib/catalog";
-import { ComparisonToggle } from "@/components/catalog/ComparisonToggle";
+import { getProductMedia, getProductPricing, type CatalogProduct } from "@/lib/catalog";
 import { SizeChartButton } from "@/components/catalog/SizeChartButton";
+import { AddToCartButton } from "@/components/commerce/AddToCartButton";
 import { WishlistButton } from "@/components/commerce/WishlistButton";
 
 export function ProductCard({
@@ -18,10 +13,9 @@ export function ProductCard({
   view = "grid",
 }: Readonly<{ product: CatalogProduct; view?: "grid" | "list" }>) {
   const media = getProductMedia(product);
-  const price = getProductPrice(product);
   const pricing = getProductPricing(product);
   const sizes = [...new Set(product.variants.map((variant) => variant.size).filter(isString))];
-  const hasPreOrder = product.variants.some((variant) => {
+  const preOrderVariant = product.variants.find((variant) => {
     const p = variant.preOrder;
     if (!p?.enabled) return false;
     const now = Date.now();
@@ -29,15 +23,12 @@ export function ProductCard({
     if (p.endAt && new Date(p.endAt).getTime() < now) return false;
     return (p.remainingQuantity ?? 0) > 0;
   });
-  const hasReadyStock = product.variants.some(
+  const readyStockVariant = product.variants.find(
     (variant) => variant.active !== false && (variant.stockPlaceholder ?? 0) > 0,
   );
-  const storedProduct = {
-    imageUrl: media[0]?.url,
-    name: product.name,
-    price,
-    slug: product.slug,
-  };
+  const hasPreOrder = Boolean(preOrderVariant);
+  const hasReadyStock = Boolean(readyStockVariant);
+  const cartVariant = preOrderVariant ?? readyStockVariant;
 
   return (
     <article
@@ -133,9 +124,26 @@ export function ProductCard({
             sizeGuideMedia={product.sizeGuideMedia}
           />
           <div className="grid grid-cols-2 gap-2">
-            <ComparisonToggle className="w-full min-w-0 px-2" product={storedProduct} />
+            {cartVariant ? (
+              <AddToCartButton
+                className="h-10 min-w-0 gap-1.5 rounded-sm border border-[#6e1423] bg-[#6e1423] px-2 text-sm text-white hover:bg-[#84182c]"
+                iconSize={15}
+                productId={product._id}
+                purchaseMode={preOrderVariant ? "pre_order" : "regular"}
+                variantId={cartVariant._id}
+              />
+            ) : (
+              <button
+                className="inline-flex h-10 min-w-0 cursor-not-allowed items-center justify-center gap-1.5 rounded-sm border border-[#e1d6c4] px-2 text-sm font-semibold text-muted-foreground"
+                disabled
+                type="button"
+              >
+                Out of Stock
+              </button>
+            )}
             {product.variants[0]?._id ? (
               <WishlistButton
+                buttonClassName="h-10 rounded-sm border-[#e1d6c4] bg-white hover:border-[#caa14e] hover:text-[#6e1423]"
                 className="min-w-0"
                 productId={product._id}
                 variantId={product.variants[0]._id}

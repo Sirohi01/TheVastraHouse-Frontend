@@ -3,13 +3,20 @@
 import { Heart } from "lucide-react";
 import { useState } from "react";
 import { commerceFetch, type Wishlist } from "@/lib/commerce";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 
 export function WishlistButton({
+  buttonClassName = "",
   className = "",
   productId,
   variantId,
-}: Readonly<{ className?: string; productId: string; variantId: string }>) {
+}: Readonly<{
+  buttonClassName?: string;
+  className?: string;
+  productId: string;
+  variantId: string;
+}>) {
   const accessToken = useAuthStore((state) => state.accessToken);
   const [message, setMessage] = useState("");
 
@@ -30,7 +37,10 @@ export function WishlistButton({
     <div className={className}>
       <button
         aria-label="Add to wishlist"
-        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-semibold hover:border-primary hover:text-primary"
+        className={cn(
+          "inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-3 text-sm font-semibold hover:border-primary hover:text-primary",
+          buttonClassName,
+        )}
         onClick={addToWishlist}
         title="Add to wishlist"
         type="button"
