@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getSeoSettings, getSiteUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const builtInDisallow = ["/admin", "/account", "/cart", "/checkout", "/wishlist", "/payments"];
 

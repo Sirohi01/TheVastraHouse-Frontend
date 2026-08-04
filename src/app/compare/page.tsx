@@ -1,8 +1,6 @@
 import { CompareClient } from "@/components/catalog/CompareClient";
 import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
 
-export const dynamic = "force-dynamic";
-
 export default function ComparePage() {
   return (
     <PublicPageFrame

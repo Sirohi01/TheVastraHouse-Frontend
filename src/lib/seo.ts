@@ -22,7 +22,9 @@ export function getSiteUrl() {
 }
 
 export async function getSitemapData(): Promise<SitemapData> {
-  const response = await fetch(`${apiBaseUrl}/catalog/sitemap`, { cache: "no-store" });
+  const response = await fetch(`${apiBaseUrl}/catalog/sitemap`, {
+    next: { revalidate: 300 },
+  });
 
   if (!response.ok) {
     return { products: [], categories: [], collections: [] };

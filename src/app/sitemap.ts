@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getSitemapData, getSiteUrl } from "@/lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 const staticPaths = ["", "/shop", "/about", "/cart", "/compare", "/pre-order"];
 
