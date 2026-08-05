@@ -3,7 +3,6 @@
 import { Loader2, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { getGuestSessionId } from "@/lib/commerce";
 import { apiBaseUrl } from "@/lib/api";
 import { useAuthStore, type AuthUser } from "@/stores/authStore";
 
@@ -64,7 +63,7 @@ export default function AdminLoginPage() {
           password,
           totpToken: totpToken || undefined,
         }),
-        headers: { "Content-Type": "application/json", "X-Guest-Session-Id": getGuestSessionId() },
+        headers: { "Content-Type": "application/json" },
         method: "POST",
       });
 
