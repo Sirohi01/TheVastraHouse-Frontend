@@ -14,7 +14,7 @@ type LoginResponse = {
 };
 
 type TotpSetupResponse = {
-  error?: string;
+  error?: string | { message?: string };
   otpauthUrl?: string;
   totpSecret?: string;
 };
@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
           if (payload.totpSecret) {
             setTotpSetupKey(payload.totpSecret);
           }
-          setMessage(payload.error ?? "TOTP setup failed");
+          setMessage(getAuthErrorMessage(payload, "TOTP setup failed"));
           return;
         }
       }
@@ -77,12 +77,13 @@ export default function AdminLoginPage() {
         if (payload.totpSecret) {
           setTotpSetupKey(payload.totpSecret);
         }
+        const errorMessage = getAuthErrorMessage(payload, "Admin login failed");
         setMessage(
           payload.otpauthUrl
             ? "TOTP setup required. Add the setup key below to your authenticator app, then submit the 6-digit code."
-            : (payload.error ?? "Admin login failed"),
+            : errorMessage,
         );
-        if ((payload.error ?? "").toLowerCase().includes("totp")) {
+        if (errorMessage.toLowerCase().includes("totp")) {
           setNeedsTotpCode(true);
         }
         return;
@@ -318,6 +319,23 @@ export default function AdminLoginPage() {
       `}</style>
     </main>
   );
+}
+
+function getAuthErrorMessage(payload: TotpSetupResponse, fallback: string) {
+  if (typeof payload.error === "string" && payload.error.trim()) {
+    return payload.error;
+  }
+
+  if (
+    payload.error &&
+    typeof payload.error === "object" &&
+    typeof payload.error.message === "string" &&
+    payload.error.message.trim()
+  ) {
+    return payload.error.message;
+  }
+
+  return fallback;
 }
 
 function CornerFiligree({ className = "" }: Readonly<{ className?: string }>) {
