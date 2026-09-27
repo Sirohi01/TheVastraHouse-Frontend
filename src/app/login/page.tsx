@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const setSession = useAuthStore((state) => state.setSession);
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function submit(formData: FormData) {
@@ -94,20 +95,41 @@ export default function LoginPage() {
 
           <label className="mt-4 block text-sm font-medium">
             Password
-            <input
-              autoComplete="current-password"
-              className="mt-2 h-11 w-full rounded-md border border-border px-3"
-              name="password"
-              required
-              type="password"
-            />
+            <span className="relative mt-2 block">
+              <input
+                autoComplete="current-password"
+                className="h-11 w-full rounded-md border border-border px-3 pr-12"
+                name="password"
+                required
+                type={showPassword ? "text" : "password"}
+              />
+              <button
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                onClick={() => setShowPassword((visible) => !visible)}
+                type="button"
+              >
+                {showPassword ? (
+                  <EyeOff aria-hidden="true" size={17} />
+                ) : (
+                  <Eye aria-hidden="true" size={17} />
+                )}
+              </button>
+            </span>
           </label>
 
           <button
-            className="mt-6 h-11 w-full rounded-md bg-primary px-4 font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-4 font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             disabled={submitting}
           >
-            {submitting ? "Signing in" : "Continue"}
+            {submitting ? (
+              <>
+                <Loader2 aria-hidden="true" className="animate-spin" size={17} />
+                Signing in...
+              </>
+            ) : (
+              "Continue"
+            )}
           </button>
 
           <div className="mt-4 flex items-center justify-between gap-3 text-sm">
