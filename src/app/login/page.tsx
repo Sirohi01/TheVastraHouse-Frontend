@@ -132,6 +132,14 @@ export default function LoginPage() {
             ) : (
               "Continue"
             )}
+            {submitting ? (
+              <>
+                <Loader2 aria-hidden="true" className="animate-spin" size={17} />
+                Signing in...
+              </>
+            ) : (
+              "Continue"
+            )}
           </button>
 
           <div className="mt-4 flex items-center justify-between gap-3 text-sm">

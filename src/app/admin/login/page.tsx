@@ -1,163 +1,314 @@
 "use client";
 
-import { Eye, EyeOff, Loader2, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+} from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type SubmitEvent, useCallback, useEffect, useRef, useState } from "react";
 import { apiBaseUrl } from "@/lib/api";
 import { useAuthStore, type AuthUser } from "@/stores/authStore";
 
-type LoginResponse = {
-  accessToken: string;
-  refreshToken: string;
-  user: AuthUser;
+/**
+ * Admin sign-in flow:
+ *   credentials ─┬─> totp (authenticator already set up) ───────────────> dashboard
+ *                └─> email-code ─> scan QR + confirm code (first-time 2FA) ─> dashboard
+ * After the password is verified the API returns a short-lived challenge token; every later step
+ * uses it instead of the password. It is kept in sessionStorage so a refresh resumes the step.
+ */
+type Stage = "credentials" | "email-code" | "scan" | "totp";
+
+type ApiError = { code?: string; message?: string };
+
+type ApiPayload = {
+  error?: string | ApiError;
+  challengeToken?: string;
+  challengeExpiresInSeconds?: number;
+  resendAfterSeconds?: number;
+  devOnlyEmailCode?: string;
 };
 
-type TotpSetupResponse = {
-  error?: string | { code?: string; message?: string };
-  otpauthUrl?: string;
-  totpSecret?: string;
+type SessionPayload = { accessToken: string; refreshToken: string; user: AuthUser };
+
+type TotpSetup = {
+  accountLabel: string;
+  issuer: string;
+  otpauthUrl: string;
+  qrCodeDataUrl: string;
+  totpSecret: string;
 };
+
+type SavedChallenge = {
+  challengeToken: string;
+  email: string;
+  expiresAt: number;
+  stage: Exclude<Stage, "credentials">;
+};
+
+type Notice = { tone: "error" | "info" | "success"; text: string };
+
+const CHALLENGE_STORAGE_KEY = "vastra-admin-login-challenge";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const setSession = useAuthStore((state) => state.setSession);
-  const [message, setMessage] = useState("");
-  const [needsSetupCode, setNeedsSetupCode] = useState(false);
-  const [needsTotpCode, setNeedsTotpCode] = useState(false);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const signedInUser = useAuthStore((state) => state.user);
+  const signedInToken = useAuthStore((state) => state.accessToken);
+
+  const [stage, setStage] = useState<Stage>("credentials");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [code, setCode] = useState("");
+  const [challengeToken, setChallengeToken] = useState("");
+  const [setup, setSetup] = useState<TotpSetup | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [devCode, setDevCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [totpSetupKey, setTotpSetupKey] = useState("");
-  const [totpSetupUrl, setTotpSetupUrl] = useState("");
+  const [restoring, setRestoring] = useState(true);
+  const [resendAt, setResendAt] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  const [copied, setCopied] = useState(false);
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
-  async function submit(formData: FormData) {
-    setSubmitting(true);
-    setMessage("Checking secure admin login...");
+  const resendIn = Math.max(0, Math.ceil((resendAt - now) / 1000));
 
-    try {
-      const email = String(formData.get("email") ?? "");
-      const password = String(formData.get("password") ?? "");
-      const emailCode = String(formData.get("emailCode") ?? "");
-      const totpToken = String(formData.get("totpToken") ?? "");
+  useEffect(() => {
+    if (hasHydrated && signedInUser?.type === "admin" && signedInToken) {
+      router.replace("/admin");
+    }
+  }, [hasHydrated, router, signedInToken, signedInUser]);
 
-      if (needsSetupCode && !totpSetupUrl) {
-        if (!/^\d{6}$/.test(emailCode)) {
-          setMessage("Enter the 6-digit setup code sent to your email.");
-          return;
-        }
+  useEffect(() => {
+    if (resendAt <= Date.now()) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [resendAt]);
 
-        const setupResponse = await fetch(`${apiBaseUrl}/auth/admin/totp/setup`, {
-          body: JSON.stringify({ email, password, emailCode }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
-        const setupPayload = (await setupResponse.json()) as TotpSetupResponse;
+  useEffect(() => {
+    if (stage !== "credentials") codeInputRef.current?.focus();
+  }, [stage, setup]);
 
-        if (!setupResponse.ok) {
-          setMessage(getAuthErrorMessage(setupPayload, "TOTP setup failed"));
-          return;
-        }
+  const goToStage = useCallback((next: SavedChallenge) => {
+    writeSavedChallenge(next);
+    setChallengeToken(next.challengeToken);
+    setEmail(next.email);
+    setStage(next.stage);
+    setCode("");
+  }, []);
 
-        if (setupPayload.otpauthUrl) {
-          setTotpSetupUrl(setupPayload.otpauthUrl);
-        }
-        if (setupPayload.totpSecret) {
-          setTotpSetupKey(setupPayload.totpSecret);
-        }
-        setNeedsSetupCode(false);
-        setNeedsTotpCode(true);
-        setMessage("Add this key to your authenticator app, then enter the 6-digit code.");
-        return;
-      }
+  const restartSignIn = useCallback((text?: string) => {
+    clearSavedChallenge();
+    setStage("credentials");
+    setChallengeToken("");
+    setSetup(null);
+    setCode("");
+    setDevCode("");
+    setPassword("");
+    setNotice(text ? { tone: "error", text } : null);
+  }, []);
 
-      if (totpSetupUrl && !/^\d{6}$/.test(totpToken)) {
-        setMessage("Enter the 6-digit code from your authenticator app.");
-        return;
-      }
-
-      if (totpSetupUrl) {
-        const setupResponse = await fetch(`${apiBaseUrl}/auth/admin/totp/enable`, {
-          body: JSON.stringify({ email, password, totpToken }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
-
-        if (!setupResponse.ok) {
-          const payload = (await setupResponse.json()) as TotpSetupResponse;
-          if (payload.otpauthUrl) {
-            setTotpSetupUrl(payload.otpauthUrl);
-            setNeedsTotpCode(true);
-          }
-          if (payload.totpSecret) {
-            setTotpSetupKey(payload.totpSecret);
-          }
-          setMessage(getAuthErrorMessage(payload, "TOTP setup failed"));
-          return;
-        }
-
-        setNeedsSetupCode(false);
-        setNeedsTotpCode(true);
-        setTotpSetupKey("");
-        setTotpSetupUrl("");
-        setMessage("TOTP enabled. Signing you in...");
-      }
-
-      const response = await fetch(`${apiBaseUrl}/auth/login`, {
-        body: JSON.stringify({
-          email,
-          password,
-          totpToken: totpToken || undefined,
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
+  const loadSetup = useCallback(
+    async (token: string, emailCode?: string) => {
+      const response = await postJson("/auth/admin/totp/setup", {
+        challengeToken: token,
+        emailCode,
       });
+      const payload = (await response.json()) as ApiPayload & Partial<TotpSetup>;
 
       if (!response.ok) {
-        const payload = (await response.json()) as TotpSetupResponse;
-        const errorMessage = getAuthErrorMessage(payload, "Admin login failed");
-        const errorCode = getAuthErrorCode(payload);
-        if (errorCode === "ADMIN_2FA_SETUP_REQUIRED") {
-          setNeedsSetupCode(true);
-          setNeedsTotpCode(false);
-          setTotpSetupKey("");
-          setTotpSetupUrl("");
-          setMessage("Two-factor setup required. Enter the 6-digit setup code sent to your email.");
-          return;
+        if (errorCode(payload) === "ADMIN_CHALLENGE_EXPIRED") {
+          restartSignIn(errorMessage(payload, "Please sign in again."));
+        } else {
+          setNotice({
+            tone: "error",
+            text: errorMessage(payload, "Could not start authenticator setup."),
+          });
+          setCode("");
         }
-        if (errorCode === "ADMIN_TOTP_REQUIRED" || errorMessage.toLowerCase().includes("authenticator")) {
-          setNeedsSetupCode(false);
-          setNeedsTotpCode(true);
-          setTotpSetupKey("");
-          setTotpSetupUrl("");
-        }
-        setMessage(
-          payload.otpauthUrl
-            ? "TOTP setup required. Add the setup key below to your authenticator app, then submit the 6-digit code."
-            : errorMessage,
-        );
-        if (errorMessage.toLowerCase().includes("totp")) {
-          setNeedsTotpCode(true);
-        }
-        return;
+        return false;
       }
 
-      const payload = (await response.json()) as LoginResponse;
-      if (payload.user.type !== "admin") {
-        setMessage("This login is only for admin users.");
-        return;
-      }
+      setSetup(payload as TotpSetup);
+      return true;
+    },
+    [restartSignIn],
+  );
 
-      setSession(payload);
-      setNeedsSetupCode(false);
-      setNeedsTotpCode(false);
-      setTotpSetupKey("");
-      setTotpSetupUrl("");
-      router.push("/admin");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Admin login failed");
+  // Resume an in-progress sign-in after a refresh instead of asking for the password again.
+  useEffect(() => {
+    const saved = readSavedChallenge();
+    if (!saved) {
+      setRestoring(false);
+      return;
+    }
+
+    goToStage(saved);
+    if (saved.stage === "scan") {
+      void loadSetup(saved.challengeToken).finally(() => setRestoring(false));
+    } else {
+      setRestoring(false);
+    }
+  }, [goToStage, loadSetup]);
+
+  async function run(task: () => Promise<void>) {
+    if (submitting) return;
+    setSubmitting(true);
+    setNotice(null);
+    try {
+      await task();
+    } catch {
+      setNotice({
+        tone: "error",
+        text: "Could not reach the server. Check your connection and try again.",
+      });
     } finally {
       setSubmitting(false);
     }
   }
+
+  function finishSignIn(payload: SessionPayload) {
+    if (payload.user.type !== "admin") {
+      restartSignIn("This login is only for admin users.");
+      return;
+    }
+    clearSavedChallenge();
+    setSession(payload);
+    setNotice({ tone: "success", text: "Verified. Opening your dashboard..." });
+    router.replace("/admin");
+  }
+
+  function handleCodeFailure(payload: ApiPayload, fallback: string) {
+    if (errorCode(payload) === "ADMIN_CHALLENGE_EXPIRED") {
+      restartSignIn(errorMessage(payload, "Please sign in again."));
+      return;
+    }
+    setNotice({ tone: "error", text: errorMessage(payload, fallback) });
+    setCode("");
+    codeInputRef.current?.focus();
+  }
+
+  function submitCredentials(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void run(async () => {
+      const response = await postJson("/auth/login", { email: email.trim(), password });
+      const payload = (await response.json()) as ApiPayload & Partial<SessionPayload>;
+
+      if (response.ok) {
+        finishSignIn(payload as SessionPayload);
+        return;
+      }
+
+      const expiresAt = Date.now() + (payload.challengeExpiresInSeconds ?? 600) * 1000;
+      const token = payload.challengeToken;
+
+      if (errorCode(payload) === "ADMIN_2FA_SETUP_REQUIRED" && token) {
+        setPassword("");
+        setDevCode(payload.devOnlyEmailCode ?? "");
+        setResendAt(Date.now() + (payload.resendAfterSeconds ?? 45) * 1000);
+        setNow(Date.now());
+        goToStage({ challengeToken: token, email: email.trim(), expiresAt, stage: "email-code" });
+        setNotice({ tone: "info", text: `We emailed a 6-digit setup code to ${email.trim()}.` });
+        return;
+      }
+
+      if (errorCode(payload) === "ADMIN_TOTP_REQUIRED" && token) {
+        setPassword("");
+        goToStage({ challengeToken: token, email: email.trim(), expiresAt, stage: "totp" });
+        return;
+      }
+
+      setNotice({ tone: "error", text: errorMessage(payload, "Admin login failed.") });
+    });
+  }
+
+  function submitEmailCode(value = code) {
+    if (!/^\d{6}$/.test(value)) {
+      setNotice({ tone: "error", text: "Enter the 6-digit code from your email." });
+      return;
+    }
+    void run(async () => {
+      if (await loadSetup(challengeToken, value)) {
+        const saved = readSavedChallenge();
+        goToStage({
+          challengeToken,
+          email,
+          expiresAt: saved?.expiresAt ?? Date.now() + 600_000,
+          stage: "scan",
+        });
+        setDevCode("");
+        setNotice({ tone: "success", text: "Email verified. Now link your authenticator app." });
+      }
+    });
+  }
+
+  function submitAuthenticatorCode(value = code) {
+    if (!/^\d{6}$/.test(value)) {
+      setNotice({ tone: "error", text: "Enter the 6-digit code from your authenticator app." });
+      return;
+    }
+    const path = stage === "scan" ? "/auth/admin/totp/enable" : "/auth/admin/login/verify";
+    void run(async () => {
+      const response = await postJson(path, { challengeToken, totpToken: value });
+      const payload = (await response.json()) as ApiPayload & Partial<SessionPayload>;
+      if (!response.ok) {
+        handleCodeFailure(payload, "The authenticator code is incorrect.");
+        return;
+      }
+      finishSignIn(payload as SessionPayload);
+    });
+  }
+
+  function resendEmailCode() {
+    void run(async () => {
+      const response = await postJson("/auth/admin/totp/resend", { challengeToken });
+      const payload = (await response.json()) as ApiPayload;
+      if (!response.ok) {
+        handleCodeFailure(payload, "Could not resend the code.");
+        return;
+      }
+      setDevCode(payload.devOnlyEmailCode ?? "");
+      setResendAt(Date.now() + (payload.resendAfterSeconds ?? 45) * 1000);
+      setNow(Date.now());
+      setNotice({ tone: "info", text: `A new code was sent to ${email}.` });
+    });
+  }
+
+  function onCodeChange(raw: string) {
+    const digits = raw.replace(/\D/g, "").slice(0, 6);
+    setCode(digits);
+    // Auto-submit once all 6 digits are in (typed, pasted or autofilled).
+    if (digits.length === 6 && !submitting) {
+      if (stage === "email-code") submitEmailCode(digits);
+      else submitAuthenticatorCode(digits);
+    }
+  }
+
+  async function copySecret() {
+    if (!setup) return;
+    try {
+      await navigator.clipboard.writeText(setup.totpSecret);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setNotice({ tone: "info", text: "Copy failed. Select the key and copy it manually." });
+    }
+  }
+
+  const header = STAGE_COPY[stage];
+  const setupStep = stage === "email-code" ? 1 : stage === "scan" ? 2 : 0;
 
   return (
     <main className="relative grid min-h-screen place-items-center overflow-hidden bg-[#fbf7ef] px-4 py-8 text-[#211f1c] sm:px-5">
@@ -182,9 +333,9 @@ export default function AdminLoginPage() {
 
       <div className="vh-rise relative w-full max-w-6xl">
         <div className="h-[3px] rounded-t bg-[linear-gradient(90deg,#6e1423,#caa14e,#6e1423)]" />
-        <section className="grid w-full overflow-hidden rounded-b-md border border-x border-b border-[#e5dac7] bg-[#fffdf8] shadow-[0_30px_80px_-40px_rgba(46,12,18,0.55)] lg:grid-cols-[1.08fr_440px]">
+        <section className="grid w-full overflow-hidden rounded-b-md border border-x border-b border-[#e5dac7] bg-[#fffdf8] shadow-[0_30px_80px_-40px_rgba(46,12,18,0.55)] lg:grid-cols-[1.08fr_460px]">
           {/* Brand / maroon panel */}
-          <div className="relative flex min-h-[420px] flex-col justify-between overflow-hidden bg-[#842033] p-7 text-white sm:p-10 lg:min-h-[620px]">
+          <div className="relative flex min-h-[320px] flex-col justify-between overflow-hidden bg-[#842033] p-7 text-white sm:p-10 lg:min-h-[640px]">
             <div className="absolute inset-0 bg-[linear-gradient(135deg,rgb(255_255_255/0.12),transparent_42%),linear-gradient(0deg,rgb(42_24_12/0.24),transparent)]" />
 
             {/* Gold inset frame + corner filigree */}
@@ -226,7 +377,7 @@ export default function AdminLoginPage() {
             <div className="relative mt-8 grid gap-3 text-sm text-white/78 sm:grid-cols-2">
               <span className="inline-flex items-center gap-2">
                 <LockKeyhole aria-hidden="true" className="text-[#d8b66d]" size={16} />
-                Protected access
+                Two-factor protected
               </span>
               <span className="inline-flex items-center gap-2">
                 <Sparkles aria-hidden="true" className="text-[#d8b66d]" size={16} />
@@ -235,150 +386,189 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          {/* Form panel */}
-          <form action={submit} className="flex flex-col justify-center p-6 sm:p-9">
-            <div className="vh-field" style={{ animationDelay: "0.05s" }}>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#a2713f]">
-                Sign in
-              </p>
-              <h2 className="mt-3 font-serif text-3xl uppercase text-[#2c231d]">Admin Login</h2>
-              <div className="mt-3 flex items-center gap-2 text-[#caa14e]">
-                <span className="h-px w-8 bg-[#caa14e]" />
-                <span aria-hidden="true" className="text-[10px]">
-                  ❖
-                </span>
-                <span className="h-px w-4 bg-[#caa14e]/60" />
+          {/* Step panel */}
+          <div className="flex flex-col justify-center p-6 sm:p-9">
+            {restoring ? (
+              <div className="grid place-items-center py-24 text-[#6f6256]">
+                <Loader2 aria-hidden="true" className="animate-spin text-[#a2713f]" size={28} />
+                <p className="mt-3 text-sm">Resuming secure sign-in...</p>
               </div>
-              <p className="mt-3 text-sm leading-6 text-[#6f6256]">
-                Use your admin credentials to open the dashboard.
-              </p>
-            </div>
-
-            <label
-              className="vh-field mt-7 text-sm font-medium text-[#2c231d]"
-              style={{ animationDelay: "0.12s" }}
-            >
-              Email
-              <input
-                className="mt-2 h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)]"
-                name="email"
-                required
-                type="email"
-              />
-            </label>
-
-            <div
-              className="vh-field mt-4 text-sm font-medium text-[#2c231d]"
-              style={{ animationDelay: "0.18s" }}
-            >
-              <label htmlFor="admin-login-password">Password</label>
-              <span className="relative mt-2 block">
-                <input
-                  autoComplete="current-password"
-                  className="h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 pr-12 outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)]"
-                  id="admin-login-password"
-                  name="password"
-                  required
-                  type={showPassword ? "text" : "password"}
-                />
-                <button
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  aria-pressed={showPassword}
-                  className="absolute right-2 top-1/2 z-10 grid size-8 -translate-y-1/2 place-items-center rounded-md text-[#6f6256] transition-colors hover:bg-[#f6eee1] hover:text-[#2c231d]"
-                  onClick={() => setShowPassword((visible) => !visible)}
-                  type="button"
-                >
-                  {showPassword ? (
-                    <EyeOff aria-hidden="true" size={17} />
-                  ) : (
-                    <Eye aria-hidden="true" size={17} />
-                  )}
-                </button>
-              </span>
-            </div>
-
-            {needsSetupCode ? (
-              <label className="vh-field mt-4 text-sm font-medium text-[#2c231d]">
-                Email setup code
-                <input
-                  autoComplete="one-time-code"
-                  className="mt-2 h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 tracking-[0.4em] outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)]"
-                  inputMode="numeric"
-                  maxLength={6}
-                  name="emailCode"
-                  placeholder="6 digits"
-                  required
-                />
-              </label>
-            ) : null}
-
-            {needsTotpCode ? (
-              <label className="vh-field mt-4 text-sm font-medium text-[#2c231d]">
-                TOTP Code
-                <input
-                  autoComplete="one-time-code"
-                  className="mt-2 h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 tracking-[0.4em] outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)]"
-                  inputMode="numeric"
-                  maxLength={6}
-                  name="totpToken"
-                  placeholder="6 digits"
-                  required
-                />
-              </label>
-            ) : null}
-
-            {totpSetupUrl ? (
-              <div className="vh-field mt-4 space-y-3 rounded-md border border-[#ecd9b3] bg-[#fdf6e8] p-3">
-                <p className="text-sm leading-6 text-[#5d5044]">
-                  Add this account in your authenticator app once. After it is enabled, this setup
-                  panel will disappear and future logins will only ask for the current 6-digit code.
-                </p>
-                {totpSetupKey ? (
-                  <label className="block text-sm font-medium text-[#2c231d]">
-                    Manual setup key
-                    <input
-                      className="mt-2 h-11 w-full rounded-md border border-[#e1d6c4] bg-white px-3 font-mono text-xs"
-                      readOnly
-                      value={totpSetupKey}
-                    />
-                  </label>
+            ) : (
+              <div className="vh-field" key={stage}>
+                {stage !== "credentials" ? (
+                  <button
+                    className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-[#6f6256] transition-colors hover:text-[#842033]"
+                    onClick={() => restartSignIn()}
+                    type="button"
+                  >
+                    <ArrowLeft aria-hidden="true" size={16} />
+                    Use a different account
+                  </button>
                 ) : null}
-                <a
-                  className="inline-flex h-10 items-center justify-center rounded-md border border-[#caa14e] px-3 text-sm font-semibold text-[#842033] transition-colors hover:bg-[#fff8e8]"
-                  href={totpSetupUrl}
-                >
-                  Open authenticator app
-                </a>
+
+                {setupStep ? <SetupSteps current={setupStep} /> : null}
+
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 grid size-10 shrink-0 place-items-center rounded-full border border-[#ecd9b3] bg-[#fdf6e8] text-[#842033]">
+                    <header.icon aria-hidden="true" size={19} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#a2713f]">
+                      {header.eyebrow}
+                    </p>
+                    <h2 className="mt-1.5 font-serif text-[1.7rem] uppercase leading-tight text-[#2c231d]">
+                      {header.title}
+                    </h2>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-[#caa14e]">
+                  <span className="h-px w-8 bg-[#caa14e]" />
+                  <span aria-hidden="true" className="text-[10px]">
+                    ❖
+                  </span>
+                  <span className="h-px w-4 bg-[#caa14e]/60" />
+                </div>
+                <p className="mt-3 text-sm leading-6 text-[#6f6256]">
+                  {stage === "credentials" ? (
+                    header.body
+                  ) : (
+                    <>
+                      {header.body} <span className="font-medium text-[#2c231d]">{email}</span>
+                    </>
+                  )}
+                </p>
+
+                {stage === "credentials" ? (
+                  <form className="mt-7" onSubmit={submitCredentials}>
+                    <label
+                      className="block text-sm font-medium text-[#2c231d]"
+                      htmlFor="admin-login-email"
+                    >
+                      Email
+                    </label>
+                    <input
+                      autoComplete="username"
+                      autoFocus
+                      className={inputClass}
+                      id="admin-login-email"
+                      onChange={(event) => setEmail(event.target.value)}
+                      required
+                      type="email"
+                      value={email}
+                    />
+
+                    <label
+                      className="mt-4 block text-sm font-medium text-[#2c231d]"
+                      htmlFor="admin-login-password"
+                    >
+                      Password
+                    </label>
+                    <span className="relative block">
+                      <input
+                        autoComplete="current-password"
+                        className={`${inputClass} pr-12`}
+                        id="admin-login-password"
+                        onChange={(event) => setPassword(event.target.value)}
+                        required
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                      />
+                      <button
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showPassword}
+                        className="absolute right-2 top-[calc(50%+4px)] z-10 grid size-8 -translate-y-1/2 place-items-center rounded-md text-[#6f6256] transition-colors hover:bg-[#f6eee1] hover:text-[#2c231d]"
+                        onClick={() => setShowPassword((visible) => !visible)}
+                        type="button"
+                      >
+                        {showPassword ? (
+                          <EyeOff aria-hidden="true" size={17} />
+                        ) : (
+                          <Eye aria-hidden="true" size={17} />
+                        )}
+                      </button>
+                    </span>
+
+                    <SubmitButton
+                      label="Continue"
+                      pending={submitting}
+                      pendingLabel="Checking credentials..."
+                    />
+                  </form>
+                ) : (
+                  <form
+                    className="mt-6"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (stage === "email-code") submitEmailCode();
+                      else submitAuthenticatorCode();
+                    }}
+                  >
+                    {stage === "scan" && setup ? (
+                      <AuthenticatorSetupCard copied={copied} onCopy={copySecret} setup={setup} />
+                    ) : null}
+
+                    <label
+                      className="block text-sm font-medium text-[#2c231d]"
+                      htmlFor="admin-login-code"
+                    >
+                      {header.codeLabel}
+                    </label>
+                    <input
+                      autoComplete="one-time-code"
+                      className={`${inputClass} text-center font-mono text-xl tracking-[0.5em]`}
+                      disabled={submitting}
+                      id="admin-login-code"
+                      inputMode="numeric"
+                      maxLength={6}
+                      onChange={(event) => onCodeChange(event.target.value)}
+                      pattern="\d{6}"
+                      placeholder="••••••"
+                      ref={codeInputRef}
+                      required
+                      value={code}
+                    />
+
+                    {stage === "email-code" ? (
+                      <div className="mt-3 flex items-center justify-between text-sm">
+                        <span className="text-[#6f6256]">Code valid for 10 minutes</span>
+                        <button
+                          className="font-semibold text-[#842033] transition-colors hover:text-[#6e1423] disabled:cursor-not-allowed disabled:text-[#b3a597]"
+                          disabled={resendIn > 0 || submitting}
+                          onClick={resendEmailCode}
+                          type="button"
+                        >
+                          {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {devCode ? (
+                      <p className="mt-3 rounded-md border border-dashed border-[#caa14e] bg-[#fffaf0] px-3 py-2 text-xs text-[#6f6256]">
+                        Dev mode code:{" "}
+                        <span className="font-mono font-semibold text-[#2c231d]">{devCode}</span>
+                      </p>
+                    ) : null}
+
+                    <SubmitButton
+                      label={header.submitLabel}
+                      pending={submitting}
+                      pendingLabel={stage === "email-code" ? "Verifying code..." : "Verifying..."}
+                    />
+                  </form>
+                )}
               </div>
-            ) : null}
+            )}
 
-            <button
-              className="group vh-field relative mt-6 inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-md bg-[#842033] px-4 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-200 hover:bg-[#6e1423] disabled:opacity-70"
-              disabled={submitting}
-              style={{ animationDelay: "0.24s" }}
-            >
-              <span className="pointer-events-none absolute left-1.5 top-1.5 size-1.5 border-l border-t border-[#e4c17b]/70" />
-              <span className="pointer-events-none absolute bottom-1.5 right-1.5 size-1.5 border-b border-r border-[#e4c17b]/70" />
-              {submitting ? (
-                <span className="inline-flex items-center gap-2">
-                  <Loader2 aria-hidden="true" className="animate-spin text-[#e4c17b]" size={17} />
-                  {getSubmittingLabel(needsSetupCode, Boolean(totpSetupUrl))}
-                </span>
-              ) : (
-                "Continue"
-              )}
-            </button>
-
-            {message ? (
+            {notice ? (
               <p
                 aria-live="polite"
-                className="vh-field mt-4 break-words rounded-md border border-[#e1d6c4] bg-[#fffdf8] px-3 py-2 text-sm text-muted-foreground"
-                role="status"
+                className={`mt-4 break-words rounded-md border px-3 py-2 text-sm ${NOTICE_STYLES[notice.tone]}`}
+                role={notice.tone === "error" ? "alert" : "status"}
               >
-                {message}
+                {notice.text}
               </p>
             ) : null}
-          </form>
+          </div>
         </section>
       </div>
 
@@ -391,7 +581,7 @@ export default function AdminLoginPage() {
         @keyframes vhDriftSlow { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(-18px,14px); } }
 
         .vh-rise { animation: vhRise 0.7s ease-out both; }
-        .vh-field { animation: vhFieldIn 0.6s ease-out both; }
+        .vh-field { animation: vhFieldIn 0.5s ease-out both; }
         .vh-sweep { animation: vhSweep 3.2s linear infinite; }
         .vh-glow { animation: vhGlow 2.6s ease-in-out infinite; }
         .vh-drift { animation: vhDrift 11s ease-in-out infinite; }
@@ -409,37 +599,227 @@ export default function AdminLoginPage() {
   );
 }
 
-function getAuthErrorMessage(payload: TotpSetupResponse, fallback: string) {
-  if (typeof payload.error === "string" && payload.error.trim()) {
-    return payload.error;
-  }
+const inputClass =
+  "mt-2 h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)] disabled:opacity-60";
 
-  if (
-    payload.error &&
-    typeof payload.error === "object" &&
-    typeof payload.error.message === "string" &&
-    payload.error.message.trim()
-  ) {
+const NOTICE_STYLES: Record<Notice["tone"], string> = {
+  error: "border-[#e8b4b4] bg-[#fdf2f2] text-[#8a1f2d]",
+  info: "border-[#e1d6c4] bg-[#fffdf8] text-[#5d5044]",
+  success: "border-[#b9dcc0] bg-[#f1faf3] text-[#23613a]",
+};
+
+const STAGE_COPY: Record<
+  Stage,
+  {
+    eyebrow: string;
+    title: string;
+    body: string;
+    codeLabel: string;
+    submitLabel: string;
+    icon: typeof Mail;
+  }
+> = {
+  credentials: {
+    eyebrow: "Sign in",
+    title: "Admin Login",
+    body: "Use your admin credentials to open the dashboard.",
+    codeLabel: "",
+    submitLabel: "Continue",
+    icon: KeyRound,
+  },
+  "email-code": {
+    eyebrow: "Step 1 of 2 · Verify email",
+    title: "Check your inbox",
+    body: "Enter the 6-digit setup code we sent to",
+    codeLabel: "Email setup code",
+    submitLabel: "Verify email",
+    icon: Mail,
+  },
+  scan: {
+    eyebrow: "Step 2 of 2 · Link authenticator",
+    title: "Scan the QR code",
+    body: "Set up Microsoft Authenticator (or any authenticator app) for",
+    codeLabel: "6-digit code from the app",
+    submitLabel: "Enable & sign in",
+    icon: Smartphone,
+  },
+  totp: {
+    eyebrow: "Two-factor sign in",
+    title: "Authenticator code",
+    body: "Open your authenticator app and enter the current code for",
+    codeLabel: "Authenticator code",
+    submitLabel: "Verify & sign in",
+    icon: ShieldCheck,
+  },
+};
+
+function SetupSteps({ current }: Readonly<{ current: number }>) {
+  const steps = ["Verify email", "Link authenticator"];
+  return (
+    <ol className="mb-6 flex items-center gap-2 text-xs font-medium">
+      {steps.map((label, index) => {
+        const step = index + 1;
+        const done = step < current;
+        const active = step === current;
+        return (
+          <li className="flex flex-1 items-center gap-2" key={label}>
+            <span
+              className={`grid size-6 shrink-0 place-items-center rounded-full border text-[11px] ${
+                done
+                  ? "border-[#842033] bg-[#842033] text-white"
+                  : active
+                    ? "border-[#842033] text-[#842033]"
+                    : "border-[#d9ccb8] text-[#a89a8a]"
+              }`}
+            >
+              {done ? <Check aria-hidden="true" size={13} /> : step}
+            </span>
+            <span className={active || done ? "text-[#2c231d]" : "text-[#a89a8a]"}>{label}</span>
+            {step < steps.length ? <span className="h-px flex-1 bg-[#e1d6c4]" /> : null}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function AuthenticatorSetupCard({
+  copied,
+  onCopy,
+  setup,
+}: Readonly<{ copied: boolean; onCopy: () => void; setup: TotpSetup }>) {
+  return (
+    <div className="mb-5 rounded-md border border-[#ecd9b3] bg-[#fdf6e8] p-4">
+      <ol className="space-y-1 text-sm leading-6 text-[#5d5044]">
+        <li>
+          1. Open <span className="font-medium text-[#2c231d]">Microsoft Authenticator</span> → tap{" "}
+          <span className="font-medium text-[#2c231d]">+</span> →{" "}
+          <span className="font-medium text-[#2c231d]">Other account</span>.
+        </li>
+        <li>2. Scan this QR code.</li>
+        <li>3. Enter the 6-digit code the app shows below.</li>
+      </ol>
+
+      <div className="mt-4 flex justify-center">
+        <div className="rounded-md border border-[#e1d6c4] bg-white p-2 shadow-sm">
+          <Image
+            alt={`QR code to add ${setup.accountLabel} to your authenticator app`}
+            className="size-[200px]"
+            height={200}
+            src={setup.qrCodeDataUrl}
+            unoptimized
+            width={200}
+          />
+        </div>
+      </div>
+      <p className="mt-2 text-center text-xs text-[#6f6256]">
+        Appears in the app as <span className="font-medium">{setup.issuer}</span> ·{" "}
+        {setup.accountLabel}
+      </p>
+
+      <details className="mt-3 text-sm">
+        <summary className="cursor-pointer font-medium text-[#842033]">
+          Can&apos;t scan? Enter the key manually
+        </summary>
+        <div className="mt-2 flex items-center gap-2">
+          <code className="min-w-0 flex-1 break-all rounded-md border border-[#e1d6c4] bg-white px-3 py-2 font-mono text-xs tracking-wider">
+            {setup.totpSecret.replace(/(.{4})/g, "$1 ").trim()}
+          </code>
+          <button
+            aria-label="Copy setup key"
+            className="grid size-9 shrink-0 place-items-center rounded-md border border-[#caa14e] text-[#842033] transition-colors hover:bg-[#fff8e8]"
+            onClick={onCopy}
+            type="button"
+          >
+            {copied ? (
+              <Check aria-hidden="true" size={16} />
+            ) : (
+              <Copy aria-hidden="true" size={16} />
+            )}
+          </button>
+        </div>
+        <p className="mt-1.5 text-xs text-[#6f6256]">
+          Choose &quot;Time based&quot; if the app asks.
+        </p>
+      </details>
+    </div>
+  );
+}
+
+function SubmitButton({
+  label,
+  pending,
+  pendingLabel,
+}: Readonly<{ label: string; pending: boolean; pendingLabel: string }>) {
+  return (
+    <button
+      className="group relative mt-6 inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-md bg-[#842033] px-4 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-200 hover:bg-[#6e1423] disabled:opacity-70"
+      disabled={pending}
+      type="submit"
+    >
+      <span className="pointer-events-none absolute left-1.5 top-1.5 size-1.5 border-l border-t border-[#e4c17b]/70" />
+      <span className="pointer-events-none absolute bottom-1.5 right-1.5 size-1.5 border-b border-r border-[#e4c17b]/70" />
+      {pending ? (
+        <span className="inline-flex items-center gap-2">
+          <Loader2 aria-hidden="true" className="animate-spin text-[#e4c17b]" size={17} />
+          {pendingLabel}
+        </span>
+      ) : (
+        label
+      )}
+    </button>
+  );
+}
+
+function postJson(path: string, body: Record<string, unknown>) {
+  return fetch(`${apiBaseUrl}${path}`, {
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+}
+
+function errorMessage(payload: ApiPayload, fallback: string) {
+  if (typeof payload.error === "string" && payload.error.trim()) return payload.error;
+  if (payload.error && typeof payload.error === "object" && payload.error.message?.trim()) {
     return payload.error.message;
   }
-
   return fallback;
 }
 
-function getAuthErrorCode(payload: TotpSetupResponse) {
+function errorCode(payload: ApiPayload) {
   return payload.error && typeof payload.error === "object" ? payload.error.code : undefined;
 }
 
-function getSubmittingLabel(needsSetupCode: boolean, hasTotpSetupUrl: boolean) {
-  if (needsSetupCode) {
-    return "Checking setup code...";
+function readSavedChallenge(): SavedChallenge | null {
+  try {
+    const raw = window.sessionStorage.getItem(CHALLENGE_STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as SavedChallenge;
+    if (!saved.challengeToken || !saved.stage || saved.expiresAt <= Date.now()) {
+      window.sessionStorage.removeItem(CHALLENGE_STORAGE_KEY);
+      return null;
+    }
+    return saved;
+  } catch {
+    return null;
   }
+}
 
-  if (hasTotpSetupUrl) {
-    return "Enabling TOTP...";
+function writeSavedChallenge(challenge: SavedChallenge) {
+  try {
+    window.sessionStorage.setItem(CHALLENGE_STORAGE_KEY, JSON.stringify(challenge));
+  } catch {
+    // Storage unavailable (private mode): the flow still works, it just won't survive a refresh.
   }
+}
 
-  return "Signing in...";
+function clearSavedChallenge() {
+  try {
+    window.sessionStorage.removeItem(CHALLENGE_STORAGE_KEY);
+  } catch {
+    // Ignore storage access errors.
+  }
 }
 
 function CornerFiligree({ className = "" }: Readonly<{ className?: string }>) {
