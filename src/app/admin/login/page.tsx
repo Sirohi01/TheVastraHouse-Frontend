@@ -701,20 +701,27 @@ function AuthenticatorSetupCard({
       </ol>
 
       <div className="mt-4 flex justify-center">
-        <div className="rounded-md border border-[#e1d6c4] bg-white p-2 shadow-sm">
+        {/* The SVG carries its own white quiet zone; keep the frame white so it is not eaten into. */}
+        <div className="rounded-md border border-[#e1d6c4] bg-white shadow-sm">
           <Image
             alt={`QR code to add ${setup.accountLabel} to your authenticator app`}
-            className="size-[200px]"
-            height={200}
+            className="block size-[240px] max-w-full"
+            height={240}
             src={setup.qrCodeDataUrl}
             unoptimized
-            width={200}
+            width={240}
           />
         </div>
       </div>
       <p className="mt-2 text-center text-xs text-[#6f6256]">
         Appears in the app as <span className="font-medium">{setup.issuer}</span> ·{" "}
         {setup.accountLabel}
+      </p>
+      <p className="mt-1 text-center text-xs text-[#6f6256]">
+        On this phone already?{" "}
+        <a className="font-semibold text-[#842033] underline" href={setup.otpauthUrl}>
+          Open in authenticator app
+        </a>
       </p>
 
       <details className="mt-3 text-sm">
