@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { EmptyState } from "@/components/states/EmptyState";
+import { fetchAddresses, type AccountAddress } from "@/lib/account";
 import {
   confirmCheckoutRazorpayPayment,
   checkoutPreview,
@@ -55,13 +56,21 @@ export function CheckoutClient() {
   const [addressDraft, setAddressDraft] = useState({
     city: "",
     countryCode: "IN",
+    fullName: "",
+    line1: "",
+    line2: "",
+    phone: "",
     postalCode: "",
     region: "",
   });
+  const [addresses, setAddresses] = useState<AccountAddress[]>([]);
+  const [addressKey, setAddressKey] = useState(0);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>();
   const [loyalty, setLoyalty] = useState<LoyaltySummary>();
   const [preview, setPreview] = useState<CheckoutPreview>();
+  const [giftCardCode, setGiftCardCode] = useState("");
   const [message, setMessage] = useState("");
+  const [giftCardMessage, setGiftCardMessage] = useState("");
   const [pincodeMessage, setPincodeMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -128,6 +137,9 @@ export function CheckoutClient() {
     fetchLoyaltySummary(accessToken)
       .then(setLoyalty)
       .catch(() => setLoyalty(undefined));
+    fetchAddresses(accessToken)
+      .then((payload) => setAddresses(payload.addresses))
+      .catch(() => setAddresses([]));
   }, [accessToken]);
 
   useEffect(() => {
@@ -249,6 +261,10 @@ export function CheckoutClient() {
       setAddressDraft({
         city: postOffice.District ?? "",
         countryCode: "IN",
+        fullName: addressDraft.fullName,
+        line1: addressDraft.line1,
+        line2: addressDraft.line2,
+        phone: addressDraft.phone,
         postalCode: normalized,
         region: postOffice.State ?? "",
       });
@@ -377,6 +393,56 @@ export function CheckoutClient() {
     }
   }
 
+  function selectSavedAddress(id: string) {
+    const selected = addresses.find((address) => address._id === id);
+    if (!selected) {
+      return;
+    }
+    setAddressDraft({
+      city: selected.city,
+      countryCode: selected.countryCode,
+      fullName: selected.fullName,
+      line1: selected.line1,
+      line2: selected.line2 ?? "",
+      phone: selected.phone,
+      postalCode: selected.postalCode,
+      region: selected.region,
+    });
+    setAddressKey((current) => current + 1);
+    setPreview(undefined);
+  }
+
+  async function applyGiftCard() {
+    const code = giftCardCode.trim();
+    if (!code) {
+      setGiftCardMessage("Enter a gift card code.");
+      return;
+    }
+    setGiftCardMessage("Validating gift card...");
+    try {
+      const payload = await commerceFetch<{ cart: Cart }>("/commerce/cart/gift-cards/validate", {
+        accessToken,
+        body: JSON.stringify({ code }),
+        method: "POST",
+      });
+      setCart(payload.cart);
+      setCartStore(payload.cart);
+      setPreview(undefined);
+      setGiftCardMessage("Gift card applied. Recalculate checkout total.");
+    } catch (error) {
+      setGiftCardMessage(error instanceof Error ? error.message : "Gift card validation failed");
+    }
+  }
+
+  function clearCoupon() {
+    const field = formRef.current?.elements.namedItem("couponCode");
+    if (field instanceof HTMLInputElement) {
+      field.value = "";
+    }
+    setPreview(undefined);
+    setMessage("Coupon removed. Recalculate checkout total.");
+  }
+
   return (
     <form ref={formRef} action={placeOrder} className="grid gap-4 lg:grid-cols-[1fr_330px]">
       <div className="rounded-lg border border-border bg-card p-3 shadow-soft">
@@ -478,7 +544,25 @@ export function CheckoutClient() {
 
           <section className={step === 1 ? "block" : "hidden"}>
             <SectionTitle icon={PackageCheck} title="Address" />
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2" key={addressKey}>
+              {addresses.length ? (
+                <label className="text-sm font-medium sm:col-span-2">
+                  Saved address
+                  <select
+                    className="mt-2 h-10 w-full rounded-md border border-border px-3"
+                    onChange={(event) => selectSavedAddress(event.target.value)}
+                    value=""
+                  >
+                    <option value="">Choose a saved address</option>
+                    {addresses.map((address) => (
+                      <option key={address._id} value={address._id}>
+                        {address.label || address.fullName} - {address.line1}, {address.city}
+                        {address.isDefaultShipping ? " (default shipping)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               <Field
                 inputMode="numeric"
                 label="Pincode"
@@ -528,21 +612,27 @@ export function CheckoutClient() {
                 value={addressDraft.region}
               />
               <Field
-                defaultValue={defaultAddress.fullName}
+                defaultValue={addressDraft.fullName || defaultAddress.fullName}
                 label="Full name"
                 name="fullName"
                 required
               />
               <Field label="Email" name="guestEmail" required type="email" />
-              <Field defaultValue={defaultAddress.phone} label="Phone" name="phone" required />
+              <Field defaultValue={addressDraft.phone || defaultAddress.phone} label="Phone" name="phone" required />
               <Field
                 className="sm:col-span-2"
-                defaultValue={defaultAddress.line1}
+                defaultValue={addressDraft.line1 || defaultAddress.line1}
                 label="Address line 1"
                 name="line1"
                 required
               />
-              <Field className="sm:col-span-2" label="Address line 2" name="line2" />
+              <Field className="sm:col-span-2" defaultValue={addressDraft.line2} label="Address line 2" name="line2" />
+              {accessToken ? (
+                <label className="inline-flex items-center gap-2 text-sm font-semibold sm:col-span-2">
+                  <input name="saveAddress" type="checkbox" value="true" />
+                  Save this address to my account
+                </label>
+              ) : null}
             </div>
           </section>
 
@@ -665,7 +755,27 @@ export function CheckoutClient() {
           <section className={step === 3 ? "block" : "hidden"}>
             <SectionTitle icon={CreditCard} title="Review" />
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Coupon" name="couponCode" />
+              <div className="grid gap-2">
+                <Field label="Coupon" name="couponCode" />
+                <div className="flex gap-2">
+                  <button className="h-9 rounded-md border border-border px-3 text-sm font-semibold" onClick={() => formRef.current && void refreshPreview(new FormData(formRef.current))} type="button">
+                    Apply coupon
+                  </button>
+                  <button className="h-9 rounded-md border border-border px-3 text-sm font-semibold" onClick={clearCoupon} type="button">
+                    Remove
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">
+                  Gift card
+                  <input className="mt-2 h-10 w-full rounded-md border border-border px-3" onChange={(event) => setGiftCardCode(event.target.value)} value={giftCardCode} />
+                </label>
+                <button className="h-9 rounded-md border border-border px-3 text-sm font-semibold" onClick={() => void applyGiftCard()} type="button">
+                  Apply gift card
+                </button>
+                {giftCardMessage ? <p className="text-xs text-muted-foreground">{giftCardMessage}</p> : null}
+              </div>
               {loyalty && loyalty.storeCreditBalance > 0 ? (
                 <Field
                   helperText={`Available: ${formatMoney(loyalty.storeCreditBalance)}`}
@@ -1041,6 +1151,7 @@ function buildPayload(
     paymentMode:
       lockedPaymentMode ?? ((text(formData, "paymentMode") || "full") as "full" | "advance"),
     rewardValueRequested: numberOrUndefined(formData, "rewardValueRequested"),
+    saveAddress: text(formData, "saveAddress") === "true",
     shippingAddress,
     shippingMethod,
     storeCreditRequested: numberOrUndefined(formData, "storeCreditRequested"),

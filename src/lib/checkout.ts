@@ -79,6 +79,8 @@ export type CheckoutPayload = {
   couponCode?: string;
   storeCreditRequested?: number;
   rewardValueRequested?: number;
+  saveAddress?: boolean;
+  marketingConsent?: boolean;
   manualScreenshot?: {
     url: string;
     type: "image";
