@@ -1,6 +1,7 @@
 "use client";
 
 import { ImagePlus, Send, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { authenticatedFetch, errorMessage, toApiError } from "@/lib/api";
@@ -127,7 +128,7 @@ export function ReviewForm({ slug }: Readonly<{ slug: string }>) {
       <div className="flex flex-wrap items-center gap-2">
         {photos.map((photo) => (
           <span className="relative" key={photo.id}>
-            <img alt="Your review upload" className="size-16 rounded-md border border-border object-cover" height={64} src={photo.url} width={64} />
+            <Image alt="Your review upload" className="size-16 rounded-md border border-border object-cover" height={64} src={photo.url} width={64} />
             <button
               aria-label="Remove photo"
               className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-white shadow"

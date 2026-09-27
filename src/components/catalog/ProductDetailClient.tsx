@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, ChevronDown, Star } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { NotifyMeForm } from "@/components/catalog/NotifyMeForm";
 import { trackViewItem } from "@/lib/analytics";
@@ -522,7 +523,7 @@ function ReviewsSection({
               {review.photos?.length ? (
                 <div className="mt-3 flex gap-2">
                   {review.photos.map((photo) => (
-                    <img
+                    <Image
                       alt={photo.altText ?? "Customer photo"}
                       className="size-16 rounded-md border border-[#e5dac7] object-cover"
                       height={64}
