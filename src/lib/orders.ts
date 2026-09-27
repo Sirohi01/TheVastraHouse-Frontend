@@ -71,6 +71,42 @@ export type OrderDetailPayload = {
   timeline: OrderTimelineEvent[];
 };
 
+export type CustomerOrderDocument = {
+  _id: string;
+  documentNumber: string;
+  documentType: string;
+  createdAt?: string;
+};
+
+export type CustomerRefund = {
+  _id: string;
+  amount: number;
+  method: string;
+  status: string;
+  source?: string;
+  processedAt?: string;
+  createdAt?: string;
+};
+
+export type CustomerPaymentSession = {
+  _id: string;
+  amount: number;
+  currencyCode: string;
+  dueAt?: string;
+  method: string;
+  outstandingAmount: number;
+  paidAmount: number;
+  paymentMode: string;
+  refundedAmount?: number;
+  status: string;
+};
+
+export type CustomerOrderDetailPayload = OrderDetailPayload & {
+  documents: CustomerOrderDocument[];
+  paymentSession?: CustomerPaymentSession | null;
+  refunds: CustomerRefund[];
+};
+
 export function fetchAdminOrders(
   input: { status?: OrderStatus; search?: string; page?: number; limit?: number },
   accessToken?: string,
@@ -144,6 +180,23 @@ export function fetchTrackedOrder(orderNumber: string) {
 
 export function fetchMyOrders(accessToken?: string, page = 1, limit = 50) {
   return apiFetch<PaginatedOrders>(`/orders/me?page=${page}&limit=${limit}`, { accessToken });
+}
+
+export function fetchMyOrder(orderNumber: string, accessToken?: string) {
+  return apiFetch<CustomerOrderDetailPayload>(`/orders/me/${encodeURIComponent(orderNumber)}`, {
+    accessToken,
+  });
+}
+
+export function cancelMyOrder(orderNumber: string, note?: string, accessToken?: string) {
+  return apiFetch<{ order: OrderRecord }>(
+    `/orders/me/${encodeURIComponent(orderNumber)}/cancel`,
+    {
+      accessToken,
+      body: JSON.stringify({ note }),
+      method: "POST",
+    },
+  );
 }
 
 export function formatOrderMoney(value?: number, currencyCode = "INR") {

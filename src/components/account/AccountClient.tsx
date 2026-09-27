@@ -185,7 +185,7 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
           {view === "orders" ? (
             <ListView title="Orders" empty="No orders yet.">
               {orders.map((order) => (
-                <Link className="block rounded-md border border-border bg-card p-4 hover:bg-muted/40" href={`/checkout/confirmation/${order.orderNumber}`} key={order._id}>
+                <Link className="block rounded-md border border-border bg-card p-4 hover:bg-muted/40" href={`/account/orders/${encodeURIComponent(order.orderNumber)}`} key={order._id}>
                   <p className="font-semibold">{order.orderNumber}</p>
                   <p className="text-sm text-muted-foreground">{order.status} · {formatMoney(order.totals?.grandTotal ?? 0)}</p>
                 </Link>
