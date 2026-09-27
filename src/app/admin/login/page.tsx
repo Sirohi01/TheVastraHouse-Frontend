@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Loader2, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiBaseUrl } from "@/lib/api";
@@ -13,7 +13,7 @@ type LoginResponse = {
 };
 
 type TotpSetupResponse = {
-  error?: string | { message?: string };
+  error?: string | { code?: string; message?: string };
   otpauthUrl?: string;
   totpSecret?: string;
 };
@@ -22,7 +22,9 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const setSession = useAuthStore((state) => state.setSession);
   const [message, setMessage] = useState("");
+  const [needsSetupCode, setNeedsSetupCode] = useState(false);
   const [needsTotpCode, setNeedsTotpCode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [totpSetupKey, setTotpSetupKey] = useState("");
   const [totpSetupUrl, setTotpSetupUrl] = useState("");
@@ -34,9 +36,45 @@ export default function AdminLoginPage() {
     try {
       const email = String(formData.get("email") ?? "");
       const password = String(formData.get("password") ?? "");
+      const emailCode = String(formData.get("emailCode") ?? "");
       const totpToken = String(formData.get("totpToken") ?? "");
 
-      if (totpSetupUrl && totpToken.length === 6) {
+      if (needsSetupCode && !totpSetupUrl) {
+        if (!/^\d{6}$/.test(emailCode)) {
+          setMessage("Enter the 6-digit setup code sent to your email.");
+          return;
+        }
+
+        const setupResponse = await fetch(`${apiBaseUrl}/auth/admin/totp/setup`, {
+          body: JSON.stringify({ email, password, emailCode }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        const setupPayload = (await setupResponse.json()) as TotpSetupResponse;
+
+        if (!setupResponse.ok) {
+          setMessage(getAuthErrorMessage(setupPayload, "TOTP setup failed"));
+          return;
+        }
+
+        if (setupPayload.otpauthUrl) {
+          setTotpSetupUrl(setupPayload.otpauthUrl);
+        }
+        if (setupPayload.totpSecret) {
+          setTotpSetupKey(setupPayload.totpSecret);
+        }
+        setNeedsSetupCode(false);
+        setNeedsTotpCode(true);
+        setMessage("Add this key to your authenticator app, then enter the 6-digit code.");
+        return;
+      }
+
+      if (totpSetupUrl && !/^\d{6}$/.test(totpToken)) {
+        setMessage("Enter the 6-digit code from your authenticator app.");
+        return;
+      }
+
+      if (totpSetupUrl) {
         const setupResponse = await fetch(`${apiBaseUrl}/auth/admin/totp/enable`, {
           body: JSON.stringify({ email, password, totpToken }),
           headers: { "Content-Type": "application/json" },
@@ -55,6 +93,12 @@ export default function AdminLoginPage() {
           setMessage(getAuthErrorMessage(payload, "TOTP setup failed"));
           return;
         }
+
+        setNeedsSetupCode(false);
+        setNeedsTotpCode(true);
+        setTotpSetupKey("");
+        setTotpSetupUrl("");
+        setMessage("TOTP enabled. Signing you in...");
       }
 
       const response = await fetch(`${apiBaseUrl}/auth/login`, {
@@ -69,14 +113,22 @@ export default function AdminLoginPage() {
 
       if (!response.ok) {
         const payload = (await response.json()) as TotpSetupResponse;
-        if (payload.otpauthUrl) {
-          setTotpSetupUrl(payload.otpauthUrl);
-          setNeedsTotpCode(true);
-        }
-        if (payload.totpSecret) {
-          setTotpSetupKey(payload.totpSecret);
-        }
         const errorMessage = getAuthErrorMessage(payload, "Admin login failed");
+        const errorCode = getAuthErrorCode(payload);
+        if (errorCode === "ADMIN_2FA_SETUP_REQUIRED") {
+          setNeedsSetupCode(true);
+          setNeedsTotpCode(false);
+          setTotpSetupKey("");
+          setTotpSetupUrl("");
+          setMessage("Two-factor setup required. Enter the 6-digit setup code sent to your email.");
+          return;
+        }
+        if (errorCode === "ADMIN_TOTP_REQUIRED" || errorMessage.toLowerCase().includes("authenticator")) {
+          setNeedsSetupCode(false);
+          setNeedsTotpCode(true);
+          setTotpSetupKey("");
+          setTotpSetupUrl("");
+        }
         setMessage(
           payload.otpauthUrl
             ? "TOTP setup required. Add the setup key below to your authenticator app, then submit the 6-digit code."
@@ -95,6 +147,7 @@ export default function AdminLoginPage() {
       }
 
       setSession(payload);
+      setNeedsSetupCode(false);
       setNeedsTotpCode(false);
       setTotpSetupKey("");
       setTotpSetupUrl("");
@@ -214,34 +267,72 @@ export default function AdminLoginPage() {
               />
             </label>
 
-            <label
+            <div
               className="vh-field mt-4 text-sm font-medium text-[#2c231d]"
               style={{ animationDelay: "0.18s" }}
             >
-              Password
-              <input
-                className="mt-2 h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)]"
-                name="password"
-                required
-                type="password"
-              />
-            </label>
+              <label htmlFor="admin-login-password">Password</label>
+              <span className="relative mt-2 block">
+                <input
+                  autoComplete="current-password"
+                  className="h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 pr-12 outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)]"
+                  id="admin-login-password"
+                  name="password"
+                  required
+                  type={showPassword ? "text" : "password"}
+                />
+                <button
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="absolute right-2 top-1/2 z-10 grid size-8 -translate-y-1/2 place-items-center rounded-md text-[#6f6256] transition-colors hover:bg-[#f6eee1] hover:text-[#2c231d]"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  type="button"
+                >
+                  {showPassword ? (
+                    <EyeOff aria-hidden="true" size={17} />
+                  ) : (
+                    <Eye aria-hidden="true" size={17} />
+                  )}
+                </button>
+              </span>
+            </div>
+
+            {needsSetupCode ? (
+              <label className="vh-field mt-4 text-sm font-medium text-[#2c231d]">
+                Email setup code
+                <input
+                  autoComplete="one-time-code"
+                  className="mt-2 h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 tracking-[0.4em] outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)]"
+                  inputMode="numeric"
+                  maxLength={6}
+                  name="emailCode"
+                  placeholder="6 digits"
+                  required
+                />
+              </label>
+            ) : null}
 
             {needsTotpCode ? (
               <label className="vh-field mt-4 text-sm font-medium text-[#2c231d]">
                 TOTP Code
                 <input
+                  autoComplete="one-time-code"
                   className="mt-2 h-12 w-full rounded-md border border-[#e1d6c4] bg-white px-3 tracking-[0.4em] outline-none transition-[border-color,box-shadow] duration-200 focus:border-[#a2713f] focus:shadow-[0_0_0_3px_rgba(202,161,78,0.18)]"
                   inputMode="numeric"
                   maxLength={6}
                   name="totpToken"
                   placeholder="6 digits"
+                  required
                 />
               </label>
             ) : null}
 
             {totpSetupUrl ? (
               <div className="vh-field mt-4 space-y-3 rounded-md border border-[#ecd9b3] bg-[#fdf6e8] p-3">
+                <p className="text-sm leading-6 text-[#5d5044]">
+                  Add this account in your authenticator app once. After it is enabled, this setup
+                  panel will disappear and future logins will only ask for the current 6-digit code.
+                </p>
                 {totpSetupKey ? (
                   <label className="block text-sm font-medium text-[#2c231d]">
                     Manual setup key
@@ -252,14 +343,12 @@ export default function AdminLoginPage() {
                     />
                   </label>
                 ) : null}
-                <label className="block text-sm font-medium text-[#2c231d]">
-                  Authenticator setup URL
-                  <textarea
-                    className="mt-2 min-h-24 w-full rounded-md border border-[#e1d6c4] bg-white px-3 py-2 text-xs"
-                    readOnly
-                    value={totpSetupUrl}
-                  />
-                </label>
+                <a
+                  className="inline-flex h-10 items-center justify-center rounded-md border border-[#caa14e] px-3 text-sm font-semibold text-[#842033] transition-colors hover:bg-[#fff8e8]"
+                  href={totpSetupUrl}
+                >
+                  Open authenticator app
+                </a>
               </div>
             ) : null}
 
@@ -273,7 +362,7 @@ export default function AdminLoginPage() {
               {submitting ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 aria-hidden="true" className="animate-spin text-[#e4c17b]" size={17} />
-                  Signing in...
+                  {getSubmittingLabel(needsSetupCode, Boolean(totpSetupUrl))}
                 </span>
               ) : (
                 "Continue"
@@ -335,6 +424,22 @@ function getAuthErrorMessage(payload: TotpSetupResponse, fallback: string) {
   }
 
   return fallback;
+}
+
+function getAuthErrorCode(payload: TotpSetupResponse) {
+  return payload.error && typeof payload.error === "object" ? payload.error.code : undefined;
+}
+
+function getSubmittingLabel(needsSetupCode: boolean, hasTotpSetupUrl: boolean) {
+  if (needsSetupCode) {
+    return "Checking setup code...";
+  }
+
+  if (hasTotpSetupUrl) {
+    return "Enabling TOTP...";
+  }
+
+  return "Signing in...";
 }
 
 function CornerFiligree({ className = "" }: Readonly<{ className?: string }>) {

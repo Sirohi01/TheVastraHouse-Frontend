@@ -7,7 +7,7 @@
     "prepare": "node -e \"if (!process.env.CI && process.env.NODE_ENV !== 'production') import('husky').then(({default: husky}) => husky())\"",
     "dev": "next dev",
     "clean": "node -e \"require('node:fs').rmSync('.next',{recursive:true,force:true})\"",
-    "build": "npm run clean && next build",
+    "build": "node scripts/next-build-stable.mjs",
     "start": "next start",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
