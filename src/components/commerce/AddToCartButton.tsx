@@ -3,6 +3,7 @@
 import { ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { trackAddToCart } from "@/lib/analytics";
 import { commerceFetch, type Cart } from "@/lib/commerce";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/cartStore";
@@ -46,6 +47,16 @@ export function AddToCartButton({
         method: "POST",
       });
       setCart(payload.cart);
+      const line = payload.cart.items.find((item) => String(item.variantId) === variantId);
+      if (line) {
+        trackAddToCart({
+          item_id: line.sku,
+          item_name: line.productName,
+          item_variant: [line.color, line.size].filter(Boolean).join(" / ") || undefined,
+          price: line.unitPrice,
+          quantity,
+        });
+      }
       if (afterAddPath) {
         router.push(afterAddPath);
         return;

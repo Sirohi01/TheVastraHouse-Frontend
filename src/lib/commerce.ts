@@ -1,6 +1,5 @@
 "use client";
 
-import { apiBaseUrl } from "@/lib/api";
 import type { MediaReference } from "@/lib/catalog";
 
 export type CartLineItem = {
@@ -90,18 +89,19 @@ export async function commerceFetch<T>(
   options: RequestInit & { accessToken?: string } = {},
 ) {
   const { accessToken, headers, ...rest } = options;
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const { authenticatedFetch, toApiError } = await import("@/lib/api");
+  // Refresh-aware: an expired session is renewed instead of silently becoming a guest cart.
+  const response = await authenticatedFetch(path, {
     ...rest,
+    accessToken,
     headers: {
-      "Content-Type": "application/json",
       "X-Guest-Session-Id": getGuestSessionId(),
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...headers,
+      ...(headers as Record<string, string> | undefined),
     },
   });
 
   if (!response.ok) {
-    throw new Error((await response.text()) || "Commerce request failed");
+    throw await toApiError(response);
   }
 
   return response.json() as Promise<T>;

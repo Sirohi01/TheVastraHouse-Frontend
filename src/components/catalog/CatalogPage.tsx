@@ -1,4 +1,6 @@
 import { Search } from "lucide-react";
+import { Breadcrumbs, type BreadcrumbItem } from "@/components/layout/Breadcrumbs";
+import { ContentFaqs } from "@/components/content/ContentFaqs";
 import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { FilterSidebar } from "@/components/catalog/FilterSidebar";
 import { Pagination } from "@/components/catalog/Pagination";
@@ -6,25 +8,44 @@ import { ProductGrid } from "@/components/catalog/ProductGrid";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { ErrorState } from "@/components/states/ErrorState";
 import type { CmsCatalogPage } from "@/lib/cms";
-import { getCatalogFilters, getProducts, type CatalogQuery, type MediaReference } from "@/lib/catalog";
+import {
+  getCatalogFilters,
+  getProducts,
+  type CatalogProduct,
+  type CatalogQuery,
+  type ContentFaq,
+  type MediaReference,
+  type PaginatedResult,
+} from "@/lib/catalog";
 
 const heroImage = "/images/home-hero.jpg";
 
 export async function CatalogPage({
+  bottomContent,
+  breadcrumbs,
   description,
   eyebrow,
   bannerStyle,
+  faqs,
   heroMedia,
   imageOnlyBanners = false,
+  introContent,
+  onProducts,
   query,
   title,
 }: Readonly<{
+  bottomContent?: string;
+  breadcrumbs?: BreadcrumbItem[];
   description: string;
   eyebrow?: string;
   bannerStyle?: CmsCatalogPage;
+  faqs?: ContentFaq[];
   heroMedia?: MediaReference | null;
   imageOnlyBanners?: boolean;
-  query: CatalogQuery & { view?: string };
+  introContent?: string;
+  /** Receives the first page of products (used for ItemList structured data). */
+  onProducts?: (products: PaginatedResult<CatalogProduct>) => React.ReactNode;
+  query: CatalogQuery & { view?: string; q?: string };
   title: string;
 }>) {
   const view = query.view === "list" ? "list" : "grid";
@@ -37,7 +58,7 @@ export async function CatalogPage({
     minPrice: query.minPrice,
     page: query.page,
     preOrder: query.preOrder,
-    search: query.search,
+    search: query.search ?? query.q,
     size: query.size,
     sort: query.sort ?? "-newest",
     tagId: query.tagId,
@@ -51,7 +72,13 @@ export async function CatalogPage({
     ]);
 
     return (
-      <main className="bg-[#fbf7ef]">
+      <div className="bg-[#fbf7ef]">
+        {onProducts ? onProducts(products) : null}
+        {breadcrumbs?.length ? (
+          <div className="mx-auto max-w-7xl px-3 pt-4 sm:px-5">
+            <Breadcrumbs items={breadcrumbs} />
+          </div>
+        ) : null}
         <section className="mx-auto max-w-7xl px-3 py-4 sm:px-5 sm:py-6">
           <div className="relative overflow-hidden rounded-sm border border-[#e1d6c4] shadow-[0_24px_60px_-46px_rgba(46,12,18,0.6)]">
             <ResponsiveImage
@@ -77,18 +104,19 @@ export async function CatalogPage({
               <CornerFiligree className="absolute -bottom-px -left-px -rotate-90 text-[#caa14e]/85" />
             </div>
 
+            {/* One H1 for every breakpoint: below the image on mobile, overlaid on desktop. */}
             <div
               className={
                 imageOnlyBanners
-                  ? "hidden"
-                  : "absolute inset-0 hidden items-center px-7 md:flex md:px-10"
+                  ? "px-4 py-4 md:sr-only"
+                  : "px-4 py-4 md:absolute md:inset-0 md:flex md:items-center md:px-10 md:py-0"
               }
             >
               <div
-                className={`max-w-xl ${catalogContentAlignment(bannerStyle?.contentPosition)} ${
+                className={`max-w-xl text-[#3d1620] md:text-[var(--banner-text)] ${catalogContentAlignment(bannerStyle?.contentPosition)} ${
                   bannerStyle?.fontFamily === "sans" ? "" : "font-serif"
                 }`}
-                style={{ color: bannerStyle?.textColor ?? "#ffffff" }}
+                style={{ "--banner-text": bannerStyle?.textColor ?? "#ffffff" } as React.CSSProperties}
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-current opacity-80">
                   {eyebrow ?? "The Vastra House"}
@@ -114,15 +142,20 @@ export async function CatalogPage({
         </section>
 
         <section className="mx-auto max-w-7xl px-3 pb-8 sm:px-5 sm:pb-10">
-          <div className="mb-4 rounded-sm border border-[#caa14e]/50 bg-[#fffaf1] p-3 text-sm leading-6 text-[#6f6256] sm:p-4">
-            <p className="font-serif text-lg uppercase tracking-wide text-[#3d1620]">
-              Pre-orders only right now
+          {introContent ? (
+            <div className="mb-4 whitespace-pre-line rounded-sm border border-[#e1d6c4] bg-[#fffaf1] p-4 text-sm leading-7 text-[#6f6256]">
+              {introContent}
+            </div>
+          ) : null}
+          {(query.search ?? query.q) && !products.data.length && products.suggestion ? (
+            <p className="mb-4 text-sm text-[#6f6256]">
+              No results for &ldquo;{query.search ?? query.q}&rdquo;. Did you mean{" "}
+              <a className="font-semibold text-primary underline" href={`/shop?q=${encodeURIComponent(products.suggestion)}`}>
+                {products.suggestion}
+              </a>
+              ?
             </p>
-            <p className="mt-1">
-              You can browse all products, but checkout is currently enabled only for products with
-              active pre-order slots.
-            </p>
-          </div>
+          ) : null}
           <div className="overflow-hidden rounded-sm border border-[#e1d6c4] bg-[#fffdf8] shadow-[0_18px_50px_-40px_rgba(46,12,18,0.5)]">
             <CatalogToolbar query={catalogQuery} total={products.meta.total} view={view} />
 
@@ -137,8 +170,14 @@ export async function CatalogPage({
               </div>
             </div>
           </div>
+          {bottomContent ? (
+            <section className="mt-8 whitespace-pre-line rounded-sm border border-[#e1d6c4] bg-[#fffdf8] p-5 text-sm leading-7 text-[#6f6256]">
+              {bottomContent}
+            </section>
+          ) : null}
+          {faqs?.length ? <ContentFaqs faqs={faqs} title={`${title}: frequently asked questions`} /> : null}
         </section>
-      </main>
+      </div>
     );
   } catch (error) {
     return (
@@ -204,9 +243,9 @@ function PromoBand({
           className={`${promo?.contentPosition === "right" ? "ml-auto text-left" : promo?.contentPosition === "center" ? "mx-auto text-center" : "text-left"} ${promo?.fontFamily === "sans" ? "" : "font-serif"}`}
           style={{ color: promo?.textColor ?? "#ffffff" }}
         >
-          <h2 className={`uppercase leading-tight ${catalogTitleSize(promo?.fontSize)}`}>
+          <p className={`uppercase leading-tight ${catalogTitleSize(promo?.fontSize)}`}>
             {promo?.title ?? "Crafted with Heritage, Worn with Pride."}
-          </h2>
+          </p>
           <p className={`mt-2 text-current opacity-80 ${catalogCopySize(promo?.copyFontSize)}`}>
             {promo?.copy ?? "Explore our handpicked premium collection."}
           </p>

@@ -21,7 +21,6 @@ import {
   Megaphone,
   Menu,
   Package,
-  Percent,
   ReceiptText,
   RotateCcw,
   Search,
@@ -73,6 +72,9 @@ const enabledSections: SidebarSection<EnabledItem>[] = [
       { href: "/admin/manufacturing", icon: Factory, label: "Manufacturing" },
       { href: "/admin/content", icon: FileText, label: "CMS Content" },
       { href: "/admin/instagram", icon: Instagram, label: "Instagram Feed" },
+      { href: "/admin/seo", icon: Search, label: "SEO" },
+      { href: "/admin/crm", icon: Users, label: "CRM / Support" },
+      { href: "/admin/marketing", icon: Megaphone, label: "Marketing" },
       { href: "/admin/notifications", icon: Bell, label: "Notifications" },
       { href: "/admin/documents", icon: ReceiptText, label: "Invoicing" },
       { href: "/admin/access", icon: UserCog, label: "Roles / Users" },
@@ -114,10 +116,7 @@ const plannedSections: SidebarSection<DisabledItem>[] = [
   {
     label: "Customers & Growth",
     items: [
-      { icon: Users, label: "CRM / Customers", phase: "Phase 22" },
       { icon: ContactRound, label: "Customer Account Admin", phase: "Phase 27" },
-      { icon: Megaphone, label: "Marketing Automation", phase: "Phase 23" },
-      { icon: Percent, label: "Coupons", phase: "Phase 23" },
     ],
   },
   {

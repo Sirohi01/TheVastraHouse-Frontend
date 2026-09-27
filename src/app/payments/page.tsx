@@ -1,16 +1,8 @@
-import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
-import { PaymentMethodClient } from "@/components/payments/PaymentMethodClient";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+export const metadata = { robots: { follow: false, index: false }, title: "Payments" };
 
 export default function PaymentsPage() {
-  return (
-    <PublicPageFrame
-      eyebrow="Payments"
-      title="Payment Options"
-      description="Create and verify payment sessions for Razorpay, COD, manual bank transfer, and direct UPI."
-    >
-      <PaymentMethodClient />
-    </PublicPageFrame>
-  );
+  redirect("/checkout");
 }

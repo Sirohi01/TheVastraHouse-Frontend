@@ -21,15 +21,24 @@ const leftNavItems = navItems.slice(0, 3);
 const rightNavItems = navItems.slice(3);
 const actionItems = [
   { icon: Search, label: "Search", href: "/shop" },
-  { icon: UserRound, label: "Admin Login", href: "/admin/login" },
   { icon: Heart, label: "Wishlist", href: "/wishlist" },
   { icon: ShoppingBag, label: "Cart", href: "/cart" },
 ];
 
 export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
   const accessToken = useAuthStore((state) => state.accessToken);
+  const user = useAuthStore((state) => state.user);
   const itemCount = useCartStore((state) => state.itemCount);
   const setCart = useCartStore((state) => state.setCart);
+  const headerActionItems = [
+    actionItems[0],
+    {
+      icon: UserRound,
+      label: user ? "My account" : "Customer login",
+      href: user ? "/account" : "/login",
+    },
+    ...actionItems.slice(1),
+  ];
 
   useEffect(() => {
     async function hydrateCartCount() {
@@ -57,7 +66,7 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
 
             <span className="text-white/35">|</span>
             <div className="flex items-center gap-1">
-              {actionItems.map((item) => (
+              {headerActionItems.map((item) => (
                 <HeaderActionItem item={item} itemCount={itemCount} key={item.label} />
               ))}
             </div>
@@ -141,7 +150,7 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
                 </a>
               ))}
               <div className="my-2 h-px bg-border" />
-              {actionItems.map((item) => (
+              {headerActionItems.map((item) => (
                 <HeaderActionItem
                   item={item}
                   itemCount={itemCount}

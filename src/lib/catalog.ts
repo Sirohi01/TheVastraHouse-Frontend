@@ -1,4 +1,5 @@
 import { apiBaseUrl } from "@/lib/api";
+import type { EntitySeo } from "@/lib/seo";
 
 export type MediaReference = {
   mediaId?: string;
@@ -9,6 +10,13 @@ export type MediaReference = {
   objectFit?: "cover" | "contain";
 };
 
+export type VariantAvailability = {
+  status: "in_stock" | "low_stock" | "out_of_stock" | "pre_order";
+  available: number;
+  canPurchase: boolean;
+  canPreOrder: boolean;
+};
+
 export type ProductVariant = {
   _id: string;
   color?: string;
@@ -16,9 +24,12 @@ export type ProductVariant = {
   sku?: string;
   basePrice: number;
   salePrice?: number;
-  costPrice?: number;
+  /** Negotiated wholesale price for approved B2B buyers (server-resolved). */
+  tierPrice?: number;
+  priceListCode?: string;
   currencyCode?: string;
-  stockPlaceholder?: number;
+  /** Ledger-backed availability computed by the API. */
+  availability?: VariantAvailability;
   active?: boolean;
   media?: MediaReference[];
   preOrder?: {
@@ -34,11 +45,9 @@ export type ProductVariant = {
   };
 };
 
-export type SeoFields = {
-  title?: string;
-  description?: string;
-  canonicalUrl?: string;
-};
+export type SeoFields = EntitySeo;
+
+export type ContentFaq = { question: string; answer: string };
 
 export type TaxonomyRef = {
   _id?: string;
@@ -46,6 +55,11 @@ export type TaxonomyRef = {
   slug: string;
   description?: string;
   seo?: SeoFields;
+  banner?: MediaReference;
+  introContent?: string;
+  bottomContent?: string;
+  faqs?: ContentFaq[];
+  updatedAt?: string;
 };
 
 export type CatalogProduct = {
@@ -66,6 +80,11 @@ export type CatalogProduct = {
   tagIds?: TaxonomyRef[];
   computedBadges?: Record<string, boolean>;
   seo?: SeoFields;
+  ratingAverage?: number;
+  ratingCount?: number;
+  availabilityStatus?: VariantAvailability["status"];
+  wholesaleMinQuantity?: number;
+  updatedAt?: string;
 };
 
 export type CatalogTile = {
@@ -103,10 +122,18 @@ export type ProductReview = {
   body: string;
   guestName?: string;
   verifiedPurchase?: boolean;
+  photos?: MediaReference[];
   createdAt?: string;
 };
 
+export type ReviewSummary = {
+  average: number;
+  count: number;
+  distribution: Record<string, number>;
+};
+
 export type PaginatedResult<T> = {
+  suggestion?: string;
   data: T[];
   meta: {
     page: number;
@@ -133,6 +160,7 @@ export type CatalogQuery = {
   page?: string;
   limit?: string;
   search?: string;
+  q?: string;
   size?: string;
   color?: string;
   fabric?: string;
@@ -187,7 +215,7 @@ export async function getProductPdp(slug: string) {
 }
 
 export async function getProductReviews(slug: string, page = "1") {
-  return catalogFetch<PaginatedResult<ProductReview>>(
+  return catalogFetch<PaginatedResult<ProductReview> & { summary: ReviewSummary }>(
     `/catalog/products/${slug}/reviews${toQueryString({ page, limit: "8" })}`,
   );
 }
@@ -200,18 +228,28 @@ export async function getCollection(slug: string) {
   return catalogFetch<{ collection: TaxonomyRef }>(`/catalog/collections/${slug}`);
 }
 
+/** Authenticated: reviews are tied to a customer account (verified-purchase detection). */
 export async function submitReview(slug: string, payload: Record<string, unknown>) {
-  const response = await fetch(`${apiBaseUrl}/catalog/products/${slug}/reviews`, {
+  const { apiFetch } = await import("@/lib/api");
+  return apiFetch<{ moderationStatus: "pending" }>(`/catalog/products/${slug}/reviews`, {
     body: JSON.stringify(payload),
-    headers: { "Content-Type": "application/json" },
     method: "POST",
   });
+}
 
-  if (!response.ok) {
-    throw new Error((await response.text()) || "Review submission failed");
-  }
-
-  return response.json() as Promise<{ moderationStatus: "pending" }>;
+/** Lowest price the viewer pays and whether any variant can be bought or pre-ordered. */
+export function getProductAvailability(product: CatalogProduct) {
+  const variants = product.variants.filter((variant) => variant.active !== false);
+  const purchasable = variants.some((variant) => variant.availability?.canPurchase);
+  const preorderable = variants.some((variant) => variant.availability?.canPreOrder);
+  const lowStock = variants.some((variant) => variant.availability?.status === "low_stock");
+  return {
+    label: purchasable ? (lowStock ? "Only a few left" : "In stock") : preorderable ? "Pre-order" : "Out of stock",
+    lowStock,
+    preorderable,
+    purchasable,
+    status: product.availabilityStatus ?? (purchasable ? "in_stock" : preorderable ? "pre_order" : "out_of_stock"),
+  };
 }
 
 export function getProductMedia(product: CatalogProduct) {

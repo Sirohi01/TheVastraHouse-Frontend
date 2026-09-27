@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ProductDetailClient } from "@/components/catalog/ProductDetailClient";
-import { ErrorState } from "@/components/states/ErrorState";
-import { getProductPdp, getProductReviews } from "@/lib/catalog";
-import { buildBreadcrumbJsonLd, buildProductJsonLd, getSiteUrl } from "@/lib/seo";
+import { getProductPdp, getProductReviews, type PdpResponse } from "@/lib/catalog";
+import { applyManagedRedirect } from "@/lib/redirects";
+import { buildPageMetadata, buildProductJsonLd, getSeoSettings } from "@/lib/seo";
 
 export const revalidate = 30;
 
@@ -11,50 +13,64 @@ type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+async function loadPdp(slug: string): Promise<PdpResponse | null> {
+  try {
+    return await getProductPdp(slug);
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: Readonly<ProductPageProps>): Promise<Metadata> {
   const { slug } = await params;
+  const [settings, pdp] = await Promise.all([getSeoSettings(), loadPdp(slug)]);
 
-  try {
-    const { product } = await getProductPdp(slug);
-    const title = product.seo?.title ?? product.name;
-    const description = product.seo?.description ?? product.shortDescription ?? product.description;
-
-    return {
-      title,
-      description,
-      alternates: { canonical: product.seo?.canonicalUrl ?? `${getSiteUrl()}/shop/${slug}` },
-    };
-  } catch {
-    return {};
+  if (!pdp) {
+    return { robots: { follow: false, index: false }, title: "Product not found" };
   }
+
+  const { product } = pdp;
+  const image = product.media?.find((item) => item.type === "image") ?? product.variants[0]?.media?.[0];
+
+  return buildPageMetadata(settings, {
+    description: product.shortDescription ?? product.description,
+    image,
+    name: product.name,
+    path: `/shop/${product.slug}`,
+    seo: product.seo,
+  });
 }
 
 export default async function ProductPage({ params }: Readonly<ProductPageProps>) {
   const { slug } = await params;
+  const pdp = await loadPdp(slug);
 
-  try {
-    const [pdp, reviews] = await Promise.all([getProductPdp(slug), getProductReviews(slug)]);
-
-    return (
-      <>
-        <JsonLd data={buildProductJsonLd(pdp.product, reviews.data)} />
-        <JsonLd
-          data={buildBreadcrumbJsonLd([
-            { name: "Shop", path: "/shop" },
-            { name: pdp.product.name, path: `/shop/${pdp.product.slug}` },
-          ])}
-        />
-        <ProductDetailClient pdp={pdp} reviews={reviews.data} />
-      </>
-    );
-  } catch (error) {
-    return (
-      <main className="mx-auto flex min-h-[calc(100vh-144px)] max-w-4xl items-center px-4 sm:px-6 lg:px-8">
-        <ErrorState
-          title="Product could not load"
-          message={error instanceof Error ? error.message : "Product request failed"}
-        />
-      </main>
-    );
+  if (!pdp) {
+    await applyManagedRedirect(`/shop/${slug}`);
+    notFound();
   }
+
+  const [reviews, settings] = await Promise.all([
+    getProductReviews(slug).catch(() => ({ data: [], meta: undefined, summary: { average: 0, count: 0, distribution: {} } })),
+    getSeoSettings(),
+  ]);
+  const primaryCategory = pdp.product.categoryIds?.[0];
+
+  return (
+    <>
+      {pdp.product.seo?.schemaEnabled !== false ? (
+        <JsonLd data={buildProductJsonLd(pdp.product, reviews.summary, settings.brandName)} />
+      ) : null}
+      <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+        <Breadcrumbs
+          items={[
+            { name: "Shop", path: "/shop" },
+            ...(primaryCategory ? [{ name: primaryCategory.name, path: `/categories/${primaryCategory.slug}` }] : []),
+            { name: pdp.product.name, path: `/shop/${pdp.product.slug}` },
+          ]}
+        />
+      </div>
+      <ProductDetailClient pdp={pdp} reviewSummary={reviews.summary} reviews={reviews.data} />
+    </>
+  );
 }

@@ -1,7 +1,9 @@
 "use client";
 
-import { CheckCircle2, ChevronDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CheckCircle2, ChevronDown, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { NotifyMeForm } from "@/components/catalog/NotifyMeForm";
+import { trackViewItem } from "@/lib/analytics";
 import { AddToCartButton } from "@/components/commerce/AddToCartButton";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { RecentlyViewed } from "@/components/catalog/RecentlyViewed";
@@ -14,27 +16,40 @@ import {
   type MediaReference,
   type PdpResponse,
   type ProductReview,
+  type ReviewSummary,
 } from "@/lib/catalog";
 
 export function ProductDetailClient({
   pdp,
+  reviewSummary,
   reviews,
-}: Readonly<{ pdp: PdpResponse; reviews: ProductReview[] }>) {
+}: Readonly<{ pdp: PdpResponse; reviewSummary?: ReviewSummary; reviews: ProductReview[] }>) {
   const [selectedMedia, setSelectedMedia] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState(0);
   const product = pdp.product;
+  const activeVariants = product.variants.filter((item) => item.active !== false);
+  const [selectedVariant, setSelectedVariant] = useState(() => {
+    // Default to the first variant that can actually be bought.
+    const index = product.variants.findIndex((item) => item.active !== false && item.availability?.canPurchase);
+    return index >= 0 ? index : 0;
+  });
   const media = getProductMedia(product);
-  const variant = product.variants[selectedVariant] ?? product.variants[0];
-  const canPreOrder = useMemo(() => {
-    const p = variant?.preOrder;
-    if (!p?.enabled) return false;
-    const now = Date.now();
-    if (p.startAt && new Date(p.startAt).getTime() > now) return false;
-    if (p.endAt && new Date(p.endAt).getTime() < now) return false;
-    return (p.remainingQuantity ?? 0) > 0;
-  }, [variant?.preOrder]);
-  const canDirectOrder = (variant?.stockPlaceholder ?? 0) > 0;
+  const variant = product.variants[selectedVariant] ?? activeVariants[0] ?? product.variants[0];
+  // Availability comes from the inventory ledger via the API — the same source checkout uses.
+  const canPreOrder = Boolean(variant?.availability?.canPreOrder) && !variant?.availability?.canPurchase;
+  const canDirectOrder = Boolean(variant?.availability?.canPurchase);
+  const lowStock = variant?.availability?.status === "low_stock";
   const pricing = getProductPricing({ ...product, variants: [variant] });
+
+  useEffect(() => {
+    if (!variant) return;
+    trackViewItem({
+      item_category: product.categoryIds?.[0]?.name,
+      item_id: variant.sku ?? product._id,
+      item_name: product.name,
+      item_variant: [variant.color, variant.size].filter(Boolean).join(" / ") || undefined,
+      price: variant.tierPrice ?? variant.salePrice ?? variant.basePrice,
+    });
+  }, [product, variant]);
   const storedProduct = {
     imageUrl: media[0]?.url,
     name: product.name,
@@ -43,7 +58,7 @@ export function ProductDetailClient({
   };
 
   return (
-    <main className="bg-[#fbf7ef]">
+    <div className="bg-[#fbf7ef]">
       <section className="mx-auto grid max-w-7xl gap-8 px-5 py-8 lg:grid-cols-[minmax(280px,0.72fr)_minmax(360px,1.28fr)]">
         <div className="mx-auto w-full max-w-md lg:max-w-none">
           {media[selectedMedia]?.url ? (
@@ -104,12 +119,30 @@ export function ProductDetailClient({
               {product.name}
             </h1>
             <FiligreeDivider align="start" className="mt-3" />
+            {reviewSummary?.count ? (
+              <a className="mt-3 inline-flex items-center gap-1 text-sm text-[#6e1423] hover:underline" href="#reviews">
+                <Star aria-hidden="true" className="fill-[#caa14e] text-[#caa14e]" size={16} />
+                <span className="font-semibold">{reviewSummary.average.toFixed(1)}</span>
+                <span className="text-muted-foreground">
+                  ({reviewSummary.count} review{reviewSummary.count === 1 ? "" : "s"})
+                </span>
+              </a>
+            ) : null}
             {product.shortDescription ? (
               <p className="mt-3 leading-7 text-muted-foreground">{product.shortDescription}</p>
             ) : null}
             <div className="mt-5 flex flex-wrap items-end gap-3">
-              <p className="text-2xl font-semibold text-[#3d2a18]">{pricing.price}</p>
-              {pricing.hasSale ? (
+              <p className="text-2xl font-semibold text-[#3d2a18]">
+                {variant?.tierPrice !== undefined
+                  ? new Intl.NumberFormat("en-IN", { currency: "INR", maximumFractionDigits: 0, style: "currency" }).format(variant.tierPrice)
+                  : pricing.price}
+              </p>
+              {variant?.tierPrice !== undefined ? (
+                <p className="pb-1 text-sm font-semibold uppercase text-[#6e1423]">
+                  Trade price{product.wholesaleMinQuantity ? ` · MOQ ${product.wholesaleMinQuantity}` : ""}
+                </p>
+              ) : null}
+              {pricing.hasSale && variant?.tierPrice === undefined ? (
                 <>
                   <p className="pb-0.5 text-base text-muted-foreground line-through">
                     {pricing.original}
@@ -127,23 +160,33 @@ export function ProductDetailClient({
                 label="Color"
                 options={[...new Set(product.variants.map((item) => item.color).filter(isString))]}
                 selected={variant?.color}
-                onSelect={(value) => selectVariant(product, setSelectedVariant, "color", value)}
+                onSelect={(value) => selectVariant(product, setSelectedVariant, "color", value, variant?.size)}
               />
               <VariantSelector
                 label="Size"
                 options={[...new Set(product.variants.map((item) => item.size).filter(isString))]}
                 selected={variant?.size}
-                onSelect={(value) => selectVariant(product, setSelectedVariant, "size", value)}
+                disabledOptions={product.variants
+                  .filter((item) => item.color === variant?.color && item.availability?.status === "out_of_stock")
+                  .map((item) => item.size)
+                  .filter(isString)}
+                onSelect={(value) => selectVariant(product, setSelectedVariant, "size", value, variant?.color)}
               />
             </div>
 
-            {!canPreOrder && !canDirectOrder ? (
+            {!canPreOrder && !canDirectOrder && variant ? (
               <div className="mt-6 rounded-md border border-[#e1d6c4] bg-white p-3">
                 <p className="text-sm font-semibold text-[#3d1620]">Out of stock</p>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  This variant is not currently available for direct order or pre-order.
+                  This size/colour is sold out. Leave your email and we will tell you when it is back.
                 </p>
+                <NotifyMeForm productId={product._id} variantId={String(variant._id)} />
               </div>
+            ) : null}
+            {canDirectOrder && lowStock ? (
+              <p className="mt-4 text-sm font-semibold text-[#6e1423]" role="status">
+                Only {variant?.availability?.available} left in this size
+              </p>
             ) : null}
 
             <div
@@ -254,10 +297,10 @@ export function ProductDetailClient({
           title="Complete The Look"
           products={pdp.merchandising.completeTheLook}
         />
-        <ReviewsSection product={product} reviews={reviews} />
+        <ReviewsSection product={product} reviews={reviews} summary={reviewSummary} />
         <RecentlyViewed product={storedProduct} />
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -339,11 +382,13 @@ function ProductMediaFrame({
 }
 
 function VariantSelector({
+  disabledOptions = [],
   label,
   onSelect,
   options,
   selected,
 }: Readonly<{
+  disabledOptions?: string[];
   label: string;
   onSelect: (value: string) => void;
   options: string[];
@@ -355,17 +400,24 @@ function VariantSelector({
 
   return (
     <div>
-      <p className="text-sm font-semibold uppercase tracking-wide text-[#3d1620]">{label}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <p className="text-sm font-semibold uppercase tracking-wide text-[#3d1620]" id={`variant-${label}`}>
+        {label}
+      </p>
+      <div aria-labelledby={`variant-${label}`} className="mt-2 flex flex-wrap gap-2" role="radiogroup">
         {options.map((option) => (
           <button
+            aria-checked={selected === option}
             className={`h-10 rounded-md border px-4 text-sm font-semibold transition-colors ${
               selected === option
                 ? "border-[#6e1423] bg-[#6e1423] text-white shadow-[0_6px_16px_-8px_rgba(110,20,35,0.7)]"
-                : "border-[#e1d6c4] bg-white text-[#3d1620] hover:border-[#caa14e]"
+                : disabledOptions.includes(option)
+                  ? "border-dashed border-[#e1d6c4] bg-white text-muted-foreground line-through"
+                  : "border-[#e1d6c4] bg-white text-[#3d1620] hover:border-[#caa14e]"
             }`}
             key={option}
             onClick={() => onSelect(option)}
+            role="radio"
+            title={disabledOptions.includes(option) ? `${option} — out of stock` : undefined}
             type="button"
           >
             {option}
@@ -424,10 +476,35 @@ function MerchandisingSection({
 function ReviewsSection({
   product,
   reviews,
-}: Readonly<{ product: CatalogProduct; reviews: ProductReview[] }>) {
+  summary,
+}: Readonly<{ product: CatalogProduct; reviews: ProductReview[]; summary?: ReviewSummary }>) {
   return (
-    <section className="mt-12 border-t border-[#e1d6c4] pt-8">
+    <section className="mt-12 scroll-mt-24 border-t border-[#e1d6c4] pt-8" id="reviews">
       <SectionHeading title="Reviews & Ratings" />
+      {summary?.count ? (
+        <div className="mt-4 flex flex-wrap items-center gap-6 rounded-lg border border-[#e5dac7] bg-white p-4">
+          <div>
+            <p className="font-serif text-4xl text-[#3d1620]">{summary.average.toFixed(1)}</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {summary.count} verified review{summary.count === 1 ? "" : "s"}
+            </p>
+          </div>
+          <ul className="grid flex-1 gap-1 text-xs text-muted-foreground">
+            {[5, 4, 3, 2, 1].map((star) => {
+              const count = summary.distribution[String(star)] ?? 0;
+              return (
+                <li className="flex items-center gap-2" key={star}>
+                  <span className="w-6">{star}★</span>
+                  <span className="h-2 flex-1 overflow-hidden rounded bg-[#efe4d4]">
+                    <span className="block h-full bg-[#caa14e]" style={{ width: `${(count / summary.count) * 100}%` }} />
+                  </span>
+                  <span className="w-6 text-right">{count}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         {reviews.length ? (
           reviews.map((review) => (
@@ -436,11 +513,30 @@ function ReviewsSection({
               key={review._id}
             >
               <p className="font-semibold text-[#3d1620]">
-                <span className="text-[#caa14e]">★</span> {review.rating}/5 {review.title}
+                <span aria-label={`${review.rating} out of 5 stars`} className="text-[#caa14e]">
+                  {"★".repeat(review.rating)}
+                </span>{" "}
+                {review.title}
               </p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{review.body}</p>
+              {review.photos?.length ? (
+                <div className="mt-3 flex gap-2">
+                  {review.photos.map((photo) => (
+                    <img
+                      alt={photo.altText ?? "Customer photo"}
+                      className="size-16 rounded-md border border-[#e5dac7] object-cover"
+                      height={64}
+                      key={photo.url}
+                      loading="lazy"
+                      src={photo.url}
+                      width={64}
+                    />
+                  ))}
+                </div>
+              ) : null}
               <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-[#9b6d35]">
                 {review.guestName ?? "Customer"}
+                {review.verifiedPurchase ? " · Verified purchase" : ""}
               </p>
             </article>
           ))
@@ -455,16 +551,26 @@ function ReviewsSection({
   );
 }
 
+/** Picks the variant matching the new choice while keeping the other attribute if possible. */
 function selectVariant(
   product: CatalogProduct,
   setSelectedVariant: (value: number) => void,
   key: "color" | "size",
   value: string,
+  otherValue?: string,
 ) {
-  const index = product.variants.findIndex((variant) => variant[key] === value);
+  const other = key === "color" ? "size" : "color";
+  const candidates = product.variants
+    .map((variant, index) => ({ index, variant }))
+    .filter(({ variant }) => variant.active !== false && variant[key] === value);
+  const match =
+    candidates.find(({ variant }) => variant[other] === otherValue && variant.availability?.canPurchase) ??
+    candidates.find(({ variant }) => variant[other] === otherValue) ??
+    candidates.find(({ variant }) => variant.availability?.canPurchase) ??
+    candidates[0];
 
-  if (index >= 0) {
-    setSelectedVariant(index);
+  if (match) {
+    setSelectedVariant(match.index);
   }
 }
 

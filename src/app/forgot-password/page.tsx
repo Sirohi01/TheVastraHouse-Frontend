@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: formData.get("email") }),
     });
-    setMessage("If an account exists, reset instructions have been prepared.");
+    setMessage("If an account exists, reset instructions have been sent. Use the reset link to continue.");
   }
 
   return (

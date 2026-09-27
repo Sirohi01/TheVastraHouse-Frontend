@@ -15,17 +15,14 @@ export function ProductCard({
   const media = getProductMedia(product);
   const pricing = getProductPricing(product);
   const sizes = [...new Set(product.variants.map((variant) => variant.size).filter(isString))];
-  const preOrderVariant = product.variants.find((variant) => {
-    const p = variant.preOrder;
-    if (!p?.enabled) return false;
-    const now = Date.now();
-    if (p.startAt && new Date(p.startAt).getTime() > now) return false;
-    if (p.endAt && new Date(p.endAt).getTime() < now) return false;
-    return (p.remainingQuantity ?? 0) > 0;
-  });
+  // Ledger-backed availability from the API (the same data checkout validates against).
   const readyStockVariant = product.variants.find(
-    (variant) => variant.active !== false && (variant.stockPlaceholder ?? 0) > 0,
+    (variant) => variant.active !== false && variant.availability?.canPurchase,
   );
+  const preOrderVariant = readyStockVariant
+    ? undefined
+    : product.variants.find((variant) => variant.active !== false && variant.availability?.canPreOrder);
+  const lowStock = product.variants.some((variant) => variant.availability?.status === "low_stock");
   const hasPreOrder = Boolean(preOrderVariant);
   const hasReadyStock = Boolean(readyStockVariant);
   const cartVariant = preOrderVariant ?? readyStockVariant;
@@ -71,7 +68,7 @@ export function ProductCard({
             </span>
           ))}
         <span className="absolute left-3 bottom-3 rounded-sm border border-[#f0d9a4]/50 bg-[#fffaf1]/95 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6e1423]">
-          {hasPreOrder ? "Pre-order available" : hasReadyStock ? "Ready stock" : "Out of stock"}
+          {hasReadyStock ? (lowStock ? "Few left" : "Ready stock") : hasPreOrder ? "Pre-order available" : "Out of stock"}
         </span>
         {sizes.length ? (
           <div className="absolute inset-x-3 bottom-12 translate-y-2 rounded-sm border border-[#caa14e]/50 bg-white/95 px-2 py-2 opacity-0 shadow-soft transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">

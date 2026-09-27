@@ -1,11 +1,12 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
 
 export default function RegisterPage() {
   const [message, setMessage] = useState("");
+  const router = useRouter();
   const searchParams = useSearchParams();
   const referralCodeFromLink = searchParams.get("ref") ?? "";
 
@@ -25,7 +26,12 @@ export default function RegisterPage() {
       }),
     });
 
-    setMessage(response.ok ? "Account created. Verify email next." : "Registration failed");
+    if (response.ok) {
+      router.push(`/verify-email?email=${encodeURIComponent(String(formData.get("email") ?? ""))}`);
+      return;
+    }
+
+    setMessage("Registration failed");
   }
 
   return (

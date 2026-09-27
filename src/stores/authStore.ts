@@ -11,7 +11,19 @@ export type AuthUser = {
   lastName?: string;
   roleSlug?: string;
   customerType?: "retail" | "wholesale";
+  wholesaleStatus?: "none" | "pending" | "approved" | "rejected";
   whatsappOptIn?: boolean;
+  phone?: string;
+  emailVerified?: boolean;
+  totpEnabled?: boolean;
+  notificationPreferences?: {
+    orderUpdatesEmail: boolean;
+    orderUpdatesWhatsapp: boolean;
+    marketingEmail: boolean;
+    marketingWhatsapp: boolean;
+    backInStock: boolean;
+    reviewRequests: boolean;
+  };
 };
 
 type AuthState = {

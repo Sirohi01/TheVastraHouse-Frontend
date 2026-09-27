@@ -1,70 +1,20 @@
 import type { Metadata } from "next";
-import { JsonLd } from "@/components/seo/JsonLd";
-import { CatalogPage } from "@/components/catalog/CatalogPage";
-import { ErrorState } from "@/components/states/ErrorState";
-import { getCollection, type CatalogQuery } from "@/lib/catalog";
-import { buildBreadcrumbJsonLd, getSiteUrl } from "@/lib/seo";
+import { TaxonomyListingPage, taxonomyMetadata } from "@/components/catalog/TaxonomyListingPage";
+import type { CatalogQuery } from "@/lib/catalog";
+
+export const revalidate = 60;
 
 type CollectionPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<CatalogQuery & { view?: string }>;
 };
 
-export async function generateMetadata({
-  params,
-}: Readonly<CollectionPageProps>): Promise<Metadata> {
-  const { slug } = await params;
-
-  try {
-    const { collection } = await getCollection(slug);
-    const title = collection.seo?.title ?? collection.name;
-    const description = collection.seo?.description ?? collection.description;
-
-    return {
-      title,
-      description,
-      alternates: {
-        canonical: collection.seo?.canonicalUrl ?? `${getSiteUrl()}/collections/${slug}`,
-      },
-    };
-  } catch {
-    return {};
-  }
+export async function generateMetadata({ params, searchParams }: Readonly<CollectionPageProps>): Promise<Metadata> {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  return taxonomyMetadata("collections", slug, (query ?? {}) as Record<string, string | undefined>);
 }
 
-export default async function CollectionPage({
-  params,
-  searchParams,
-}: Readonly<CollectionPageProps>) {
-  const { slug } = await params;
-  const query = (await searchParams) ?? {};
-
-  try {
-    const { collection } = await getCollection(slug);
-
-    return (
-      <>
-        <JsonLd
-          data={buildBreadcrumbJsonLd([
-            { name: "Shop", path: "/shop" },
-            { name: collection.name, path: `/collections/${collection.slug}` },
-          ])}
-        />
-        <CatalogPage
-          description={collection.description ?? `Products in ${collection.name}.`}
-          query={{ ...query, collectionId: collection._id }}
-          title={collection.name}
-        />
-      </>
-    );
-  } catch (error) {
-    return (
-      <main className="mx-auto flex min-h-[calc(100vh-144px)] max-w-4xl items-center px-4 sm:px-6 lg:px-8">
-        <ErrorState
-          title="Collection could not load"
-          message={error instanceof Error ? error.message : "Collection request failed"}
-        />
-      </main>
-    );
-  }
+export default async function CollectionPage({ params, searchParams }: Readonly<CollectionPageProps>) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  return <TaxonomyListingPage kind="collections" query={query ?? {}} slug={slug} />;
 }
