@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorState } from "@/components/states/ErrorState";
+import { trackPurchase } from "@/lib/analytics";
 import {
   confirmCheckoutRazorpayPayment,
   createOrderBalancePayment,
@@ -17,6 +18,17 @@ import type { PaymentSession } from "@/lib/payments";
 import { loadRazorpayScript } from "@/lib/razorpay";
 import { createReturnRequest } from "@/lib/returns";
 import { useAuthStore } from "@/stores/authStore";
+
+const PURCHASED_STATUSES = new Set([
+  "confirmed",
+  "pre_order_confirmed",
+  "cod_confirmed",
+  "in_production",
+  "packed",
+  "ready_to_dispatch",
+  "shipped",
+  "delivered",
+]);
 
 export function OrderConfirmationClient({ orderNumber }: Readonly<{ orderNumber: string }>) {
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -39,6 +51,23 @@ export function OrderConfirmationClient({ orderNumber }: Readonly<{ orderNumber:
   useEffect(() => {
     void loadOrder();
   }, [accessToken, orderNumber]);
+
+  // Revenue is reported only for orders that are actually placed (not awaiting payment).
+  useEffect(() => {
+    if (!order || !PURCHASED_STATUSES.has(order.status)) return;
+    trackPurchase({
+      items: order.items.map((item) => ({
+        item_id: item.sku,
+        item_name: item.productName,
+        price: item.unitPrice,
+        quantity: item.quantity,
+      })),
+      shipping: order.totals.shippingFee,
+      tax: order.totals.gstAmount,
+      transactionId: order.orderNumber,
+      value: order.totals.grandTotal,
+    });
+  }, [order]);
 
   async function payBalanceNow() {
     setIsPayingBalance(true);

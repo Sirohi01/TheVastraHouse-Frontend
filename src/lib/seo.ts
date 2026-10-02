@@ -64,6 +64,13 @@ export type SeoSettings = {
   };
   pages: Array<{ path: string; label?: string; seo: EntitySeo }>;
   analytics?: { ga4MeasurementId?: string };
+  /** Shipping/returns facts enforced by checkout; absent when the API predates them. */
+  commerce?: {
+    currency: string;
+    freeShippingThreshold: number;
+    returnWindowDays: number;
+    shippingStandardFee: number;
+  };
 };
 
 const FALLBACK_SETTINGS: SeoSettings = {
@@ -340,11 +347,18 @@ export function buildOrganizationJsonLd(settings: SeoSettings) {
   return {
     "@context": "https://schema.org",
     "@id": `${getSiteUrl()}/#organization`,
-    "@type": "Organization",
+    // OnlineStore is the Organization subtype Google recommends for merchants.
+    "@type": "OnlineStore",
+    description: settings.defaultDescription,
     legalName: org.legalName || undefined,
     name: settings.brandName || settings.siteName,
     url: getSiteUrl(),
-    ...(org.logo ? { logo: org.logo } : {}),
+    ...(org.logo ? { image: org.logo, logo: org.logo } : {}),
+    ...(org.email ? { email: org.email } : {}),
+    ...(org.phone ? { telephone: org.phone } : {}),
+    ...(settings.commerce
+      ? { hasMerchantReturnPolicy: buildReturnPolicyJsonLd(settings.commerce) }
+      : {}),
     ...(org.sameAs.length ? { sameAs: org.sameAs } : {}),
     ...address,
     ...contact,
@@ -396,27 +410,63 @@ function schemaAvailability(variant: ProductVariant) {
  * Product schema from real data only: price and availability per active variant (matching what
  * the page shows), and aggregateRating only when approved reviews exist.
  */
+type CommerceFacts = NonNullable<SeoSettings["commerce"]>;
+
+function buildReturnPolicyJsonLd(commerce: CommerceFacts) {
+  return {
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: "IN",
+    merchantReturnDays: commerce.returnWindowDays,
+    merchantReturnLink: absoluteUrl("/policies/return-policy"),
+    returnMethod: "https://schema.org/ReturnByMail",
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  };
+}
+
+/** Standard shipping, as charged at checkout: free at or above the threshold. */
+function buildShippingDetailsJsonLd(commerce: CommerceFacts, price: number) {
+  return {
+    "@type": "OfferShippingDetails",
+    shippingDestination: { "@type": "DefinedRegion", addressCountry: "IN" },
+    shippingRate: {
+      "@type": "MonetaryAmount",
+      currency: commerce.currency,
+      value: price >= commerce.freeShippingThreshold ? 0 : commerce.shippingStandardFee,
+    },
+  };
+}
+
 export function buildProductJsonLd(
   product: CatalogProduct,
   rating?: { average: number; count: number },
   brandName = "The Vastra House",
+  commerce?: SeoSettings["commerce"],
 ) {
   const url = absoluteUrl(`/shop/${product.slug}`);
   const variants = product.variants.filter((variant) => variant.active !== false);
   const media = product.media?.length ? product.media : (variants[0]?.media ?? []);
   const images = media.filter((item) => item.type === "image").map((item) => item.url);
-  const offers = variants.map((variant) => ({
-    "@type": "Offer",
-    availability: schemaAvailability(variant),
-    itemCondition: "https://schema.org/NewCondition",
-    price: Number((variant.salePrice ?? variant.basePrice).toFixed(2)),
-    priceCurrency: variant.currencyCode ?? "INR",
-    sku: variant.sku,
-    url,
-    ...(variant.size || variant.color
-      ? { name: [variant.color, variant.size].filter(Boolean).join(" / ") }
-      : {}),
-  }));
+  const offers = variants.map((variant) => {
+    const price = Number((variant.salePrice ?? variant.basePrice).toFixed(2));
+    return {
+      "@type": "Offer",
+      availability: schemaAvailability(variant),
+      itemCondition: "https://schema.org/NewCondition",
+      price,
+      priceCurrency: variant.currencyCode ?? "INR",
+      sku: variant.sku,
+      url,
+      ...(variant.size || variant.color
+        ? { name: [variant.color, variant.size].filter(Boolean).join(" / ") }
+        : {}),
+      ...(commerce
+        ? {
+            hasMerchantReturnPolicy: buildReturnPolicyJsonLd(commerce),
+            shippingDetails: buildShippingDetailsJsonLd(commerce, price),
+          }
+        : {}),
+    };
+  });
   const prices = offers.map((offer) => offer.price);
 
   return {

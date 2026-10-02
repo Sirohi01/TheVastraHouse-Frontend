@@ -41,9 +41,15 @@ export function Analytics({ measurementId }: Readonly<{ measurementId: string }>
     if (!isAdmin) sendVisitBeacon();
   }, [isAdmin]);
 
-  // Page views for client-side navigations (the first view is sent by config).
+  // Page views for client-side navigations; the landing view is sent by the loader script.
   useEffect(() => {
-    if (consent.analytics && window.gtag && measurementId) {
+    if (
+      consent.analytics &&
+      window.gtag &&
+      measurementId &&
+      window.__vastraLastPageView !== pathname
+    ) {
+      window.__vastraLastPageView = pathname;
       window.gtag("event", "page_view", {
         page_location: window.location.href,
         page_path: pathname,
@@ -68,7 +74,7 @@ export function Analytics({ measurementId }: Readonly<{ measurementId: string }>
       {measurementId && consent.analytics && !isAdmin ? (
         <>
           <Script id="ga-consent-default" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('consent','default',{ad_storage:'${consent.marketing ? "granted" : "denied"}',ad_user_data:'${consent.marketing ? "granted" : "denied"}',ad_personalization:'${consent.marketing ? "granted" : "denied"}',analytics_storage:'granted'});gtag('js',new Date());gtag('config','${measurementId}',{send_page_view:false,anonymize_ip:true});`}
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('consent','default',{ad_storage:'${consent.marketing ? "granted" : "denied"}',ad_user_data:'${consent.marketing ? "granted" : "denied"}',ad_personalization:'${consent.marketing ? "granted" : "denied"}',analytics_storage:'granted'});gtag('js',new Date());gtag('config','${measurementId}',{send_page_view:false,anonymize_ip:true});window.__vastraLastPageView=location.pathname;gtag('event','page_view',{page_location:location.href,page_path:location.pathname});`}
           </Script>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
@@ -135,7 +141,7 @@ export function Analytics({ measurementId }: Readonly<{ measurementId: string }>
               <p className="flex-1 leading-6">
                 We use essential cookies to run the store and, with your permission, analytics
                 cookies to improve it.{" "}
-                <Link className="underline" href="/pages/privacy-policy">
+                <Link className="underline" href="/policies/privacy-policy">
                   Privacy policy
                 </Link>
               </p>

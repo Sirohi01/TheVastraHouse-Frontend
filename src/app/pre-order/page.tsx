@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { CatalogPage } from "@/components/catalog/CatalogPage";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
-import { buildPageMetadata, getSeoSettings } from "@/lib/seo";
+import { buildCollectionPageJsonLd, buildPageMetadata, getSeoSettings } from "@/lib/seo";
 
 export const revalidate = 30;
 
@@ -24,9 +25,20 @@ export default async function PreOrderPage() {
   return (
     <CatalogPage
       bannerStyle={preOrder}
+      breadcrumbs={[{ name: preOrder.title ?? "Pre-Order", path: "/pre-order" }]}
       description={preOrder.description ?? ""}
       eyebrow={preOrder.eyebrow}
       heroMedia={preOrder.media}
+      onProducts={(products) => (
+        <JsonLd
+          data={buildCollectionPageJsonLd({
+            description: preOrder.description,
+            name: preOrder.title ?? "Pre-Order",
+            path: "/pre-order",
+            products: products.data,
+          })}
+        />
+      )}
       query={{ preOrder: "true", sort: "-newest" }}
       title={preOrder.title ?? "Pre-Order"}
     />

@@ -1,10 +1,12 @@
 import { ArrowRight, Award, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { defaultCmsContent, fetchCmsContent, type CmsContent } from "@/lib/cms";
-import { buildPageMetadata, getSeoSettings } from "@/lib/seo";
+import { buildPageMetadata, buildWebPageJsonLd, getSeoSettings } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -42,7 +44,16 @@ export default async function AboutPage() {
         "The Vastra House brings timeless Indian wear into a polished modern commerce experience."
       }
     >
-      <section className="overflow-hidden rounded-md border border-[#e5dac7] bg-[#fffaf1] shadow-[0_24px_60px_-44px_rgba(46,12,18,0.5)]">
+      <Breadcrumbs items={[{ name: "About Us", path: "/about" }]} />
+      <JsonLd
+        data={buildWebPageJsonLd({
+          description: about?.description,
+          name: "About Us",
+          path: "/about",
+          type: "AboutPage",
+        })}
+      />
+      <section className="mt-5 overflow-hidden rounded-md border border-[#e5dac7] bg-[#fffaf1] shadow-[0_24px_60px_-44px_rgba(46,12,18,0.5)]">
         <div className="h-[3px] bg-[linear-gradient(90deg,#6e1423,#caa14e,#6e1423)]" />
         <div className="grid min-w-0 lg:grid-cols-[42%_58%]">
           <div className="flex min-w-0 items-center p-5 sm:p-8 lg:p-10">

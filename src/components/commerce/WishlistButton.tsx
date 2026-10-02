@@ -2,6 +2,7 @@
 
 import { Heart } from "lucide-react";
 import { useState } from "react";
+import { trackAddToWishlist } from "@/lib/analytics";
 import { commerceFetch, type Wishlist } from "@/lib/commerce";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
@@ -24,12 +25,20 @@ export function WishlistButton({
 
   async function addToWishlist() {
     try {
-      await commerceFetch<{ wishlist: Wishlist }>("/commerce/wishlist/items", {
+      const payload = await commerceFetch<{ wishlist: Wishlist }>("/commerce/wishlist/items", {
         accessToken,
         body: JSON.stringify({ productId, variantId }),
         method: "POST",
       });
       setMessage("Saved");
+      const item = payload.wishlist.items.find((entry) => String(entry.variantId) === variantId);
+      if (item) {
+        trackAddToWishlist({
+          item_id: item.sku,
+          item_name: item.productName,
+          price: item.currentPrice,
+        });
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Wishlist failed");
     }

@@ -17,6 +17,8 @@ declare global {
   interface Window {
     dataLayer?: unknown[];
     gtag?: Gtag;
+    /** Path of the last page_view sent, so the first view is not counted twice. */
+    __vastraLastPageView?: string;
   }
 }
 
@@ -52,15 +54,18 @@ export function saveConsent(consent: Omit<ConsentState, "decided">) {
   window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: { ...consent, decided: true } }));
 }
 
-function analyticsAllowed() {
-  return (
-    typeof window !== "undefined" && readConsent().analytics && typeof window.gtag === "function"
-  );
-}
-
-export function trackEvent(name: string, params: Record<string, unknown> = {}) {
-  if (!analyticsAllowed()) return;
-  window.gtag!("event", name, params);
+/**
+ * Sends a GA4 event. gtag is defined by an afterInteractive script, so an event raised during
+ * the first moments of a page (e.g. on the order confirmation page) is retried briefly instead
+ * of being dropped.
+ */
+export function trackEvent(name: string, params: Record<string, unknown> = {}, attempt = 0) {
+  if (typeof window === "undefined" || !readConsent().analytics) return;
+  if (typeof window.gtag !== "function") {
+    if (attempt < 20) window.setTimeout(() => trackEvent(name, params, attempt + 1), 500);
+    return;
+  }
+  window.gtag("event", name, params);
 }
 
 export type AnalyticsItem = {
@@ -105,7 +110,7 @@ export function trackPurchase(input: {
   coupon?: string;
   items: AnalyticsItem[];
 }) {
-  if (!analyticsAllowed()) return;
+  if (typeof window === "undefined" || !readConsent().analytics) return;
   const key = `vastra-purchase-${input.transactionId}`;
   try {
     if (window.localStorage.getItem(key)) return;

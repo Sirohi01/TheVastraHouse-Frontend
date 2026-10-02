@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { EmptyState } from "@/components/states/EmptyState";
 import { fetchAddresses, type AccountAddress } from "@/lib/account";
+import { trackBeginCheckout } from "@/lib/analytics";
 import {
   confirmCheckoutRazorpayPayment,
   checkoutPreview,
@@ -48,6 +49,7 @@ export function CheckoutClient() {
   const accessToken = useAuthStore((state) => state.accessToken);
   const setCartStore = useCartStore((state) => state.setCart);
   const formRef = useRef<HTMLFormElement>(null);
+  const checkoutTracked = useRef(false);
   const lastPincodeLookupRef = useRef("");
   const [cart, setCart] = useState<Cart>();
   const [step, setStep] = useState(0);
@@ -107,6 +109,18 @@ export function CheckoutClient() {
         const payload = await commerceFetch<{ cart: Cart }>("/commerce/cart", { accessToken });
         setCart(payload.cart);
         setCartStore(payload.cart);
+        if (!checkoutTracked.current && payload.cart.items.length) {
+          checkoutTracked.current = true;
+          trackBeginCheckout(
+            payload.cart.items.map((item) => ({
+              item_id: item.sku,
+              item_name: item.productName,
+              price: item.unitPrice,
+              quantity: item.quantity,
+            })),
+            payload.cart.totals.subtotal,
+          );
+        }
       } catch (error) {
         setMessage(error instanceof Error ? error.message : "Cart could not load");
       }
