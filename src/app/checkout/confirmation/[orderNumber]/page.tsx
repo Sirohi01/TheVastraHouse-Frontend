@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
 import { OrderConfirmationClient } from "@/components/checkout/OrderConfirmationClient";
 import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
+import { privatePageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { ...privatePageMetadata, title: "Order Confirmation" };
 
 export default async function CheckoutConfirmationPage({
   params,

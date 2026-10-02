@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import { CompareClient } from "@/components/catalog/CompareClient";
 import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
+import { privatePageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = { ...privatePageMetadata, title: "Compare Products" };
 
 export default function ComparePage() {
   return (

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { CmsRichPage } from "@/components/content/CmsRichPage";
 import { fetchCmsPage } from "@/lib/content";
 import { buildPageMetadata, getSeoSettings } from "@/lib/seo";
@@ -28,16 +28,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PolicyPage({ params }: Props) {
   const { slug } = await params;
-  try {
-    const { page } = await fetchCmsPage(slug);
-    return (
-      <CmsRichPage
-        breadcrumbParent={{ name: "Policies", path: "/policies" }}
-        page={page}
-        path={`/policies/${slug}`}
-      />
-    );
-  } catch {
-    notFound();
-  }
+  const page = await fetchCmsPage(slug)
+    .then((payload) => payload.page)
+    .catch(() => notFound());
+  if (page.kind !== "policy") permanentRedirect(`/pages/${slug}`);
+  return (
+    <CmsRichPage
+      breadcrumbParent={{ name: "Policies", path: "/policies" }}
+      page={page}
+      path={`/policies/${slug}`}
+    />
+  );
 }

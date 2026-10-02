@@ -1,8 +1,10 @@
 import { ArrowRight, Award, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { Metadata } from "next";
 import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { defaultCmsContent, fetchCmsContent, type CmsContent } from "@/lib/cms";
+import { buildPageMetadata, getSeoSettings } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -12,6 +14,19 @@ const iconMap: Record<string, LucideIcon> = {
   shield: ShieldCheck,
   sparkles: Sparkles,
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [settings, content] = await Promise.all([getSeoSettings(), loadAboutContent()]);
+  const about = content.about ?? defaultCmsContent.about;
+  return buildPageMetadata(settings, {
+    description:
+      about?.description ??
+      "The Vastra House brings timeless Indian wear into a polished modern commerce experience.",
+    image: about?.media ?? undefined,
+    name: "About Us",
+    path: "/about",
+  });
+}
 
 export default async function AboutPage() {
   const content = await loadAboutContent();

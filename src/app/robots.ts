@@ -20,6 +20,7 @@ const privatePaths = [
   "/returns",
   "/track-order",
   "/login",
+  "/otp",
   "/register",
   "/forgot-password",
   "/reset-password",

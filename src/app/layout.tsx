@@ -38,8 +38,8 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: seo.locale,
       siteName: seo.siteName,
       title: seo.defaultTitle,
+      // No og:url here: pages inheriting these defaults must not claim the home page URL.
       type: "website",
-      url: siteUrl,
     },
     robots: seo.robots.indexSite
       ? { follow: true, index: true }

@@ -24,6 +24,7 @@ const STATIC_PATHS: Array<{ path: string; priority: number; changefreq: UrlEntry
     { changefreq: "monthly", path: "/contact", priority: 0.5 },
     { changefreq: "monthly", path: "/faq", priority: 0.5 },
     { changefreq: "weekly", path: "/blog", priority: 0.6 },
+    { changefreq: "monthly", path: "/policies", priority: 0.3 },
   ];
 
 function escapeXml(value: string) {
@@ -77,7 +78,12 @@ type BlogSitemap = {
 };
 
 type PageSitemap = {
-  pages: Array<{ slug: string; updatedAt?: string; seo?: { robotsIndex?: boolean } }>;
+  pages: Array<{
+    slug: string;
+    kind?: "page" | "policy";
+    updatedAt?: string;
+    seo?: { robotsIndex?: boolean };
+  }>;
 };
 
 async function fetchJson<T>(path: string, fallback: T): Promise<T> {
@@ -124,23 +130,31 @@ export async function renderChildSitemap(name: string) {
   }
 
   if (name === "pages") {
-    const pages = await fetchJson<PageSitemap>("/content/pages", { pages: [] });
+    const [pages, blog] = await Promise.all([
+      fetchJson<PageSitemap>("/content/pages", { pages: [] }),
+      fetchJson<BlogSitemap>("/content/blog/sitemap", { categories: [], posts: [] }),
+    ]);
+    // /faq renders the "faq" CMS page and /blog lists posts; without content they are noindex.
+    const hasContent = (path: string) =>
+      (path !== "/faq" || pages.pages.some((page) => page.slug === "faq")) &&
+      (path !== "/blog" || blog.posts.length > 0);
     return renderUrlset([
       ...STATIC_PATHS.filter(
         (entry) =>
+          hasContent(entry.path) &&
           settings.pages.find((page) => page.path === (entry.path || "/"))?.seo?.robotsIndex !==
-          false,
+            false,
       ).map((entry) => ({
         changefreq: entry.changefreq,
         loc: `${siteUrl}${entry.path}`,
         priority: entry.priority,
       })),
       ...pages.pages
-        .filter((page) => page.seo?.robotsIndex !== false)
+        .filter((page) => page.seo?.robotsIndex !== false && page.slug !== "faq")
         .map((page) => ({
           changefreq: "monthly" as const,
           lastmod: isoDate(page.updatedAt),
-          loc: `${siteUrl}/pages/${page.slug}`,
+          loc: `${siteUrl}/${page.kind === "policy" ? "policies" : "pages"}/${page.slug}`,
           priority: 0.3,
         })),
     ]);
@@ -193,12 +207,6 @@ export async function renderChildSitemap(name: string) {
         lastmod: isoDate(post.updatedAt),
         loc: `${siteUrl}/blog/${post.slug}`,
         priority: 0.6,
-      })),
-      ...blog.categories.map((category) => ({
-        changefreq: "weekly" as const,
-        lastmod: isoDate(category.updatedAt),
-        loc: `${siteUrl}/blog/category/${category.slug}`,
-        priority: 0.4,
       })),
     ]);
   }

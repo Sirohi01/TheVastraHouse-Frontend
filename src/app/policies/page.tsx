@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
 import { fetchCmsPages } from "@/lib/content";
+import { buildPageMetadata, getSeoSettings } from "@/lib/seo";
 
-export const metadata = { title: "Policies" };
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSeoSettings();
+  return buildPageMetadata(settings, {
+    description: "Shipping, returns, privacy and terms policies of The Vastra House.",
+    name: "Policies",
+    path: "/policies",
+  });
+}
 
 export default async function PoliciesPage() {
   const { pages } = await fetchCmsPages("policy");

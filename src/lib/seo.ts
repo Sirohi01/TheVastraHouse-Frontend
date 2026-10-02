@@ -177,10 +177,11 @@ export function buildPageMetadata(settings: SeoSettings, input: PageMetadataInpu
     clampText(input.description, 160) ??
     settings.defaultDescription;
   const canonical = resolveCanonical(seo.canonicalUrl, input.path);
-  const imageUrl = seo.ogImage?.url || input.image?.url || settings.defaultOgImage;
+  const imageUrl = socialImageUrl(seo.ogImage?.url || input.image?.url || settings.defaultOgImage);
   const imageAlt =
     seo.ogImage?.altText || input.image?.altText || input.name || settings.defaultOgImageAlt;
-  const twitterImage = seo.twitterImage?.url || imageUrl || settings.defaultTwitterImage;
+  const twitterImage =
+    socialImageUrl(seo.twitterImage?.url) || imageUrl || settings.defaultTwitterImage;
   const index =
     settings.robots.indexSite && seo.robotsIndex !== false && !input.noindex && !input.isVariantUrl;
   const follow = seo.robotsFollow !== false;
@@ -226,9 +227,56 @@ export const privatePageMetadata: Metadata = {
   robots: { follow: false, googleBot: { follow: false, index: false }, index: false },
 };
 
+/** Storefront routes a same-site canonical may point at (see app/ for the route tree). */
+const CANONICAL_ROUTE_PREFIXES = [
+  "/shop",
+  "/pre-order",
+  "/about",
+  "/contact",
+  "/faq",
+  "/blog",
+  "/categories/",
+  "/collections/",
+  "/pages/",
+  "/policies",
+];
+
+function isStorefrontRoute(path: string) {
+  const pathname = path.split(/[?#]/)[0] || "/";
+  return (
+    pathname === "/" ||
+    CANONICAL_ROUTE_PREFIXES.some((prefix) =>
+      prefix.endsWith("/")
+        ? pathname.startsWith(prefix) && pathname.length > prefix.length
+        : pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  );
+}
+
 function resolveCanonical(custom: string | undefined, path: string) {
-  if (custom?.trim()) return absoluteUrl(custom.trim());
-  return absoluteUrl(path);
+  const value = custom?.trim();
+  if (!value) return absoluteUrl(path);
+
+  const url = absoluteUrl(value);
+  const siteUrl = getSiteUrl();
+  // A same-site canonical that is not a real route (e.g. a typo like /products/x) would tell
+  // crawlers to index a 404 instead of this page, so fall back to the page's own URL.
+  if (url === siteUrl || url.startsWith(`${siteUrl}/`)) {
+    if (!isStorefrontRoute(url.slice(siteUrl.length) || "/")) return absoluteUrl(path);
+  }
+  return url;
+}
+
+/**
+ * Social cards are declared as 1200x630. Untransformed Cloudinary uploads (product photos are
+ * usually portrait) are padded to exactly that size so the whole garment stays visible.
+ */
+function socialImageUrl(url: string | undefined) {
+  if (!url) return url;
+  return url.replace(
+    /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(v\d+\/)/,
+    "$1c_pad,b_auto:predominant,w_1200,h_630,f_jpg/$2",
+  );
 }
 
 /** True when the URL carries filter/sort/search parameters that should not be indexed. */

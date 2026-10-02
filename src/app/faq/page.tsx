@@ -18,6 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
     return buildPageMetadata(settings, {
       description: "Frequently asked questions.",
       name: "FAQ",
+      noindex: true,
       path: "/faq",
     });
   }

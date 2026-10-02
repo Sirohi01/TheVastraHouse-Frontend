@@ -13,11 +13,13 @@ type Props = Readonly<{
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const query = await searchParams;
-  const settings = await getSeoSettings();
+  const [settings, posts] = await Promise.all([getSeoSettings(), fetchBlogPosts(query)]);
   return buildPageMetadata(settings, {
     description: "Stories, guides and styling notes from The Vastra House.",
     isVariantUrl: Boolean(query.page || query.category || query.tag),
     name: "Blog",
+    // An empty listing is thin content; it becomes indexable with the first published post.
+    noindex: !posts.data.length,
     path: "/blog",
   });
 }

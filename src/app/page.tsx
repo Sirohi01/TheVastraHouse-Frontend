@@ -16,6 +16,8 @@ import {
 } from "@/lib/catalog";
 import { fetchCmsContent, type CmsHeroSlide } from "@/lib/cms";
 import { homeContent } from "@/lib/cms/homeContent";
+import { buildPageMetadata, getSeoSettings } from "@/lib/seo";
+import type { Metadata } from "next";
 
 export const revalidate = 60;
 
@@ -40,6 +42,11 @@ type VisualTile = {
 };
 
 const fallbackHero = homeContent.hero.media.src;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSeoSettings();
+  return buildPageMetadata(settings, { absoluteTitle: true, path: "/" });
+}
 
 export default async function HomePage() {
   const [data, cms] = await Promise.all([loadHomeData(), loadCmsData()]);
