@@ -4,20 +4,31 @@ import { CatalogPage } from "@/components/catalog/CatalogPage";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getCategory, getCollection, type CatalogQuery, type TaxonomyRef } from "@/lib/catalog";
 import { applyManagedRedirect } from "@/lib/redirects";
-import { buildCollectionPageJsonLd, buildPageMetadata, getSeoSettings, hasIndexBlockingParams } from "@/lib/seo";
+import {
+  buildCollectionPageJsonLd,
+  buildPageMetadata,
+  getSeoSettings,
+  hasIndexBlockingParams,
+} from "@/lib/seo";
 
 type Kind = "categories" | "collections";
 
 async function loadTaxonomy(kind: Kind, slug: string): Promise<TaxonomyRef | null> {
   try {
-    return kind === "categories" ? (await getCategory(slug)).category : (await getCollection(slug)).collection;
+    return kind === "categories"
+      ? (await getCategory(slug)).category
+      : (await getCollection(slug)).collection;
   } catch {
     return null;
   }
 }
 
 /** Shared metadata for category and collection listings (facet-aware canonical/robots). */
-export async function taxonomyMetadata(kind: Kind, slug: string, query: Record<string, string | undefined>): Promise<Metadata> {
+export async function taxonomyMetadata(
+  kind: Kind,
+  slug: string,
+  query: Record<string, string | undefined>,
+): Promise<Metadata> {
   const [settings, taxonomy] = await Promise.all([getSeoSettings(), loadTaxonomy(kind, slug)]);
 
   if (!taxonomy) {

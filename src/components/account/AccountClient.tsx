@@ -42,7 +42,9 @@ const blankAddress: Omit<AccountAddress, "_id"> = {
   region: "",
 };
 
-export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboard" | "orders" | "privacy" | "rewards" | "sessions" }>) {
+export function AccountClient({
+  view,
+}: Readonly<{ view: "addresses" | "dashboard" | "orders" | "privacy" | "rewards" | "sessions" }>) {
   const accessToken = useAuthStore((state) => state.accessToken);
   const user = useAuthStore((state) => state.user);
   const setSession = useAuthStore((state) => state.setSession);
@@ -61,7 +63,11 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
 
   useEffect(() => {
     if (user) {
-      setProfile({ firstName: user.firstName ?? "", lastName: user.lastName ?? "", phone: user.phone ?? "" });
+      setProfile({
+        firstName: user.firstName ?? "",
+        lastName: user.lastName ?? "",
+        phone: user.phone ?? "",
+      });
     }
   }, [user]);
 
@@ -123,11 +129,19 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
             ["/account/privacy", "Privacy & preferences"],
             ["/account/sessions", "Sessions"],
           ].map(([href, label]) => (
-            <Link className="rounded-md px-3 py-2 text-sm font-semibold hover:bg-muted" href={href} key={href}>
+            <Link
+              className="rounded-md px-3 py-2 text-sm font-semibold hover:bg-muted"
+              href={href}
+              key={href}
+            >
               {label}
             </Link>
           ))}
-          <button className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold" onClick={clearSession} type="button">
+          <button
+            className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-semibold"
+            onClick={clearSession}
+            type="button"
+          >
             <LogOut size={15} /> Logout
           </button>
         </aside>
@@ -137,19 +151,43 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
             <div className="grid gap-4">
               <h1 className="text-2xl font-semibold">My account</h1>
               <div className="grid gap-3 md:grid-cols-4">
-                <Metric label="Orders" value={String(overview?.customer.lifetimeOrderValue ? "Active" : "New")} />
+                <Metric
+                  label="Orders"
+                  value={String(overview?.customer.lifetimeOrderValue ? "Active" : "New")}
+                />
                 <Metric label="Addresses" value={String(overview?.addressesCount ?? 0)} />
-                <Metric label="Rewards" value={String(overview?.customer.rewardPointsBalance ?? 0)} />
+                <Metric
+                  label="Rewards"
+                  value={String(overview?.customer.rewardPointsBalance ?? 0)}
+                />
                 <Metric label="Gift cards" value={formatMoney(overview?.giftCardBalance ?? 0)} />
               </div>
               <form className="rounded-md border border-border bg-card p-4" onSubmit={saveProfile}>
                 <h2 className="mb-3 text-lg font-semibold">Profile</h2>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <Field label="First name" onChange={(value) => setProfile((current) => ({ ...current, firstName: value }))} value={profile.firstName} />
-                  <Field label="Last name" onChange={(value) => setProfile((current) => ({ ...current, lastName: value }))} value={profile.lastName} />
-                  <Field label="Phone" onChange={(value) => setProfile((current) => ({ ...current, phone: value }))} value={profile.phone} />
+                  <Field
+                    label="First name"
+                    onChange={(value) =>
+                      setProfile((current) => ({ ...current, firstName: value }))
+                    }
+                    value={profile.firstName}
+                  />
+                  <Field
+                    label="Last name"
+                    onChange={(value) => setProfile((current) => ({ ...current, lastName: value }))}
+                    value={profile.lastName}
+                  />
+                  <Field
+                    label="Phone"
+                    onChange={(value) => setProfile((current) => ({ ...current, phone: value }))}
+                    value={profile.phone}
+                  />
                 </div>
-                <button className="mt-4 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground" disabled={saving} type="submit">
+                <button
+                  className="mt-4 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                  disabled={saving}
+                  type="submit"
+                >
                   <Save size={16} /> Save profile
                 </button>
               </form>
@@ -163,8 +201,16 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
                 {addresses.map((address) => (
                   <div className="rounded-md border border-border bg-card p-4" key={address._id}>
                     <p className="font-semibold">{address.fullName}</p>
-                    <p className="text-sm text-muted-foreground">{address.line1}, {address.city}, {address.region} {address.postalCode}</p>
-                    <button className="mt-3 inline-flex items-center gap-1 rounded-md border border-border px-3 py-2 text-sm font-semibold" onClick={async () => setAddresses((await deleteAddress(address._id, accessToken)).addresses)} type="button">
+                    <p className="text-sm text-muted-foreground">
+                      {address.line1}, {address.city}, {address.region} {address.postalCode}
+                    </p>
+                    <button
+                      className="mt-3 inline-flex items-center gap-1 rounded-md border border-border px-3 py-2 text-sm font-semibold"
+                      onClick={async () =>
+                        setAddresses((await deleteAddress(address._id, accessToken)).addresses)
+                      }
+                      type="button"
+                    >
                       <Trash2 size={14} /> Delete
                     </button>
                   </div>
@@ -173,11 +219,27 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
               <form className="rounded-md border border-border bg-card p-4" onSubmit={addAddress}>
                 <h2 className="mb-3 text-lg font-semibold">Add address</h2>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {(["fullName", "phone", "line1", "line2", "city", "region", "postalCode"] as const).map((key) => (
-                    <Field key={key} label={key} onChange={(value) => setAddressForm((current) => ({ ...current, [key]: value }))} required={key !== "line2"} value={addressForm[key] ?? ""} />
+                  {(
+                    ["fullName", "phone", "line1", "line2", "city", "region", "postalCode"] as const
+                  ).map((key) => (
+                    <Field
+                      key={key}
+                      label={key}
+                      onChange={(value) =>
+                        setAddressForm((current) => ({ ...current, [key]: value }))
+                      }
+                      required={key !== "line2"}
+                      value={addressForm[key] ?? ""}
+                    />
                   ))}
                 </div>
-                <button className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" disabled={saving} type="submit">Save address</button>
+                <button
+                  className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                  disabled={saving}
+                  type="submit"
+                >
+                  Save address
+                </button>
               </form>
             </div>
           ) : null}
@@ -185,9 +247,15 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
           {view === "orders" ? (
             <ListView title="Orders" empty="No orders yet.">
               {orders.map((order) => (
-                <Link className="block rounded-md border border-border bg-card p-4 hover:bg-muted/40" href={`/account/orders/${encodeURIComponent(order.orderNumber)}`} key={order._id}>
+                <Link
+                  className="block rounded-md border border-border bg-card p-4 hover:bg-muted/40"
+                  href={`/account/orders/${encodeURIComponent(order.orderNumber)}`}
+                  key={order._id}
+                >
                   <p className="font-semibold">{order.orderNumber}</p>
-                  <p className="text-sm text-muted-foreground">{order.status} · {formatMoney(order.totals?.grandTotal ?? 0)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {order.status} · {formatMoney(order.totals?.grandTotal ?? 0)}
+                  </p>
                 </Link>
               ))}
             </ListView>
@@ -205,17 +273,48 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
 
           {view === "privacy" ? (
             <ListView title="Privacy & notification preferences" empty="No privacy requests yet.">
-              <PreferenceForm accessToken={accessToken} setSessionUser={(next) => accessToken && refreshToken && setSession({ accessToken, refreshToken, user: next })} user={user} />
-              {privacy.map((request) => <p className="rounded-md border border-border bg-card p-3 text-sm" key={request._id}>{request.requestNumber} · {request.type} · {request.status}</p>)}
+              <PreferenceForm
+                accessToken={accessToken}
+                setSessionUser={(next) =>
+                  accessToken &&
+                  refreshToken &&
+                  setSession({ accessToken, refreshToken, user: next })
+                }
+                user={user}
+              />
+              {privacy.map((request) => (
+                <p
+                  className="rounded-md border border-border bg-card p-3 text-sm"
+                  key={request._id}
+                >
+                  {request.requestNumber} · {request.type} · {request.status}
+                </p>
+              ))}
             </ListView>
           ) : null}
 
           {view === "sessions" ? (
             <ListView title="Sessions" empty="No active sessions found.">
               {sessions.map((session) => (
-                <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-card p-3" key={session._id}>
-                  <p className="text-sm">{session.userAgent ?? "Unknown device"}<br /><span className="text-muted-foreground">{session.ipAddress ?? ""}</span></p>
-                  <button className="rounded-md border border-border px-3 py-2 text-sm font-semibold" onClick={async () => { await revokeSession(session._id, accessToken); setSessions((await fetchSessions(accessToken)).sessions); }} type="button">Revoke</button>
+                <div
+                  className="flex items-center justify-between gap-3 rounded-md border border-border bg-card p-3"
+                  key={session._id}
+                >
+                  <p className="text-sm">
+                    {session.userAgent ?? "Unknown device"}
+                    <br />
+                    <span className="text-muted-foreground">{session.ipAddress ?? ""}</span>
+                  </p>
+                  <button
+                    className="rounded-md border border-border px-3 py-2 text-sm font-semibold"
+                    onClick={async () => {
+                      await revokeSession(session._id, accessToken);
+                      setSessions((await fetchSessions(accessToken)).sessions);
+                    }}
+                    type="button"
+                  >
+                    Revoke
+                  </button>
                 </div>
               ))}
             </ListView>
@@ -227,15 +326,37 @@ export function AccountClient({ view }: Readonly<{ view: "addresses" | "dashboar
 }
 
 function Metric({ label, value }: Readonly<{ label: string; value: string }>) {
-  return <div className="rounded-md border border-border bg-card p-4"><p className="text-xs font-bold uppercase text-muted-foreground">{label}</p><p className="mt-1 text-xl font-semibold">{value}</p></div>;
+  return (
+    <div className="rounded-md border border-border bg-card p-4">
+      <p className="text-xs font-bold uppercase text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-semibold">{value}</p>
+    </div>
+  );
 }
 
-function ListView({ children, empty, title }: Readonly<{ children: React.ReactNode; empty: string; title: string }>) {
+function ListView({
+  children,
+  empty,
+  title,
+}: Readonly<{ children: React.ReactNode; empty: string; title: string }>) {
   const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
-  return <div className="grid gap-3"><h1 className="text-2xl font-semibold">{title}</h1>{hasChildren ? children : <EmptyState title={empty} message="Nothing is available here yet." />}</div>;
+  return (
+    <div className="grid gap-3">
+      <h1 className="text-2xl font-semibold">{title}</h1>
+      {hasChildren ? (
+        children
+      ) : (
+        <EmptyState title={empty} message="Nothing is available here yet." />
+      )}
+    </div>
+  );
 }
 
-function PreferenceForm({ accessToken, setSessionUser, user }: Readonly<{ accessToken?: string; setSessionUser: (user: AuthUser) => void; user?: AuthUser }>) {
+function PreferenceForm({
+  accessToken,
+  setSessionUser,
+  user,
+}: Readonly<{ accessToken?: string; setSessionUser: (user: AuthUser) => void; user?: AuthUser }>) {
   const toast = useToast();
   const preferences = user?.notificationPreferences ?? {
     backInStock: true,
@@ -247,12 +368,33 @@ function PreferenceForm({ accessToken, setSessionUser, user }: Readonly<{ access
   };
   async function toggle(key: keyof typeof preferences) {
     try {
-      const result = await updatePreferences({ ...preferences, [key]: !preferences[key], whatsappOptIn: key === "orderUpdatesWhatsapp" ? !preferences[key] : Boolean(user?.whatsappOptIn) }, accessToken);
+      const result = await updatePreferences(
+        {
+          ...preferences,
+          [key]: !preferences[key],
+          whatsappOptIn:
+            key === "orderUpdatesWhatsapp" ? !preferences[key] : Boolean(user?.whatsappOptIn),
+        },
+        accessToken,
+      );
       setSessionUser(result.user);
       toast.success("Preference updated");
     } catch (error) {
       toast.error(errorMessage(error, "Preference could not be saved"));
     }
   }
-  return <div className="grid gap-2 rounded-md border border-border bg-card p-4">{Object.entries(preferences).map(([key, value]) => <label className="flex items-center justify-between gap-3 text-sm font-semibold" key={key}>{key}<input checked={value} onChange={() => void toggle(key as keyof typeof preferences)} type="checkbox" /></label>)}</div>;
+  return (
+    <div className="grid gap-2 rounded-md border border-border bg-card p-4">
+      {Object.entries(preferences).map(([key, value]) => (
+        <label className="flex items-center justify-between gap-3 text-sm font-semibold" key={key}>
+          {key}
+          <input
+            checked={value}
+            onChange={() => void toggle(key as keyof typeof preferences)}
+            type="checkbox"
+          />
+        </label>
+      ))}
+    </div>
+  );
 }

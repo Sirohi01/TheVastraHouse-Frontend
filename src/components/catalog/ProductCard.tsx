@@ -21,7 +21,9 @@ export function ProductCard({
   );
   const preOrderVariant = readyStockVariant
     ? undefined
-    : product.variants.find((variant) => variant.active !== false && variant.availability?.canPreOrder);
+    : product.variants.find(
+        (variant) => variant.active !== false && variant.availability?.canPreOrder,
+      );
   const lowStock = product.variants.some((variant) => variant.availability?.status === "low_stock");
   const hasPreOrder = Boolean(preOrderVariant);
   const hasReadyStock = Boolean(readyStockVariant);
@@ -68,7 +70,13 @@ export function ProductCard({
             </span>
           ))}
         <span className="absolute left-3 bottom-3 rounded-sm border border-[#f0d9a4]/50 bg-[#fffaf1]/95 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6e1423]">
-          {hasReadyStock ? (lowStock ? "Few left" : "Ready stock") : hasPreOrder ? "Pre-order available" : "Out of stock"}
+          {hasReadyStock
+            ? lowStock
+              ? "Few left"
+              : "Ready stock"
+            : hasPreOrder
+              ? "Pre-order available"
+              : "Out of stock"}
         </span>
         {sizes.length ? (
           <div className="absolute inset-x-3 bottom-12 translate-y-2 rounded-sm border border-[#caa14e]/50 bg-white/95 px-2 py-2 opacity-0 shadow-soft transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">

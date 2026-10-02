@@ -25,7 +25,11 @@ export function readConsent(): ConsentState {
     const raw = window.localStorage.getItem(CONSENT_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<ConsentState>;
-      return { analytics: Boolean(parsed.analytics), decided: true, marketing: Boolean(parsed.marketing) };
+      return {
+        analytics: Boolean(parsed.analytics),
+        decided: true,
+        marketing: Boolean(parsed.marketing),
+      };
     }
   } catch {
     // Storage unavailable (private mode): treat as undecided.
@@ -49,7 +53,9 @@ export function saveConsent(consent: Omit<ConsentState, "decided">) {
 }
 
 function analyticsAllowed() {
-  return typeof window !== "undefined" && readConsent().analytics && typeof window.gtag === "function";
+  return (
+    typeof window !== "undefined" && readConsent().analytics && typeof window.gtag === "function"
+  );
 }
 
 export function trackEvent(name: string, params: Record<string, unknown> = {}) {
@@ -71,7 +77,11 @@ export function trackViewItem(item: AnalyticsItem) {
 }
 
 export function trackAddToCart(item: AnalyticsItem) {
-  trackEvent("add_to_cart", { currency: "INR", items: [item], value: item.price * (item.quantity ?? 1) });
+  trackEvent("add_to_cart", {
+    currency: "INR",
+    items: [item],
+    value: item.price * (item.quantity ?? 1),
+  });
 }
 
 export function trackAddToWishlist(item: AnalyticsItem) {
@@ -142,8 +152,11 @@ export function sendVisitBeacon() {
   if (navigator.sendBeacon) {
     navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
   } else {
-    void fetch(url, { body, headers: { "Content-Type": "application/json" }, keepalive: true, method: "POST" }).catch(
-      () => undefined,
-    );
+    void fetch(url, {
+      body,
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      method: "POST",
+    }).catch(() => undefined);
   }
 }

@@ -117,9 +117,7 @@ const plannedSections: SidebarSection<DisabledItem>[] = [
   },
   {
     label: "Customers & Growth",
-    items: [
-      { icon: ContactRound, label: "Customer Account Admin", phase: "Phase 27" },
-    ],
+    items: [{ icon: ContactRound, label: "Customer Account Admin", phase: "Phase 27" }],
   },
   {
     label: "Platform & Governance",

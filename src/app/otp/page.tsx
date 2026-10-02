@@ -30,7 +30,10 @@ export default function OtpPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ target: formData.get("target"), purpose }),
     });
-    const payload = (await response.json().catch(() => ({}))) as { resendAfterSeconds?: number; message?: string };
+    const payload = (await response.json().catch(() => ({}))) as {
+      resendAfterSeconds?: number;
+      message?: string;
+    };
     if (response.ok) {
       setTarget(String(formData.get("target") ?? ""));
       setCooldown(payload.resendAfterSeconds ?? 45);
@@ -48,9 +51,16 @@ export default function OtpPage() {
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
-    const payload = (await response.json().catch(() => ({}))) as { message?: string; resetToken?: string };
+    const payload = (await response.json().catch(() => ({}))) as {
+      message?: string;
+      resetToken?: string;
+    };
     if (response.ok) {
-      setMessage(payload.resetToken ? "Code verified. Continue to reset password from your secure link." : "Code verified.");
+      setMessage(
+        payload.resetToken
+          ? "Code verified. Continue to reset password from your secure link."
+          : "Code verified.",
+      );
       return;
     }
     setAttemptsLeft((current) => Math.max(0, current - 1));
@@ -64,7 +74,10 @@ export default function OtpPage() {
       description="Request a one-time password for account and sensitive customer actions."
     >
       <section className="mx-auto max-w-md">
-        <form action={requestOtp} className="w-full rounded-md border border-[#e5dac7] bg-[#fffaf1] p-6">
+        <form
+          action={requestOtp}
+          className="w-full rounded-md border border-[#e5dac7] bg-[#fffaf1] p-6"
+        >
           <h2 className="font-serif text-2xl uppercase text-[#3d1620]">OTP Verification</h2>
           <input
             className="mt-6 h-11 w-full rounded-md border border-border px-3"
@@ -74,15 +87,39 @@ export default function OtpPage() {
             required
             value={target}
           />
-          <button className="mt-6 h-11 w-full rounded-md bg-primary px-4 font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60" disabled={cooldown > 0}>
+          <button
+            className="mt-6 h-11 w-full rounded-md bg-primary px-4 font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+            disabled={cooldown > 0}
+          >
             {cooldown > 0 ? `Resend in ${cooldown}s` : "Request OTP"}
           </button>
-          <p className="mt-3 text-xs font-semibold uppercase text-muted-foreground">Flow: {purpose.replace("-", " ")}</p>
+          <p className="mt-3 text-xs font-semibold uppercase text-muted-foreground">
+            Flow: {purpose.replace("-", " ")}
+          </p>
         </form>
-        <form action={verifyOtp} className="mt-4 w-full rounded-md border border-[#e5dac7] bg-[#fffaf1] p-6">
-          <input className="h-11 w-full rounded-md border border-border px-3" inputMode="numeric" maxLength={6} name="code" onChange={(event) => setCode(event.target.value)} placeholder="6-digit code" required value={code} />
-          <button className="mt-4 h-11 w-full rounded-md bg-primary px-4 font-semibold text-primary-foreground transition-opacity hover:opacity-90" type="submit">Verify code</button>
-          <p className="mt-3 text-xs font-semibold uppercase text-muted-foreground">{attemptsLeft} attempts left</p>
+        <form
+          action={verifyOtp}
+          className="mt-4 w-full rounded-md border border-[#e5dac7] bg-[#fffaf1] p-6"
+        >
+          <input
+            className="h-11 w-full rounded-md border border-border px-3"
+            inputMode="numeric"
+            maxLength={6}
+            name="code"
+            onChange={(event) => setCode(event.target.value)}
+            placeholder="6-digit code"
+            required
+            value={code}
+          />
+          <button
+            className="mt-4 h-11 w-full rounded-md bg-primary px-4 font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+            type="submit"
+          >
+            Verify code
+          </button>
+          <p className="mt-3 text-xs font-semibold uppercase text-muted-foreground">
+            {attemptsLeft} attempts left
+          </p>
           {message ? <p className="mt-4 text-sm text-muted-foreground">{message}</p> : null}
         </form>
       </section>

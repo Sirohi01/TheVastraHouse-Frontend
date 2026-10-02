@@ -9,12 +9,18 @@ type CollectionPageProps = {
   searchParams?: Promise<CatalogQuery & { view?: string }>;
 };
 
-export async function generateMetadata({ params, searchParams }: Readonly<CollectionPageProps>): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Readonly<CollectionPageProps>): Promise<Metadata> {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   return taxonomyMetadata("collections", slug, (query ?? {}) as Record<string, string | undefined>);
 }
 
-export default async function CollectionPage({ params, searchParams }: Readonly<CollectionPageProps>) {
+export default async function CollectionPage({
+  params,
+  searchParams,
+}: Readonly<CollectionPageProps>) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   return <TaxonomyListingPage kind="collections" query={query ?? {}} slug={slug} />;
 }

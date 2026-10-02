@@ -112,7 +112,9 @@ export async function toApiError(response: Response) {
   }
 
   if (response.status === 429 && !code) {
-    message = message.startsWith("Too many") ? message : "Too many attempts. Please wait a moment and try again.";
+    message = message.startsWith("Too many")
+      ? message
+      : "Too many attempts. Please wait a moment and try again.";
   }
 
   return new ApiError(cleanValidationMessage(message), response.status, code, requestId);
@@ -122,7 +124,10 @@ export async function toApiError(response: Response) {
 function cleanValidationMessage(message: string) {
   if (!message.trim().startsWith("[")) return message;
   try {
-    const issues = JSON.parse(message) as Array<{ message?: string; path?: Array<string | number> }>;
+    const issues = JSON.parse(message) as Array<{
+      message?: string;
+      path?: Array<string | number>;
+    }>;
     const first = issues[0];
     if (!first?.message) return "Please check the form and try again.";
     const field = first.path?.length ? `${String(first.path[first.path.length - 1])}: ` : "";
@@ -167,7 +172,8 @@ async function requestWithToken(
   }
 
   // An explicit empty string means "send no token" (guest retry after a failed refresh).
-  const token = accessToken === "" ? undefined : (accessToken ?? useAuthStore.getState().accessToken);
+  const token =
+    accessToken === "" ? undefined : (accessToken ?? useAuthStore.getState().accessToken);
 
   if (token) {
     requestHeaders.set("Authorization", `Bearer ${token}`);
@@ -246,7 +252,9 @@ function handleSessionExpired() {
 
     const currentPath = `${path}${window.location.search}`;
     window.location.assign(
-      path.startsWith("/admin") ? "/admin/login" : `/login?redirect=${encodeURIComponent(currentPath)}`,
+      path.startsWith("/admin")
+        ? "/admin/login"
+        : `/login?redirect=${encodeURIComponent(currentPath)}`,
     );
   }
 }

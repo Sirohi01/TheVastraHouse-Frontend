@@ -244,11 +244,19 @@ export function getProductAvailability(product: CatalogProduct) {
   const preorderable = variants.some((variant) => variant.availability?.canPreOrder);
   const lowStock = variants.some((variant) => variant.availability?.status === "low_stock");
   return {
-    label: purchasable ? (lowStock ? "Only a few left" : "In stock") : preorderable ? "Pre-order" : "Out of stock",
+    label: purchasable
+      ? lowStock
+        ? "Only a few left"
+        : "In stock"
+      : preorderable
+        ? "Pre-order"
+        : "Out of stock",
     lowStock,
     preorderable,
     purchasable,
-    status: product.availabilityStatus ?? (purchasable ? "in_stock" : preorderable ? "pre_order" : "out_of_stock"),
+    status:
+      product.availabilityStatus ??
+      (purchasable ? "in_stock" : preorderable ? "pre_order" : "out_of_stock"),
   };
 }
 

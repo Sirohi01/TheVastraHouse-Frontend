@@ -15,11 +15,16 @@ export type AdminReview = {
   userId?: { email?: string; firstName?: string; lastName?: string };
 };
 
-export function fetchAdminReviews(input: { status?: string; search?: string }, accessToken?: string) {
+export function fetchAdminReviews(
+  input: { status?: string; search?: string },
+  accessToken?: string,
+) {
   const params = new URLSearchParams();
   if (input.status) params.set("moderationStatus", input.status);
   if (input.search) params.set("search", input.search);
-  return apiFetch<PaginatedResult<AdminReview>>(`/catalog/admin/reviews?${params.toString()}`, { accessToken });
+  return apiFetch<PaginatedResult<AdminReview>>(`/catalog/admin/reviews?${params.toString()}`, {
+    accessToken,
+  });
 }
 
 export function moderateAdminReview(
@@ -35,5 +40,8 @@ export function moderateAdminReview(
 }
 
 export function deleteAdminReview(id: string, accessToken?: string) {
-  return apiFetch<{ deleted: boolean }>(`/catalog/admin/reviews/${id}`, { accessToken, method: "DELETE" });
+  return apiFetch<{ deleted: boolean }>(`/catalog/admin/reviews/${id}`, {
+    accessToken,
+    method: "DELETE",
+  });
 }

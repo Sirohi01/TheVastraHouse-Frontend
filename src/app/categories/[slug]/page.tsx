@@ -9,7 +9,10 @@ type CategoryPageProps = {
   searchParams?: Promise<CatalogQuery & { view?: string }>;
 };
 
-export async function generateMetadata({ params, searchParams }: Readonly<CategoryPageProps>): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Readonly<CategoryPageProps>): Promise<Metadata> {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   return taxonomyMetadata("categories", slug, (query ?? {}) as Record<string, string | undefined>);
 }

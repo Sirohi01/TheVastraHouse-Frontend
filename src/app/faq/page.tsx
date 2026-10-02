@@ -8,9 +8,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSeoSettings();
   try {
     const { page } = await fetchCmsPage("faq");
-    return buildPageMetadata(settings, { description: page.summary, name: page.title, path: "/faq", seo: page.seo });
+    return buildPageMetadata(settings, {
+      description: page.summary,
+      name: page.title,
+      path: "/faq",
+      seo: page.seo,
+    });
   } catch {
-    return buildPageMetadata(settings, { description: "Frequently asked questions.", name: "FAQ", path: "/faq" });
+    return buildPageMetadata(settings, {
+      description: "Frequently asked questions.",
+      name: "FAQ",
+      path: "/faq",
+    });
   }
 }
 

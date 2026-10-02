@@ -135,7 +135,10 @@ function mergeSettings(partial: Partial<SeoSettings>): SeoSettings {
 
 export function clampText(value: string | undefined, max: number) {
   if (!value) return undefined;
-  const text = value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const text = value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (text.length <= max) return text || undefined;
   const cut = text.slice(0, max - 1);
   return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 20))}…`;
@@ -170,17 +173,21 @@ export function buildPageMetadata(settings: SeoSettings, input: PageMetadataInpu
   const customTitle = seo.title?.trim();
   const baseTitle = customTitle || input.name?.trim() || settings.defaultTitle;
   const description =
-    clampText(seo.description, 320) ?? clampText(input.description, 160) ?? settings.defaultDescription;
+    clampText(seo.description, 320) ??
+    clampText(input.description, 160) ??
+    settings.defaultDescription;
   const canonical = resolveCanonical(seo.canonicalUrl, input.path);
   const imageUrl = seo.ogImage?.url || input.image?.url || settings.defaultOgImage;
-  const imageAlt = seo.ogImage?.altText || input.image?.altText || input.name || settings.defaultOgImageAlt;
+  const imageAlt =
+    seo.ogImage?.altText || input.image?.altText || input.name || settings.defaultOgImageAlt;
   const twitterImage = seo.twitterImage?.url || imageUrl || settings.defaultTwitterImage;
   const index =
     settings.robots.indexSite && seo.robotsIndex !== false && !input.noindex && !input.isVariantUrl;
   const follow = seo.robotsFollow !== false;
   // Custom SEO titles and the home page are complete titles; entity names get the template.
   const title = customTitle || input.absoluteTitle ? { absolute: baseTitle } : baseTitle;
-  const socialTitle = customTitle || (input.absoluteTitle ? baseTitle : `${baseTitle} | ${settings.siteName}`);
+  const socialTitle =
+    customTitle || (input.absoluteTitle ? baseTitle : `${baseTitle} | ${settings.siteName}`);
 
   return {
     alternates: { canonical },
@@ -227,7 +234,11 @@ function resolveCanonical(custom: string | undefined, path: string) {
 /** True when the URL carries filter/sort/search parameters that should not be indexed. */
 export function hasIndexBlockingParams(params: Record<string, string | string[] | undefined>) {
   return Object.entries(params).some(
-    ([key, value]) => key !== "page" && value !== undefined && value !== "" && !(Array.isArray(value) && !value.length),
+    ([key, value]) =>
+      key !== "page" &&
+      value !== undefined &&
+      value !== "" &&
+      !(Array.isArray(value) && !value.length),
   );
 }
 
@@ -410,7 +421,9 @@ export function buildArticleJsonLd(input: {
   return {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    author: input.authorName ? { "@type": "Person", name: input.authorName } : { "@id": `${getSiteUrl()}/#organization` },
+    author: input.authorName
+      ? { "@type": "Person", name: input.authorName }
+      : { "@id": `${getSiteUrl()}/#organization` },
     dateModified: input.dateModified ?? input.datePublished,
     datePublished: input.datePublished,
     description: input.description,
@@ -420,7 +433,9 @@ export function buildArticleJsonLd(input: {
     publisher: {
       "@type": "Organization",
       name: input.publisherName,
-      ...(input.publisherLogo ? { logo: { "@type": "ImageObject", url: input.publisherLogo } } : {}),
+      ...(input.publisherLogo
+        ? { logo: { "@type": "ImageObject", url: input.publisherLogo } }
+        : {}),
     },
     url: absoluteUrl(input.path),
   };
@@ -486,7 +501,12 @@ export function buildWebPageJsonLd(input: {
 // ---------------- Sitemap data ----------------
 
 export type SitemapData = {
-  products: Array<{ slug: string; updatedAt?: string; name?: string; images?: Array<{ url: string; alt?: string }> }>;
+  products: Array<{
+    slug: string;
+    updatedAt?: string;
+    name?: string;
+    images?: Array<{ url: string; alt?: string }>;
+  }>;
   categories: Array<{ slug: string; updatedAt?: string }>;
   collections: Array<{ slug: string; updatedAt?: string }>;
 };

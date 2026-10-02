@@ -5,7 +5,13 @@ import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { CONSENT_EVENT, readConsent, saveConsent, sendVisitBeacon, type ConsentState } from "@/lib/analytics";
+import {
+  CONSENT_EVENT,
+  readConsent,
+  saveConsent,
+  sendVisitBeacon,
+  type ConsentState,
+} from "@/lib/analytics";
 import { useAuthStore } from "@/stores/authStore";
 
 /**
@@ -15,7 +21,11 @@ import { useAuthStore } from "@/stores/authStore";
 export function Analytics({ measurementId }: Readonly<{ measurementId: string }>) {
   const pathname = usePathname();
   const accessToken = useAuthStore((state) => state.accessToken);
-  const [consent, setConsent] = useState<ConsentState>({ analytics: false, decided: true, marketing: false });
+  const [consent, setConsent] = useState<ConsentState>({
+    analytics: false,
+    decided: true,
+    marketing: false,
+  });
   const [customising, setCustomising] = useState(false);
   const [draft, setDraft] = useState({ analytics: false, marketing: false });
   const isAdmin = pathname.startsWith("/admin");
@@ -34,7 +44,10 @@ export function Analytics({ measurementId }: Readonly<{ measurementId: string }>
   // Page views for client-side navigations (the first view is sent by config).
   useEffect(() => {
     if (consent.analytics && window.gtag && measurementId) {
-      window.gtag("event", "page_view", { page_location: window.location.href, page_path: pathname });
+      window.gtag("event", "page_view", {
+        page_location: window.location.href,
+        page_path: pathname,
+      });
     }
   }, [consent.analytics, measurementId, pathname]);
 
@@ -43,7 +56,10 @@ export function Analytics({ measurementId }: Readonly<{ measurementId: string }>
     setConsent({ ...next, decided: true });
     setCustomising(false);
     if (accessToken) {
-      void apiFetch("/account/privacy/cookies", { body: JSON.stringify(next), method: "PATCH" }).catch(() => undefined);
+      void apiFetch("/account/privacy/cookies", {
+        body: JSON.stringify(next),
+        method: "PATCH",
+      }).catch(() => undefined);
     }
   }
 
@@ -54,7 +70,10 @@ export function Analytics({ measurementId }: Readonly<{ measurementId: string }>
           <Script id="ga-consent-default" strategy="afterInteractive">
             {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;gtag('consent','default',{ad_storage:'${consent.marketing ? "granted" : "denied"}',ad_user_data:'${consent.marketing ? "granted" : "denied"}',ad_personalization:'${consent.marketing ? "granted" : "denied"}',analytics_storage:'granted'});gtag('js',new Date());gtag('config','${measurementId}',{send_page_view:false,anonymize_ip:true});`}
           </Script>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`} strategy="afterInteractive" />
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
+            strategy="afterInteractive"
+          />
         </>
       ) : null}
 
@@ -74,22 +93,39 @@ export function Analytics({ measurementId }: Readonly<{ measurementId: string }>
                 </span>
               </label>
               <label className="flex items-start gap-2">
-                <input checked={draft.analytics} onChange={(event) => setDraft({ ...draft, analytics: event.target.checked })} type="checkbox" />
+                <input
+                  checked={draft.analytics}
+                  onChange={(event) => setDraft({ ...draft, analytics: event.target.checked })}
+                  type="checkbox"
+                />
                 <span>
-                  <strong>Analytics</strong> — anonymous usage statistics (Google Analytics) to improve the store.
+                  <strong>Analytics</strong> — anonymous usage statistics (Google Analytics) to
+                  improve the store.
                 </span>
               </label>
               <label className="flex items-start gap-2">
-                <input checked={draft.marketing} onChange={(event) => setDraft({ ...draft, marketing: event.target.checked })} type="checkbox" />
+                <input
+                  checked={draft.marketing}
+                  onChange={(event) => setDraft({ ...draft, marketing: event.target.checked })}
+                  type="checkbox"
+                />
                 <span>
                   <strong>Marketing</strong> — measure ads and campaigns.
                 </span>
               </label>
               <div className="flex flex-wrap gap-2">
-                <button className="h-10 rounded-md bg-primary px-4 font-semibold text-primary-foreground" onClick={() => decide(draft)} type="button">
+                <button
+                  className="h-10 rounded-md bg-primary px-4 font-semibold text-primary-foreground"
+                  onClick={() => decide(draft)}
+                  type="button"
+                >
                   Save choices
                 </button>
-                <button className="h-10 rounded-md border border-border px-4" onClick={() => setCustomising(false)} type="button">
+                <button
+                  className="h-10 rounded-md border border-border px-4"
+                  onClick={() => setCustomising(false)}
+                  type="button"
+                >
                   Back
                 </button>
               </div>
@@ -97,19 +133,32 @@ export function Analytics({ measurementId }: Readonly<{ measurementId: string }>
           ) : (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <p className="flex-1 leading-6">
-                We use essential cookies to run the store and, with your permission, analytics cookies to improve it.{" "}
+                We use essential cookies to run the store and, with your permission, analytics
+                cookies to improve it.{" "}
                 <Link className="underline" href="/pages/privacy-policy">
                   Privacy policy
                 </Link>
               </p>
               <div className="flex flex-wrap gap-2">
-                <button className="h-10 rounded-md border border-border px-3" onClick={() => setCustomising(true)} type="button">
+                <button
+                  className="h-10 rounded-md border border-border px-3"
+                  onClick={() => setCustomising(true)}
+                  type="button"
+                >
                   Customise
                 </button>
-                <button className="h-10 rounded-md border border-border px-3" onClick={() => decide({ analytics: false, marketing: false })} type="button">
+                <button
+                  className="h-10 rounded-md border border-border px-3"
+                  onClick={() => decide({ analytics: false, marketing: false })}
+                  type="button"
+                >
                   Reject optional
                 </button>
-                <button className="h-10 rounded-md bg-primary px-4 font-semibold text-primary-foreground" onClick={() => decide({ analytics: true, marketing: true })} type="button">
+                <button
+                  className="h-10 rounded-md bg-primary px-4 font-semibold text-primary-foreground"
+                  onClick={() => decide({ analytics: true, marketing: true })}
+                  type="button"
+                >
                   Accept all
                 </button>
               </div>
@@ -128,5 +177,9 @@ export function reopenCookieSettings() {
   } catch {
     // ignore
   }
-  window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: { analytics: false, decided: false, marketing: false } }));
+  window.dispatchEvent(
+    new CustomEvent(CONSENT_EVENT, {
+      detail: { analytics: false, decided: false, marketing: false },
+    }),
+  );
 }

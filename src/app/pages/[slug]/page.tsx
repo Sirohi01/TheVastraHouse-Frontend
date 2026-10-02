@@ -11,7 +11,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const settings = await getSeoSettings();
   try {
     const { page } = await fetchCmsPage(slug);
-    return buildPageMetadata(settings, { description: page.summary, name: page.title, path: `/pages/${slug}`, seo: page.seo });
+    return buildPageMetadata(settings, {
+      description: page.summary,
+      name: page.title,
+      path: `/pages/${slug}`,
+      seo: page.seo,
+    });
   } catch {
     return buildPageMetadata(settings, { name: "Page", noindex: true, path: `/pages/${slug}` });
   }

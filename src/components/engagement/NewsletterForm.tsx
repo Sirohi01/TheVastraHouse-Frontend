@@ -4,10 +4,16 @@ import { useState } from "react";
 import { apiFetch, errorMessage } from "@/lib/api";
 
 /** Newsletter signup with explicit consent (FR-MKT-01, DPDP-style consent capture). */
-export function NewsletterForm({ source, tone = "light" }: Readonly<{ source: string; tone?: "light" | "dark" }>) {
+export function NewsletterForm({
+  source,
+  tone = "light",
+}: Readonly<{ source: string; tone?: "light" | "dark" }>) {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
-  const [state, setState] = useState<{ kind: "idle" | "saving" | "done" | "error"; message?: string }>({ kind: "idle" });
+  const [state, setState] = useState<{
+    kind: "idle" | "saving" | "done" | "error";
+    message?: string;
+  }>({ kind: "idle" });
   const id = `newsletter-${source}`;
 
   async function submit(event: React.FormEvent) {
@@ -24,7 +30,9 @@ export function NewsletterForm({ source, tone = "light" }: Readonly<{ source: st
       });
       setState({
         kind: "done",
-        message: result.alreadySubscribed ? "You are already subscribed — thank you!" : "Thanks for subscribing! Check your inbox.",
+        message: result.alreadySubscribed
+          ? "You are already subscribed — thank you!"
+          : "Thanks for subscribing! Check your inbox.",
       });
       setEmail("");
     } catch (error) {
@@ -34,7 +42,10 @@ export function NewsletterForm({ source, tone = "light" }: Readonly<{ source: st
 
   if (state.kind === "done") {
     return (
-      <p className={`mt-3 text-sm font-semibold ${tone === "dark" ? "text-[#f0d9a4]" : "text-emerald-700"}`} role="status">
+      <p
+        className={`mt-3 text-sm font-semibold ${tone === "dark" ? "text-[#f0d9a4]" : "text-emerald-700"}`}
+        role="status"
+      >
         {state.message}
       </p>
     );
@@ -64,8 +75,15 @@ export function NewsletterForm({ source, tone = "light" }: Readonly<{ source: st
           {state.kind === "saving" ? "…" : "Subscribe"}
         </button>
       </div>
-      <label className={`flex items-start gap-2 text-xs ${tone === "dark" ? "text-white/80" : "text-[#6f6256]"}`}>
-        <input checked={consent} className="mt-0.5" onChange={(event) => setConsent(event.target.checked)} type="checkbox" />
+      <label
+        className={`flex items-start gap-2 text-xs ${tone === "dark" ? "text-white/80" : "text-[#6f6256]"}`}
+      >
+        <input
+          checked={consent}
+          className="mt-0.5"
+          onChange={(event) => setConsent(event.target.checked)}
+          type="checkbox"
+        />
         <span>I agree to receive marketing emails. I can unsubscribe any time.</span>
       </label>
       {state.kind === "error" ? (

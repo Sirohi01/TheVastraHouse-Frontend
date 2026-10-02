@@ -19,8 +19,12 @@ export default function NotFound() {
   return (
     <div className="bg-[#fbf7ef] px-4 py-16">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#caa14e]">Error 404</p>
-        <h1 className="mt-3 font-serif text-4xl uppercase text-[#3d1620]">This page could not be found</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#caa14e]">
+          Error 404
+        </p>
+        <h1 className="mt-3 font-serif text-4xl uppercase text-[#3d1620]">
+          This page could not be found
+        </h1>
         <p className="mt-4 text-sm leading-6 text-[#6f6256]">
           The link may be old or the item may no longer be available. Try one of these instead:
         </p>
@@ -46,7 +50,10 @@ export default function NotFound() {
             placeholder="Search kurtas, sarees…"
             type="search"
           />
-          <button className="h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground" type="submit">
+          <button
+            className="h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+            type="submit"
+          >
             Search
           </button>
         </form>

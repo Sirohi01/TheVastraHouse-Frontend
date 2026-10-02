@@ -44,7 +44,10 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: seo.robots.indexSite
       ? { follow: true, index: true }
       : { follow: false, googleBot: { follow: false, index: false }, index: false },
-    title: { default: seo.defaultTitle, template: seo.titleTemplate.includes("%s") ? seo.titleTemplate : `%s | ${seo.siteName}` },
+    title: {
+      default: seo.defaultTitle,
+      template: seo.titleTemplate.includes("%s") ? seo.titleTemplate : `%s | ${seo.siteName}`,
+    },
     twitter: {
       card: "summary_large_image",
       description: seo.defaultDescription,
@@ -66,7 +69,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="en-IN" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <a className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow" href="#content">
+        <a
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow"
+          href="#content"
+        >
           Skip to content
         </a>
         <JsonLd data={buildOrganizationJsonLd(seo)} />

@@ -6,10 +6,16 @@ import { apiFetch, errorMessage } from "@/lib/api";
 import { useAuthStore } from "@/stores/authStore";
 
 /** "Notify me when available" for an out-of-stock variant (FR-CAT-10). */
-export function NotifyMeForm({ productId, variantId }: Readonly<{ productId: string; variantId: string }>) {
+export function NotifyMeForm({
+  productId,
+  variantId,
+}: Readonly<{ productId: string; variantId: string }>) {
   const user = useAuthStore((state) => state.user);
   const [email, setEmail] = useState(user?.email ?? "");
-  const [status, setStatus] = useState<{ kind: "idle" | "saving" | "done" | "error"; message?: string }>({ kind: "idle" });
+  const [status, setStatus] = useState<{
+    kind: "idle" | "saving" | "done" | "error";
+    message?: string;
+  }>({ kind: "idle" });
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();

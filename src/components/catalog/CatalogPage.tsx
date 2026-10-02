@@ -116,7 +116,9 @@ export async function CatalogPage({
                 className={`max-w-xl text-[#3d1620] md:text-[var(--banner-text)] ${catalogContentAlignment(bannerStyle?.contentPosition)} ${
                   bannerStyle?.fontFamily === "sans" ? "" : "font-serif"
                 }`}
-                style={{ "--banner-text": bannerStyle?.textColor ?? "#ffffff" } as React.CSSProperties}
+                style={
+                  { "--banner-text": bannerStyle?.textColor ?? "#ffffff" } as React.CSSProperties
+                }
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-current opacity-80">
                   {eyebrow ?? "The Vastra House"}
@@ -150,7 +152,10 @@ export async function CatalogPage({
           {(query.search ?? query.q) && !products.data.length && products.suggestion ? (
             <p className="mb-4 text-sm text-[#6f6256]">
               No results for &ldquo;{query.search ?? query.q}&rdquo;. Did you mean{" "}
-              <a className="font-semibold text-primary underline" href={`/shop?q=${encodeURIComponent(products.suggestion)}`}>
+              <a
+                className="font-semibold text-primary underline"
+                href={`/shop?q=${encodeURIComponent(products.suggestion)}`}
+              >
                 {products.suggestion}
               </a>
               ?
@@ -175,7 +180,9 @@ export async function CatalogPage({
               {bottomContent}
             </section>
           ) : null}
-          {faqs?.length ? <ContentFaqs faqs={faqs} title={`${title}: frequently asked questions`} /> : null}
+          {faqs?.length ? (
+            <ContentFaqs faqs={faqs} title={`${title}: frequently asked questions`} />
+          ) : null}
         </section>
       </div>
     );

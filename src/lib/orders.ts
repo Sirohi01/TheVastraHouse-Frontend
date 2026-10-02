@@ -189,14 +189,11 @@ export function fetchMyOrder(orderNumber: string, accessToken?: string) {
 }
 
 export function cancelMyOrder(orderNumber: string, note?: string, accessToken?: string) {
-  return apiFetch<{ order: OrderRecord }>(
-    `/orders/me/${encodeURIComponent(orderNumber)}/cancel`,
-    {
-      accessToken,
-      body: JSON.stringify({ note }),
-      method: "POST",
-    },
-  );
+  return apiFetch<{ order: OrderRecord }>(`/orders/me/${encodeURIComponent(orderNumber)}/cancel`, {
+    accessToken,
+    body: JSON.stringify({ note }),
+    method: "POST",
+  });
 }
 
 export function formatOrderMoney(value?: number, currencyCode = "INR") {

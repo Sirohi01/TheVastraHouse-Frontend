@@ -4,7 +4,12 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { SearchTracker } from "@/components/analytics/SearchTracker";
 import type { CatalogQuery } from "@/lib/catalog";
 import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
-import { buildCollectionPageJsonLd, buildPageMetadata, getSeoSettings, hasIndexBlockingParams } from "@/lib/seo";
+import {
+  buildCollectionPageJsonLd,
+  buildPageMetadata,
+  getSeoSettings,
+  hasIndexBlockingParams,
+} from "@/lib/seo";
 
 type ShopPageProps = {
   searchParams?: Promise<CatalogQuery & { view?: string; q?: string }>;
@@ -14,8 +19,14 @@ type ShopPageProps = {
  * Facet policy: /shop and /shop?page=N are indexable (self-canonical per page); any filter,
  * sort or search variant is noindex,follow and canonicalises to /shop.
  */
-export async function generateMetadata({ searchParams }: Readonly<ShopPageProps>): Promise<Metadata> {
-  const [settings, query, content] = await Promise.all([getSeoSettings(), searchParams, loadCmsContent()]);
+export async function generateMetadata({
+  searchParams,
+}: Readonly<ShopPageProps>): Promise<Metadata> {
+  const [settings, query, content] = await Promise.all([
+    getSeoSettings(),
+    searchParams,
+    loadCmsContent(),
+  ]);
   const params = (query ?? {}) as Record<string, string | undefined>;
   const page = Number(params.page ?? "1");
   const isSearch = Boolean(params.q ?? params.search);
@@ -23,9 +34,15 @@ export async function generateMetadata({ searchParams }: Readonly<ShopPageProps>
   const shop = { ...defaultCmsContent.shop, ...content.shop };
 
   return buildPageMetadata(settings, {
-    description: shop.description ?? "Shop soft-luxury Indian wear: kurtas, sarees, co-ords and festive edits.",
+    description:
+      shop.description ??
+      "Shop soft-luxury Indian wear: kurtas, sarees, co-ords and festive edits.",
     isVariantUrl: variant || isSearch,
-    name: isSearch ? `Search results for “${params.q ?? params.search}”` : page > 1 ? `Shop — page ${page}` : (shop.title ?? "Shop"),
+    name: isSearch
+      ? `Search results for “${params.q ?? params.search}”`
+      : page > 1
+        ? `Shop — page ${page}`
+        : (shop.title ?? "Shop"),
     path: !variant && page > 1 ? `/shop?page=${page}` : "/shop",
   });
 }

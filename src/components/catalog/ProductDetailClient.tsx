@@ -30,13 +30,16 @@ export function ProductDetailClient({
   const activeVariants = product.variants.filter((item) => item.active !== false);
   const [selectedVariant, setSelectedVariant] = useState(() => {
     // Default to the first variant that can actually be bought.
-    const index = product.variants.findIndex((item) => item.active !== false && item.availability?.canPurchase);
+    const index = product.variants.findIndex(
+      (item) => item.active !== false && item.availability?.canPurchase,
+    );
     return index >= 0 ? index : 0;
   });
   const media = getProductMedia(product);
   const variant = product.variants[selectedVariant] ?? activeVariants[0] ?? product.variants[0];
   // Availability comes from the inventory ledger via the API — the same source checkout uses.
-  const canPreOrder = Boolean(variant?.availability?.canPreOrder) && !variant?.availability?.canPurchase;
+  const canPreOrder =
+    Boolean(variant?.availability?.canPreOrder) && !variant?.availability?.canPurchase;
   const canDirectOrder = Boolean(variant?.availability?.canPurchase);
   const lowStock = variant?.availability?.status === "low_stock";
   const pricing = getProductPricing({ ...product, variants: [variant] });
@@ -121,7 +124,10 @@ export function ProductDetailClient({
             </h1>
             <FiligreeDivider align="start" className="mt-3" />
             {reviewSummary?.count ? (
-              <a className="mt-3 inline-flex items-center gap-1 text-sm text-[#6e1423] hover:underline" href="#reviews">
+              <a
+                className="mt-3 inline-flex items-center gap-1 text-sm text-[#6e1423] hover:underline"
+                href="#reviews"
+              >
                 <Star aria-hidden="true" className="fill-[#caa14e] text-[#caa14e]" size={16} />
                 <span className="font-semibold">{reviewSummary.average.toFixed(1)}</span>
                 <span className="text-muted-foreground">
@@ -135,12 +141,17 @@ export function ProductDetailClient({
             <div className="mt-5 flex flex-wrap items-end gap-3">
               <p className="text-2xl font-semibold text-[#3d2a18]">
                 {variant?.tierPrice !== undefined
-                  ? new Intl.NumberFormat("en-IN", { currency: "INR", maximumFractionDigits: 0, style: "currency" }).format(variant.tierPrice)
+                  ? new Intl.NumberFormat("en-IN", {
+                      currency: "INR",
+                      maximumFractionDigits: 0,
+                      style: "currency",
+                    }).format(variant.tierPrice)
                   : pricing.price}
               </p>
               {variant?.tierPrice !== undefined ? (
                 <p className="pb-1 text-sm font-semibold uppercase text-[#6e1423]">
-                  Trade price{product.wholesaleMinQuantity ? ` · MOQ ${product.wholesaleMinQuantity}` : ""}
+                  Trade price
+                  {product.wholesaleMinQuantity ? ` · MOQ ${product.wholesaleMinQuantity}` : ""}
                 </p>
               ) : null}
               {pricing.hasSale && variant?.tierPrice === undefined ? (
@@ -161,17 +172,24 @@ export function ProductDetailClient({
                 label="Color"
                 options={[...new Set(product.variants.map((item) => item.color).filter(isString))]}
                 selected={variant?.color}
-                onSelect={(value) => selectVariant(product, setSelectedVariant, "color", value, variant?.size)}
+                onSelect={(value) =>
+                  selectVariant(product, setSelectedVariant, "color", value, variant?.size)
+                }
               />
               <VariantSelector
                 label="Size"
                 options={[...new Set(product.variants.map((item) => item.size).filter(isString))]}
                 selected={variant?.size}
                 disabledOptions={product.variants
-                  .filter((item) => item.color === variant?.color && item.availability?.status === "out_of_stock")
+                  .filter(
+                    (item) =>
+                      item.color === variant?.color && item.availability?.status === "out_of_stock",
+                  )
                   .map((item) => item.size)
                   .filter(isString)}
-                onSelect={(value) => selectVariant(product, setSelectedVariant, "size", value, variant?.color)}
+                onSelect={(value) =>
+                  selectVariant(product, setSelectedVariant, "size", value, variant?.color)
+                }
               />
             </div>
 
@@ -179,7 +197,8 @@ export function ProductDetailClient({
               <div className="mt-6 rounded-md border border-[#e1d6c4] bg-white p-3">
                 <p className="text-sm font-semibold text-[#3d1620]">Out of stock</p>
                 <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  This size/colour is sold out. Leave your email and we will tell you when it is back.
+                  This size/colour is sold out. Leave your email and we will tell you when it is
+                  back.
                 </p>
                 <NotifyMeForm productId={product._id} variantId={String(variant._id)} />
               </div>
@@ -401,10 +420,17 @@ function VariantSelector({
 
   return (
     <div>
-      <p className="text-sm font-semibold uppercase tracking-wide text-[#3d1620]" id={`variant-${label}`}>
+      <p
+        className="text-sm font-semibold uppercase tracking-wide text-[#3d1620]"
+        id={`variant-${label}`}
+      >
         {label}
       </p>
-      <div aria-labelledby={`variant-${label}`} className="mt-2 flex flex-wrap gap-2" role="radiogroup">
+      <div
+        aria-labelledby={`variant-${label}`}
+        className="mt-2 flex flex-wrap gap-2"
+        role="radiogroup"
+      >
         {options.map((option) => (
           <button
             aria-checked={selected === option}
@@ -497,7 +523,10 @@ function ReviewsSection({
                 <li className="flex items-center gap-2" key={star}>
                   <span className="w-6">{star}★</span>
                   <span className="h-2 flex-1 overflow-hidden rounded bg-[#efe4d4]">
-                    <span className="block h-full bg-[#caa14e]" style={{ width: `${(count / summary.count) * 100}%` }} />
+                    <span
+                      className="block h-full bg-[#caa14e]"
+                      style={{ width: `${(count / summary.count) * 100}%` }}
+                    />
                   </span>
                   <span className="w-6 text-right">{count}</span>
                 </li>
@@ -565,7 +594,9 @@ function selectVariant(
     .map((variant, index) => ({ index, variant }))
     .filter(({ variant }) => variant.active !== false && variant[key] === value);
   const match =
-    candidates.find(({ variant }) => variant[other] === otherValue && variant.availability?.canPurchase) ??
+    candidates.find(
+      ({ variant }) => variant[other] === otherValue && variant.availability?.canPurchase,
+    ) ??
     candidates.find(({ variant }) => variant[other] === otherValue) ??
     candidates.find(({ variant }) => variant.availability?.canPurchase) ??
     candidates[0];

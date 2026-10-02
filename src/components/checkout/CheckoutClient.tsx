@@ -618,7 +618,12 @@ export function CheckoutClient() {
                 required
               />
               <Field label="Email" name="guestEmail" required type="email" />
-              <Field defaultValue={addressDraft.phone || defaultAddress.phone} label="Phone" name="phone" required />
+              <Field
+                defaultValue={addressDraft.phone || defaultAddress.phone}
+                label="Phone"
+                name="phone"
+                required
+              />
               <Field
                 className="sm:col-span-2"
                 defaultValue={addressDraft.line1 || defaultAddress.line1}
@@ -626,7 +631,12 @@ export function CheckoutClient() {
                 name="line1"
                 required
               />
-              <Field className="sm:col-span-2" defaultValue={addressDraft.line2} label="Address line 2" name="line2" />
+              <Field
+                className="sm:col-span-2"
+                defaultValue={addressDraft.line2}
+                label="Address line 2"
+                name="line2"
+              />
               {accessToken ? (
                 <label className="inline-flex items-center gap-2 text-sm font-semibold sm:col-span-2">
                   <input name="saveAddress" type="checkbox" value="true" />
@@ -758,10 +768,20 @@ export function CheckoutClient() {
               <div className="grid gap-2">
                 <Field label="Coupon" name="couponCode" />
                 <div className="flex gap-2">
-                  <button className="h-9 rounded-md border border-border px-3 text-sm font-semibold" onClick={() => formRef.current && void refreshPreview(new FormData(formRef.current))} type="button">
+                  <button
+                    className="h-9 rounded-md border border-border px-3 text-sm font-semibold"
+                    onClick={() =>
+                      formRef.current && void refreshPreview(new FormData(formRef.current))
+                    }
+                    type="button"
+                  >
                     Apply coupon
                   </button>
-                  <button className="h-9 rounded-md border border-border px-3 text-sm font-semibold" onClick={clearCoupon} type="button">
+                  <button
+                    className="h-9 rounded-md border border-border px-3 text-sm font-semibold"
+                    onClick={clearCoupon}
+                    type="button"
+                  >
                     Remove
                   </button>
                 </div>
@@ -769,12 +789,22 @@ export function CheckoutClient() {
               <div className="grid gap-2">
                 <label className="text-sm font-medium">
                   Gift card
-                  <input className="mt-2 h-10 w-full rounded-md border border-border px-3" onChange={(event) => setGiftCardCode(event.target.value)} value={giftCardCode} />
+                  <input
+                    className="mt-2 h-10 w-full rounded-md border border-border px-3"
+                    onChange={(event) => setGiftCardCode(event.target.value)}
+                    value={giftCardCode}
+                  />
                 </label>
-                <button className="h-9 rounded-md border border-border px-3 text-sm font-semibold" onClick={() => void applyGiftCard()} type="button">
+                <button
+                  className="h-9 rounded-md border border-border px-3 text-sm font-semibold"
+                  onClick={() => void applyGiftCard()}
+                  type="button"
+                >
                   Apply gift card
                 </button>
-                {giftCardMessage ? <p className="text-xs text-muted-foreground">{giftCardMessage}</p> : null}
+                {giftCardMessage ? (
+                  <p className="text-xs text-muted-foreground">{giftCardMessage}</p>
+                ) : null}
               </div>
               {loyalty && loyalty.storeCreditBalance > 0 ? (
                 <Field

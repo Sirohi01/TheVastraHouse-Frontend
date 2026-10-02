@@ -33,7 +33,13 @@ export type AccountOverview = {
 
 export type RewardSummary = {
   creditHistory: Array<{ _id: string; amount: number; reason?: string; createdAt: string }>;
-  giftCards: Array<{ _id: string; code: string; balance: number; status: string; expiresAt?: string }>;
+  giftCards: Array<{
+    _id: string;
+    code: string;
+    balance: number;
+    status: string;
+    expiresAt?: string;
+  }>;
   pointsHistory: Array<{ _id: string; points: number; reason?: string; createdAt: string }>;
   referral: { code: string; link: string; rewardAmount: number };
   rewardPoints: number;
@@ -65,12 +71,19 @@ export function fetchAddresses(accessToken?: string) {
   return apiFetch<{ addresses: AccountAddress[] }>("/account/addresses", { accessToken });
 }
 
-export function saveAddress(address: Omit<AccountAddress, "_id">, id?: string, accessToken?: string) {
-  return apiFetch<{ addresses: AccountAddress[] }>(id ? `/account/addresses/${id}` : "/account/addresses", {
-    accessToken,
-    body: JSON.stringify(address),
-    method: id ? "PATCH" : "POST",
-  });
+export function saveAddress(
+  address: Omit<AccountAddress, "_id">,
+  id?: string,
+  accessToken?: string,
+) {
+  return apiFetch<{ addresses: AccountAddress[] }>(
+    id ? `/account/addresses/${id}` : "/account/addresses",
+    {
+      accessToken,
+      body: JSON.stringify(address),
+      method: id ? "PATCH" : "POST",
+    },
+  );
 }
 
 export function deleteAddress(id: string, accessToken?: string) {

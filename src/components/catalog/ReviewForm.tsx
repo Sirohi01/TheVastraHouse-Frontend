@@ -27,7 +27,10 @@ export function ReviewForm({ slug }: Readonly<{ slug: string }>) {
   if (!accessToken) {
     return (
       <p className="mt-5 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
-        <Link className="font-semibold text-primary underline" href={`/login?redirect=${encodeURIComponent(`/shop/${slug}#reviews`)}`}>
+        <Link
+          className="font-semibold text-primary underline"
+          href={`/login?redirect=${encodeURIComponent(`/shop/${slug}#reviews`)}`}
+        >
           Sign in
         </Link>{" "}
         to write a review. Reviews from customers who bought the item are marked as verified.
@@ -75,7 +78,10 @@ export function ReviewForm({ slug }: Readonly<{ slug: string }>) {
       setBody("");
       setTitle("");
       setPhotos([]);
-      setMessage({ kind: "success", text: "Thank you! Your review will appear once our team approves it." });
+      setMessage({
+        kind: "success",
+        text: "Thank you! Your review will appear once our team approves it.",
+      });
     } catch (error) {
       setMessage({ kind: "error", text: errorMessage(error, "Review submission failed") });
     } finally {
@@ -84,10 +90,15 @@ export function ReviewForm({ slug }: Readonly<{ slug: string }>) {
   }
 
   return (
-    <form className="mt-5 grid gap-3 rounded-lg border border-border bg-card p-4" onSubmit={handleSubmit}>
+    <form
+      className="mt-5 grid gap-3 rounded-lg border border-border bg-card p-4"
+      onSubmit={handleSubmit}
+    >
       <h3 className="font-serif text-lg uppercase text-[#3d1620]">Write a review</h3>
       <fieldset>
-        <legend className="text-xs font-semibold uppercase text-muted-foreground">Your rating</legend>
+        <legend className="text-xs font-semibold uppercase text-muted-foreground">
+          Your rating
+        </legend>
         <div className="mt-1 flex gap-1" role="radiogroup">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
@@ -105,7 +116,9 @@ export function ReviewForm({ slug }: Readonly<{ slug: string }>) {
         </div>
       </fieldset>
       <label>
-        <span className="text-xs font-semibold uppercase text-muted-foreground">Title (optional)</span>
+        <span className="text-xs font-semibold uppercase text-muted-foreground">
+          Title (optional)
+        </span>
         <input
           className="mt-1 h-11 w-full rounded-md border border-border bg-background px-3"
           maxLength={120}
@@ -128,7 +141,13 @@ export function ReviewForm({ slug }: Readonly<{ slug: string }>) {
       <div className="flex flex-wrap items-center gap-2">
         {photos.map((photo) => (
           <span className="relative" key={photo.id}>
-            <Image alt="Your review upload" className="size-16 rounded-md border border-border object-cover" height={64} src={photo.url} width={64} />
+            <Image
+              alt="Your review upload"
+              className="size-16 rounded-md border border-border object-cover"
+              height={64}
+              src={photo.url}
+              width={64}
+            />
             <button
               aria-label="Remove photo"
               className="absolute -right-2 -top-2 grid size-5 place-items-center rounded-full bg-white shadow"
@@ -159,7 +178,10 @@ export function ReviewForm({ slug }: Readonly<{ slug: string }>) {
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         {message ? (
-          <p className={`text-sm font-semibold ${message.kind === "error" ? "text-destructive" : "text-emerald-700"}`} role="status">
+          <p
+            className={`text-sm font-semibold ${message.kind === "error" ? "text-destructive" : "text-emerald-700"}`}
+            role="status"
+          >
             {message.text}
           </p>
         ) : (

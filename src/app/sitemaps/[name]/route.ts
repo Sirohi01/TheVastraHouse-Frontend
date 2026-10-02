@@ -11,6 +11,9 @@ export async function GET(_request: Request, context: { params: Promise<{ name: 
   }
 
   return new Response(xml, {
-    headers: { "Cache-Control": "public, max-age=300, s-maxage=300", "Content-Type": "application/xml; charset=utf-8" },
+    headers: {
+      "Cache-Control": "public, max-age=300, s-maxage=300",
+      "Content-Type": "application/xml; charset=utf-8",
+    },
   });
 }

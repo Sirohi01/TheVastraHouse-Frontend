@@ -32,7 +32,8 @@ export function Footer({ cms, pages = [] }: Readonly<{ cms?: CmsContent; pages?:
   const location = content.footer?.location;
   const instagramUrl = content.footer?.instagramUrl;
   const extraLinks = (content.footer?.links ?? []).filter(
-    (link) => link.href && link.label && !link.href.startsWith("/admin") && link.href !== "/payments",
+    (link) =>
+      link.href && link.label && !link.href.startsWith("/admin") && link.href !== "/payments",
   );
   const policyLinks = pages.map((page) => ({ href: `/pages/${page.slug}`, label: page.title }));
 
@@ -51,7 +52,9 @@ export function Footer({ cms, pages = [] }: Readonly<{ cms?: CmsContent; pages?:
                 />
               </span>
             ) : (
-              <span className="font-serif text-2xl uppercase tracking-[0.18em] text-[#8a6a42]">Vastra House</span>
+              <span className="font-serif text-2xl uppercase tracking-[0.18em] text-[#8a6a42]">
+                Vastra House
+              </span>
             )}
           </Link>
           <p className="mt-4 max-w-sm text-sm leading-6 text-[#6f6256]">
@@ -65,7 +68,10 @@ export function Footer({ cms, pages = [] }: Readonly<{ cms?: CmsContent; pages?:
               </ContactLink>
             ) : null}
             {phone ? (
-              <ContactLink href={`tel:${phone.replace(/\s+/g, "")}`} icon={<Phone aria-hidden="true" size={16} />}>
+              <ContactLink
+                href={`tel:${phone.replace(/\s+/g, "")}`}
+                icon={<Phone aria-hidden="true" size={16} />}
+              >
                 {phone}
               </ContactLink>
             ) : null}
@@ -77,8 +83,12 @@ export function Footer({ cms, pages = [] }: Readonly<{ cms?: CmsContent; pages?:
             ) : null}
           </address>
           <div className="mt-6 max-w-md">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#3b3128]">Newsletter</p>
-            <p className="mt-1 text-sm text-[#6f6256]">New arrivals, festive edits and early access. No spam.</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#3b3128]">
+              Newsletter
+            </p>
+            <p className="mt-1 text-sm text-[#6f6256]">
+              New arrivals, festive edits and early access. No spam.
+            </p>
             <NewsletterForm source="footer" />
           </div>
         </div>
@@ -113,7 +123,10 @@ export function Footer({ cms, pages = [] }: Readonly<{ cms?: CmsContent; pages?:
   );
 }
 
-function LinkGroup({ links, title }: Readonly<{ links: Array<{ href: string; label: string }>; title: string }>) {
+function LinkGroup({
+  links,
+  title,
+}: Readonly<{ links: Array<{ href: string; label: string }>; title: string }>) {
   if (!links.length) return null;
 
   return (

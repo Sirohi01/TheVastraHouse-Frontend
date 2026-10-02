@@ -14,7 +14,9 @@ export async function applyManagedRedirect(path: string) {
       { next: { revalidate: 60 } },
     );
     if (response.ok) {
-      target = ((await response.json()) as { redirect: { destination: string; statusCode: number } | null }).redirect;
+      target = (
+        (await response.json()) as { redirect: { destination: string; statusCode: number } | null }
+      ).redirect;
     }
   } catch {
     target = null;

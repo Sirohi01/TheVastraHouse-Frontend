@@ -36,13 +36,57 @@ export default async function BlogDetailPage({ params }: Props) {
   try {
     const { post, relatedPosts } = await fetchBlogPost(slug);
     return (
-      <PublicPageFrame eyebrow={post.categoryId?.name ?? "Journal"} title={post.title} description={post.excerpt}>
-        <Breadcrumbs items={[{ name: "Blog", path: "/blog" }, { name: post.title, path: `/blog/${slug}` }]} />
-        <JsonLd data={buildArticleJsonLd({ authorName: post.authorId?.name, dateModified: post.updatedAt, datePublished: post.publishedAt, description: post.excerpt, headline: post.title, image: post.featuredImage?.url, path: `/blog/${slug}`, publisherLogo: settings.organization.logo, publisherName: settings.brandName })} />
+      <PublicPageFrame
+        eyebrow={post.categoryId?.name ?? "Journal"}
+        title={post.title}
+        description={post.excerpt}
+      >
+        <Breadcrumbs
+          items={[
+            { name: "Blog", path: "/blog" },
+            { name: post.title, path: `/blog/${slug}` },
+          ]}
+        />
+        <JsonLd
+          data={buildArticleJsonLd({
+            authorName: post.authorId?.name,
+            dateModified: post.updatedAt,
+            datePublished: post.publishedAt,
+            description: post.excerpt,
+            headline: post.title,
+            image: post.featuredImage?.url,
+            path: `/blog/${slug}`,
+            publisherLogo: settings.organization.logo,
+            publisherName: settings.brandName,
+          })}
+        />
         <JsonLd data={buildFaqJsonLd(post.faqs ?? [])} />
-        {post.featuredImage?.url ? <ResponsiveImage alt={post.featuredImage.altText ?? post.title} aspectRatio={post.featuredImage.aspectRatio ?? "16:9"} className="mb-5 rounded-md border border-[#e5dac7]" priority src={post.featuredImage.url} /> : null}
-        <article className="rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 text-sm leading-7 text-[#4f443a] sm:p-7" dangerouslySetInnerHTML={{ __html: post.content }} />
-        {relatedPosts.length ? <section className="mt-6 grid gap-3 sm:grid-cols-3">{relatedPosts.map((related) => <Link className="rounded-md border border-border bg-card p-4 font-semibold" href={`/blog/${related.slug}`} key={related.slug}>{related.title}</Link>)}</section> : null}
+        {post.featuredImage?.url ? (
+          <ResponsiveImage
+            alt={post.featuredImage.altText ?? post.title}
+            aspectRatio={post.featuredImage.aspectRatio ?? "16:9"}
+            className="mb-5 rounded-md border border-[#e5dac7]"
+            priority
+            src={post.featuredImage.url}
+          />
+        ) : null}
+        <article
+          className="rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 text-sm leading-7 text-[#4f443a] sm:p-7"
+          dangerouslySetInnerHTML={{ __html: post.content }}
+        />
+        {relatedPosts.length ? (
+          <section className="mt-6 grid gap-3 sm:grid-cols-3">
+            {relatedPosts.map((related) => (
+              <Link
+                className="rounded-md border border-border bg-card p-4 font-semibold"
+                href={`/blog/${related.slug}`}
+                key={related.slug}
+              >
+                {related.title}
+              </Link>
+            ))}
+          </section>
+        ) : null}
       </PublicPageFrame>
     );
   } catch {

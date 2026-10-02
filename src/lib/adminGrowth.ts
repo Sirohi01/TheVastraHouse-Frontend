@@ -6,10 +6,18 @@ export type AdminRecord = Record<string, string | number | boolean | null | unde
 
 export function fetchMarketingWorkspace(accessToken?: string) {
   return Promise.all([
-    apiFetch<{ data?: AdminRecord[]; coupons?: AdminRecord[] }>("/marketing/coupons", { accessToken }),
-    apiFetch<{ data?: AdminRecord[]; campaigns?: AdminRecord[] }>("/marketing/campaigns", { accessToken }),
-    apiFetch<{ data?: AdminRecord[]; subscribers?: AdminRecord[] }>("/marketing/newsletter", { accessToken }),
-    apiFetch<{ data?: AdminRecord[]; subscriptions?: AdminRecord[] }>("/marketing/back-in-stock", { accessToken }),
+    apiFetch<{ data?: AdminRecord[]; coupons?: AdminRecord[] }>("/marketing/coupons", {
+      accessToken,
+    }),
+    apiFetch<{ data?: AdminRecord[]; campaigns?: AdminRecord[] }>("/marketing/campaigns", {
+      accessToken,
+    }),
+    apiFetch<{ data?: AdminRecord[]; subscribers?: AdminRecord[] }>("/marketing/newsletter", {
+      accessToken,
+    }),
+    apiFetch<{ data?: AdminRecord[]; subscriptions?: AdminRecord[] }>("/marketing/back-in-stock", {
+      accessToken,
+    }),
   ]);
 }
 
@@ -31,10 +39,16 @@ export function createCampaign(payload: AdminRecord, accessToken?: string) {
 
 export function fetchCrmWorkspace(accessToken?: string) {
   return Promise.all([
-    apiFetch<{ data?: AdminRecord[]; customers?: AdminRecord[] }>("/crm/customers", { accessToken }),
-    apiFetch<{ data?: AdminRecord[]; applications?: AdminRecord[] }>("/crm/wholesale", { accessToken }),
+    apiFetch<{ data?: AdminRecord[]; customers?: AdminRecord[] }>("/crm/customers", {
+      accessToken,
+    }),
+    apiFetch<{ data?: AdminRecord[]; applications?: AdminRecord[] }>("/crm/wholesale", {
+      accessToken,
+    }),
     apiFetch<{ data?: AdminRecord[]; tickets?: AdminRecord[] }>("/crm/tickets", { accessToken }),
-    apiFetch<{ data?: AdminRecord[]; requests?: AdminRecord[] }>("/crm/privacy-requests", { accessToken }),
+    apiFetch<{ data?: AdminRecord[]; requests?: AdminRecord[] }>("/crm/privacy-requests", {
+      accessToken,
+    }),
   ]);
 }
 

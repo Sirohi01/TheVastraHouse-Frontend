@@ -62,7 +62,9 @@ export function fetchCmsPage(slug: string) {
 
 export function fetchCmsPages(kind?: "page" | "policy") {
   const query = kind ? `?kind=${kind}` : "";
-  return contentFetch<{ pages: Array<Omit<CmsPage, "body">> }>(`/content/pages${query}`, { pages: [] });
+  return contentFetch<{ pages: Array<Omit<CmsPage, "body">> }>(`/content/pages${query}`, {
+    pages: [],
+  });
 }
 
 export function fetchBlogPosts(input: { page?: string; category?: string; tag?: string }) {
@@ -77,16 +79,21 @@ export function fetchBlogPosts(input: { page?: string; category?: string; tag?: 
 }
 
 export function fetchBlogTaxonomy() {
-  return contentFetch<{ categories: BlogTaxonomyItem[]; tags: BlogTag[] }>("/content/blog/taxonomy", {
-    categories: [],
-    tags: [],
-  });
+  return contentFetch<{ categories: BlogTaxonomyItem[]; tags: BlogTag[] }>(
+    "/content/blog/taxonomy",
+    {
+      categories: [],
+      tags: [],
+    },
+  );
 }
 
 export function fetchBlogPost(slug: string) {
-  return contentFetch<{ post: BlogPostDetail; relatedPosts: BlogPostSummary[]; relatedProducts: unknown[] }>(
-    `/content/blog/${encodeURIComponent(slug)}`,
-  );
+  return contentFetch<{
+    post: BlogPostDetail;
+    relatedPosts: BlogPostSummary[];
+    relatedProducts: unknown[];
+  }>(`/content/blog/${encodeURIComponent(slug)}`);
 }
 
 export function submitContact(input: {

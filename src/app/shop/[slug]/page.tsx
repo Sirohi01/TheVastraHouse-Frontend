@@ -30,7 +30,8 @@ export async function generateMetadata({ params }: Readonly<ProductPageProps>): 
   }
 
   const { product } = pdp;
-  const image = product.media?.find((item) => item.type === "image") ?? product.variants[0]?.media?.[0];
+  const image =
+    product.media?.find((item) => item.type === "image") ?? product.variants[0]?.media?.[0];
 
   return buildPageMetadata(settings, {
     description: product.shortDescription ?? product.description,
@@ -51,7 +52,11 @@ export default async function ProductPage({ params }: Readonly<ProductPageProps>
   }
 
   const [reviews, settings] = await Promise.all([
-    getProductReviews(slug).catch(() => ({ data: [], meta: undefined, summary: { average: 0, count: 0, distribution: {} } })),
+    getProductReviews(slug).catch(() => ({
+      data: [],
+      meta: undefined,
+      summary: { average: 0, count: 0, distribution: {} },
+    })),
     getSeoSettings(),
   ]);
   const primaryCategory = pdp.product.categoryIds?.[0];
@@ -65,7 +70,9 @@ export default async function ProductPage({ params }: Readonly<ProductPageProps>
         <Breadcrumbs
           items={[
             { name: "Shop", path: "/shop" },
-            ...(primaryCategory ? [{ name: primaryCategory.name, path: `/categories/${primaryCategory.slug}` }] : []),
+            ...(primaryCategory
+              ? [{ name: primaryCategory.name, path: `/categories/${primaryCategory.slug}` }]
+              : []),
             { name: pdp.product.name, path: `/shop/${pdp.product.slug}` },
           ]}
         />
