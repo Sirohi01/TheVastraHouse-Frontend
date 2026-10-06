@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { EmptyState } from "@/components/states/EmptyState";
 import { fetchAddresses, type AccountAddress } from "@/lib/account";
-import { trackBeginCheckout } from "@/lib/analytics";
+import { trackAddPaymentInfo, trackAddShippingInfo, trackBeginCheckout } from "@/lib/analytics";
 import {
   confirmCheckoutRazorpayPayment,
   checkoutPreview,
@@ -50,6 +50,7 @@ export function CheckoutClient() {
   const setCartStore = useCartStore((state) => state.setCart);
   const formRef = useRef<HTMLFormElement>(null);
   const checkoutTracked = useRef(false);
+  const paymentStepTracked = useRef(false);
   const lastPincodeLookupRef = useRef("");
   const [cart, setCart] = useState<Cart>();
   const [step, setStep] = useState(0);
@@ -242,6 +243,17 @@ export function CheckoutClient() {
     }
 
     if (step === 2 && form) {
+      if (!paymentStepTracked.current && cart?.items.length) {
+        paymentStepTracked.current = true;
+        const items = cart.items.map((item) => ({
+          item_id: item.sku,
+          item_name: item.productName,
+          price: item.unitPrice,
+          quantity: item.quantity,
+        }));
+        trackAddShippingInfo(items, cart.totals.subtotal, shippingMethod);
+        trackAddPaymentInfo(items, cart.totals.subtotal, paymentMethod);
+      }
       await refreshPreview(new FormData(form), true);
       return;
     }

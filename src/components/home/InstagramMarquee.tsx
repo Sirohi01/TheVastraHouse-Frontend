@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CONSENT_EVENT, readConsent } from "@/lib/analytics";
 
 declare global {
   interface Window {
@@ -17,9 +18,39 @@ const INSTAGRAM_EMBED_SCRIPT_ID = "instagram-embed-script";
 export function InstagramMarquee({ posts }: Readonly<{ posts: string[] }>) {
   const cleanPosts = posts.filter(Boolean);
   const marqueePosts = [...cleanPosts, ...cleanPosts];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [nearViewport, setNearViewport] = useState(false);
+  const [optedIn, setOptedIn] = useState(false);
+  const embedsEnabled = nearViewport && optedIn;
 
   useEffect(() => {
-    if (!cleanPosts.length) {
+    const syncConsent = () => setOptedIn((current) => current || readConsent().marketing);
+    syncConsent();
+    window.addEventListener(CONSENT_EVENT, syncConsent);
+    return () => window.removeEventListener(CONSENT_EVENT, syncConsent);
+  }, []);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setNearViewport(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNearViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "400px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!cleanPosts.length || !embedsEnabled) {
       return;
     }
 
@@ -37,14 +68,45 @@ export function InstagramMarquee({ posts }: Readonly<{ posts: string[] }>) {
     script.src = "https://www.instagram.com/embed.js";
     script.onload = processEmbeds;
     document.body.appendChild(script);
-  }, [cleanPosts.length]);
+  }, [cleanPosts.length, embedsEnabled]);
 
   if (!cleanPosts.length) {
     return null;
   }
 
+  if (!embedsEnabled) {
+    return (
+      <div className="mt-5 text-center" ref={containerRef}>
+        <p className="text-sm text-[#6f6256]">
+          Instagram posts are loaded from Instagram, which may set cookies.
+        </p>
+        <button
+          className="mt-3 h-10 rounded-md border border-[#caa14e] bg-[#6e1423] px-5 text-xs font-semibold uppercase tracking-[0.12em] text-white"
+          onClick={() => setOptedIn(true)}
+          type="button"
+        >
+          Show Instagram posts
+        </button>
+        <ul className="mt-4 flex flex-wrap justify-center gap-3 text-sm">
+          {cleanPosts.slice(0, 6).map((href, index) => (
+            <li key={href}>
+              <a
+                className="font-semibold text-[#6e1423] underline"
+                href={href}
+                rel="noreferrer noopener"
+                target="_blank"
+              >
+                View post {index + 1} on Instagram
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   return (
-    <div className="mt-5 overflow-hidden">
+    <div className="mt-5 overflow-hidden" ref={containerRef}>
       <div className="instagram-marquee flex w-max animate-[instaMarquee_38s_linear_infinite] items-stretch gap-4 hover:[animation-play-state:paused]">
         {marqueePosts.map((href, index) => (
           <div

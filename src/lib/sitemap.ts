@@ -97,7 +97,10 @@ async function fetchJson<T>(path: string, fallback: T): Promise<T> {
 
 export async function sitemapIndexLocations() {
   const siteUrl = getSiteUrl();
-  const data = await getSitemapData();
+  const [data, blog] = await Promise.all([
+    getSitemapData(),
+    fetchJson<BlogSitemap>("/content/blog/sitemap", { categories: [], posts: [] }),
+  ]);
   const productChunks = Math.max(1, Math.ceil(data.products.length / SITEMAP_CHUNK));
   const newest = (items: Array<{ updatedAt?: string }>) =>
     isoDate(
@@ -116,7 +119,10 @@ export async function sitemapIndexLocations() {
     })),
     { lastmod: newest(data.categories), loc: `${siteUrl}/sitemaps/categories.xml` },
     { lastmod: newest(data.collections), loc: `${siteUrl}/sitemaps/collections.xml` },
-    { loc: `${siteUrl}/sitemaps/blog.xml` },
+    // An empty blog sitemap is omitted until the first article is published.
+    ...(blog.posts.length
+      ? [{ lastmod: newest(blog.posts), loc: `${siteUrl}/sitemaps/blog.xml` }]
+      : []),
   ];
 }
 

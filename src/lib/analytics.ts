@@ -97,6 +97,38 @@ export function trackBeginCheckout(items: AnalyticsItem[], value: number, coupon
   trackEvent("begin_checkout", { coupon, currency: "INR", items, value });
 }
 
+export function trackViewItemList(listName: string, items: AnalyticsItem[]) {
+  if (!items.length) return;
+  trackEvent("view_item_list", {
+    item_list_name: listName,
+    items: items.map((item, index) => ({ ...item, index })),
+  });
+}
+
+export function trackSelectItem(listName: string, item: AnalyticsItem) {
+  trackEvent("select_item", { item_list_name: listName, items: [item] });
+}
+
+export function trackViewCart(items: AnalyticsItem[], value: number) {
+  if (items.length) trackEvent("view_cart", { currency: "INR", items, value });
+}
+
+export function trackRemoveFromCart(item: AnalyticsItem) {
+  trackEvent("remove_from_cart", {
+    currency: "INR",
+    items: [item],
+    value: item.price * (item.quantity ?? 1),
+  });
+}
+
+export function trackAddShippingInfo(items: AnalyticsItem[], value: number, tier: string) {
+  trackEvent("add_shipping_info", { currency: "INR", items, shipping_tier: tier, value });
+}
+
+export function trackAddPaymentInfo(items: AnalyticsItem[], value: number, paymentType: string) {
+  trackEvent("add_payment_info", { currency: "INR", items, payment_type: paymentType, value });
+}
+
 export function trackSearch(term: string) {
   if (term.trim().length >= 2) trackEvent("search", { search_term: term.trim() });
 }

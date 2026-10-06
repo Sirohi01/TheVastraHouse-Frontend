@@ -23,9 +23,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata(settings, {
     description:
       about?.description ??
-      "The Vastra House brings timeless Indian wear into a polished modern commerce experience.",
+      "The Vastra House is an Indian ethnic wear brand for women, offering kurtis and co-ord sets.",
     image: about?.media ?? undefined,
-    name: "About Us",
+    name: "About The Vastra House",
     path: "/about",
   });
 }
@@ -41,16 +41,17 @@ export default async function AboutPage() {
       title={about?.title ?? "Crafted With Passion, Worn With Pride"}
       description={
         about?.description ??
-        "The Vastra House brings timeless Indian wear into a polished modern commerce experience."
+        "The Vastra House is an Indian ethnic wear brand for women, offering kurtis and co-ord sets."
       }
     >
       <Breadcrumbs items={[{ name: "About Us", path: "/about" }]} />
       <JsonLd
         data={buildWebPageJsonLd({
           description: about?.description,
-          name: "About Us",
+          name: "About The Vastra House",
           path: "/about",
           type: "AboutPage",
+          aboutOrganization: true,
         })}
       />
       <section className="mt-5 overflow-hidden rounded-md border border-[#e5dac7] bg-[#fffaf1] shadow-[0_24px_60px_-44px_rgba(46,12,18,0.5)]">
@@ -107,6 +108,32 @@ export default async function AboutPage() {
           </div>
         </div>
       </section>
+
+      {(about?.sections ?? []).length ? (
+        <section className="mt-10 grid gap-5 md:grid-cols-2" aria-label="About The Vastra House">
+          {(about?.sections ?? []).map((section) => (
+            <article
+              className="rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 sm:p-6"
+              key={section.heading}
+            >
+              <h2 className="font-serif text-xl text-[#3d1620]">{section.heading}</h2>
+              <p className="mt-3 text-sm leading-7 text-[#4f443a]">{section.body}</p>
+            </article>
+          ))}
+        </section>
+      ) : null}
+
+      {about?.founder?.name ? (
+        <section className="mt-5 rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 sm:p-6">
+          <h2 className="font-serif text-xl text-[#3d1620]">
+            {about.founder.role ? `${about.founder.role}: ` : ""}
+            {about.founder.name}
+          </h2>
+          {about.founder.bio ? (
+            <p className="mt-3 text-sm leading-7 text-[#4f443a]">{about.founder.bio}</p>
+          ) : null}
+        </section>
+      ) : null}
 
       {(about?.values ?? []).length ? (
         <section className="mt-10">

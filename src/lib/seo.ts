@@ -365,7 +365,10 @@ export function buildOrganizationJsonLd(settings: SeoSettings) {
   };
 }
 
-/** WebSite schema; the SearchAction targets the working storefront search (/shop?q=). */
+/**
+ * WebSite schema. No SearchAction: storefront search results (?q=) are disallowed in robots.txt
+ * and noindexed, so advertising them as a search target would contradict the crawl rules.
+ */
 export function buildWebsiteJsonLd(settings: SeoSettings) {
   const siteUrl = getSiteUrl();
 
@@ -373,12 +376,8 @@ export function buildWebsiteJsonLd(settings: SeoSettings) {
     "@context": "https://schema.org",
     "@id": `${siteUrl}/#website`,
     "@type": "WebSite",
+    inLanguage: "en-IN",
     name: settings.siteName,
-    potentialAction: {
-      "@type": "SearchAction",
-      "query-input": "required name=search_term_string",
-      target: { "@type": "EntryPoint", urlTemplate: `${siteUrl}/shop?q={search_term_string}` },
-    },
     publisher: { "@id": `${siteUrl}/#organization` },
     url: siteUrl,
   };
@@ -399,11 +398,18 @@ export function buildBreadcrumbJsonLd(items: Crumb[]) {
   };
 }
 
+/**
+ * Maps API availability to schema.org. Returns undefined when stock was never entered for the SKU
+ * (the API sets inventoryTracked=false): "out of stock" would then be a guess, not a fact.
+ */
 function schemaAvailability(variant: ProductVariant) {
-  const status = variant.availability?.status;
-  if (status === "in_stock" || status === "low_stock") return "https://schema.org/InStock";
-  if (status === "pre_order") return "https://schema.org/PreOrder";
-  return "https://schema.org/OutOfStock";
+  const availability = variant.availability;
+  if (!availability) return undefined;
+  if (availability.status === "in_stock" || availability.status === "low_stock") {
+    return "https://schema.org/InStock";
+  }
+  if (availability.status === "pre_order") return "https://schema.org/PreOrder";
+  return availability.inventoryTracked === false ? undefined : "https://schema.org/OutOfStock";
 }
 
 /**
@@ -442,56 +448,58 @@ export function buildProductJsonLd(
   brandName = "The Vastra House",
   commerce?: SeoSettings["commerce"],
 ) {
+  const siteUrl = getSiteUrl();
   const url = absoluteUrl(`/shop/${product.slug}`);
   const variants = product.variants.filter((variant) => variant.active !== false);
   const media = product.media?.length ? product.media : (variants[0]?.media ?? []);
   const images = media.filter((item) => item.type === "image").map((item) => item.url);
-  const offers = variants.map((variant) => {
+  const category = product.categoryIds?.[0]?.name;
+  const description = clampText(product.shortDescription ?? product.description, 5000);
+  const brand = { "@type": "Brand", name: brandName };
+
+  const variantNodes = variants.map((variant) => {
     const price = Number((variant.salePrice ?? variant.basePrice).toFixed(2));
+    const variantImages = (variant.media ?? [])
+      .filter((item) => item.type === "image")
+      .map((item) => item.url);
+    const availability = schemaAvailability(variant);
+    const label = [variant.color, variant.size].filter(Boolean).join(" / ");
+
     return {
-      "@type": "Offer",
-      availability: schemaAvailability(variant),
-      itemCondition: "https://schema.org/NewCondition",
-      price,
-      priceCurrency: variant.currencyCode ?? "INR",
-      sku: variant.sku,
-      url,
-      ...(variant.size || variant.color
-        ? { name: [variant.color, variant.size].filter(Boolean).join(" / ") }
-        : {}),
-      ...(commerce
-        ? {
-            hasMerchantReturnPolicy: buildReturnPolicyJsonLd(commerce),
-            shippingDetails: buildShippingDetailsJsonLd(commerce, price),
-          }
-        : {}),
+      "@id": `${url}#variant-${encodeURIComponent(variant.sku ?? variant._id)}`,
+      "@type": "Product",
+      brand,
+      ...(variant.color ? { color: variant.color } : {}),
+      description,
+      image: variantImages.length ? variantImages : images,
+      name: label ? `${product.name} - ${label}` : product.name,
+      offers: {
+        "@type": "Offer",
+        ...(availability ? { availability } : {}),
+        itemCondition: "https://schema.org/NewCondition",
+        price,
+        priceCurrency: variant.currencyCode ?? "INR",
+        seller: { "@id": `${siteUrl}/#organization` },
+        url,
+        ...(commerce
+          ? {
+              hasMerchantReturnPolicy: buildReturnPolicyJsonLd(commerce),
+              shippingDetails: buildShippingDetailsJsonLd(commerce, price),
+            }
+          : {}),
+      },
+      ...(variant.size ? { size: variant.size } : {}),
+      ...(variant.sku ? { sku: variant.sku } : {}),
     };
   });
-  const prices = offers.map((offer) => offer.price);
 
-  return {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    brand: { "@type": "Brand", name: brandName },
-    description: clampText(product.shortDescription ?? product.description, 5000),
-    image: images,
-    name: product.name,
-    sku: variants[0]?.sku,
-    url,
-    ...(product.fabricDetails ? { material: product.fabricDetails } : {}),
-    ...(product.categoryIds?.[0]?.name ? { category: product.categoryIds[0].name } : {}),
-    offers:
-      offers.length > 1
-        ? {
-            "@type": "AggregateOffer",
-            highPrice: Math.max(...prices),
-            lowPrice: Math.min(...prices),
-            offerCount: offers.length,
-            offers,
-            priceCurrency: offers[0].priceCurrency,
-          }
-        : offers[0],
-    ...(rating && rating.count > 0
+  const varies = [
+    new Set(variants.map((variant) => variant.color).filter(Boolean)).size > 1 ? "color" : null,
+    new Set(variants.map((variant) => variant.size).filter(Boolean)).size > 1 ? "size" : null,
+  ].filter((item): item is string => item !== null);
+
+  const reviewNode =
+    rating && rating.count > 0
       ? {
           aggregateRating: {
             "@type": "AggregateRating",
@@ -501,7 +509,23 @@ export function buildProductJsonLd(
             worstRating: 1,
           },
         }
-      : {}),
+      : {};
+
+  return {
+    "@context": "https://schema.org",
+    "@id": `${url}#product`,
+    "@type": "ProductGroup",
+    brand,
+    ...(category ? { category } : {}),
+    description,
+    hasVariant: variantNodes,
+    image: images,
+    ...(product.fabricDetails ? { material: product.fabricDetails } : {}),
+    name: product.name,
+    productGroupID: product.slug,
+    url,
+    ...(varies.length ? { variesBy: varies.map((name) => `https://schema.org/${name}`) } : {}),
+    ...reviewNode,
   };
 }
 
@@ -584,6 +608,8 @@ export function buildWebPageJsonLd(input: {
   description?: string;
   type?: "WebPage" | "AboutPage" | "ContactPage";
   dateModified?: string;
+  /** Marks the brand Organization as the subject of the page (About page). */
+  aboutOrganization?: boolean;
 }) {
   return {
     "@context": "https://schema.org",
@@ -591,6 +617,7 @@ export function buildWebPageJsonLd(input: {
     dateModified: input.dateModified,
     description: clampText(input.description, 300),
     isPartOf: { "@id": `${getSiteUrl()}/#website` },
+    ...(input.aboutOrganization ? { about: { "@id": `${getSiteUrl()}/#organization` } } : {}),
     name: input.name,
     url: absoluteUrl(input.path),
   };
@@ -605,8 +632,8 @@ export type SitemapData = {
     name?: string;
     images?: Array<{ url: string; alt?: string }>;
   }>;
-  categories: Array<{ slug: string; updatedAt?: string }>;
-  collections: Array<{ slug: string; updatedAt?: string }>;
+  categories: Array<{ slug: string; name?: string; updatedAt?: string }>;
+  collections: Array<{ slug: string; name?: string; updatedAt?: string }>;
 };
 
 export async function getSitemapData(): Promise<SitemapData> {

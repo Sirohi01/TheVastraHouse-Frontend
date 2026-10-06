@@ -20,6 +20,7 @@ const helpLinks = [
   { href: "/account/orders", label: "My orders" },
   { href: "/track-order", label: "Track order" },
   { href: "/faq", label: "FAQs" },
+  { href: "/pages/size-guide", label: "Size guide" },
   { href: "/contact", label: "Contact us" },
   { href: "/about", label: "About us" },
 ];

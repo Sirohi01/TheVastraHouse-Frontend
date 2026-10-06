@@ -62,6 +62,9 @@ export type CmsContent = {
     storyEyebrow?: string;
     storyTitle?: string;
     storyCopy?: string;
+    sections?: Array<{ heading: string; body: string }>;
+    foundedYear?: number;
+    founder?: { name?: string; role?: string; bio?: string };
     media?: MediaReference | null;
     primaryCta?: CmsLink;
     values?: Array<{
@@ -105,11 +108,11 @@ export const defaultCmsContent: CmsContent = {
   },
   about: {
     description:
-      "The Vastra House brings timeless Indian wear into a polished modern commerce experience, with thoughtful cataloging, reliable operations, and premium presentation.",
+      "The Vastra House is an Indian ethnic wear brand for women, offering kurtis and co-ord sets for everyday, office and festive dressing.",
     eyebrow: "Our Story",
     primaryCta: { href: "/shop", label: "Explore Shop" },
     storyCopy:
-      "We design for customers who want familiar craft language with a cleaner, more international shopping experience. From product media to checkout, each touchpoint is built to feel calm, premium, and practical.",
+      "We make Indian wear for women who want comfortable, easy-to-style kurtis and co-ord sets in breathable fabrics, with clear product details, secure checkout and order tracking.",
     storyEyebrow: "The Vastra House",
     storyTitle: "Clothing that feels rooted, refined, and ready.",
     title: "Crafted With Passion, Worn With Pride",
@@ -131,7 +134,7 @@ export const defaultCmsContent: CmsContent = {
       },
       {
         icon: "care",
-        text: "Support workflows are built into the platform from order to return.",
+        text: "Reach us by email or phone for help with orders, sizing, shipping and returns.",
         title: "Customer Care",
       },
     ],
@@ -249,6 +252,9 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       media: sanitizeMediaReference(mergedAbout.media),
       primaryCta: sanitizeLink(mergedAbout.primaryCta),
       storyCopy: mergedAbout.storyCopy,
+      sections: (mergedAbout.sections ?? []).filter((item) => item.heading && item.body),
+      foundedYear: mergedAbout.foundedYear,
+      founder: mergedAbout.founder?.name ? mergedAbout.founder : undefined,
       storyEyebrow: mergedAbout.storyEyebrow,
       storyTitle: mergedAbout.storyTitle,
       title: mergedAbout.title,

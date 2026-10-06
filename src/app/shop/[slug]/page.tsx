@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { ProductAnswers } from "@/components/catalog/ProductAnswers";
 import { ProductDetailClient } from "@/components/catalog/ProductDetailClient";
 import { getProductPdp, getProductReviews, type PdpResponse } from "@/lib/catalog";
 import { applyManagedRedirect } from "@/lib/redirects";
@@ -85,6 +86,7 @@ export default async function ProductPage({ params }: Readonly<ProductPageProps>
         />
       </div>
       <ProductDetailClient pdp={pdp} reviewSummary={reviews.summary} reviews={reviews.data} />
+      <ProductAnswers commerce={settings.commerce} product={pdp.product} />
     </>
   );
 }

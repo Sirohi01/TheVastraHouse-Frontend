@@ -15,6 +15,8 @@ export type VariantAvailability = {
   available: number;
   canPurchase: boolean;
   canPreOrder: boolean;
+  /** False when no inventory record exists for the SKU (stock never entered). */
+  inventoryTracked?: boolean;
 };
 
 export type ProductVariant = {

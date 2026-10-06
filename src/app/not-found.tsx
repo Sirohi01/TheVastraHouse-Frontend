@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = {
-  robots: { follow: false, index: false },
-  title: "Page not found",
-};
+// Next.js adds the single `noindex` robots tag itself when notFound() renders this page.
+export const metadata: Metadata = { title: "Page not found" };
 
 const links = [
   { href: "/shop", label: "Shop all" },

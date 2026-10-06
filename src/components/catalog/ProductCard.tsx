@@ -2,6 +2,7 @@
 
 import { Eye, Heart } from "lucide-react";
 import Link from "next/link";
+import { trackSelectItem } from "@/lib/analytics";
 import { ProductMediaCarousel } from "@/components/catalog/ProductMediaCarousel";
 import { getProductMedia, getProductPricing, type CatalogProduct } from "@/lib/catalog";
 import { SizeChartButton } from "@/components/catalog/SizeChartButton";
@@ -28,6 +29,12 @@ export function ProductCard({
   const hasPreOrder = Boolean(preOrderVariant);
   const hasReadyStock = Boolean(readyStockVariant);
   const cartVariant = preOrderVariant ?? readyStockVariant;
+  const selectItem = () =>
+    trackSelectItem("Product grid", {
+      item_id: product.variants[0]?.sku ?? product.slug,
+      item_name: product.name,
+      price: pricing.salePrice,
+    });
 
   return (
     <article
@@ -38,6 +45,7 @@ export function ProductCard({
       <Link
         className="relative block overflow-hidden rounded-sm bg-[#d9c3a4]"
         href={`/shop/${product.slug}`}
+        onClick={selectItem}
       >
         <ProductMediaCarousel
           alt={product.name}
@@ -100,6 +108,7 @@ export function ProductCard({
         <Link
           className="font-serif font-medium leading-snug text-[#3d1620] transition-colors hover:text-[#6e1423]"
           href={`/shop/${product.slug}`}
+          onClick={selectItem}
         >
           {product.name}
         </Link>

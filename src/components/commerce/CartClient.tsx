@@ -2,7 +2,8 @@
 
 import { Gift, Minus, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { trackRemoveFromCart, trackViewCart } from "@/lib/analytics";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { EmptyState } from "@/components/states/EmptyState";
 import { commerceFetch, formatMoney, type Cart } from "@/lib/commerce";
@@ -14,6 +15,7 @@ export function CartClient() {
   const setCartStore = useCartStore((state) => state.setCart);
   const [cart, setCartState] = useState<Cart>();
   const [message, setMessage] = useState("");
+  const viewTracked = useRef(false);
 
   useEffect(() => {
     void loadCart();
@@ -29,6 +31,18 @@ export function CartClient() {
   }
 
   function applyCart(nextCart: Cart) {
+    if (!viewTracked.current && nextCart.items.length) {
+      viewTracked.current = true;
+      trackViewCart(
+        nextCart.items.map((item) => ({
+          item_id: item.sku,
+          item_name: item.productName,
+          price: item.unitPrice,
+          quantity: item.quantity,
+        })),
+        nextCart.totals.subtotal,
+      );
+    }
     setCartState(nextCart);
     setCartStore(nextCart);
   }
@@ -52,6 +66,15 @@ export function CartClient() {
   }
 
   async function removeLine(lineItemId: string) {
+    const removed = cart?.items.find((item) => item._id === lineItemId);
+    if (removed) {
+      trackRemoveFromCart({
+        item_id: removed.sku,
+        item_name: removed.productName,
+        price: removed.unitPrice,
+        quantity: removed.quantity,
+      });
+    }
     try {
       const payload = await commerceFetch<{ cart: Cart }>(`/commerce/cart/items/${lineItemId}`, {
         accessToken,

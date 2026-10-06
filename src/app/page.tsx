@@ -261,7 +261,7 @@ function SquareTileRail({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
             Shop by Category
           </h2>
           <p className="mx-auto max-w-2xl text-sm leading-6 text-muted-foreground">
-            Explore the categories created in your catalog.
+            Browse kurtis and co-ord sets by occasion: everyday, office and festive wear.
           </p>
         </div>
 
@@ -435,8 +435,15 @@ function ProductGrid({ products }: Readonly<{ products: VisualTile[] }>) {
       <SectionTitle title="New Arrivals" />
       <div className="mt-6 overflow-hidden">
         <div className="flex w-max animate-[instaMarquee_34s_linear_infinite] gap-4 hover:[animation-play-state:paused]">
-          {[...products.slice(0, 8), ...products.slice(0, 8)].map((product, index) => (
+          {/* The second pass only keeps the marquee loop seamless: hidden from assistive tech,
+              crawlers' heading outline and the tab order so the products are not duplicated. */}
+          {[
+            ...products.slice(0, 8).map((product) => ({ clone: false, product })),
+            ...products.slice(0, 8).map((product) => ({ clone: true, product })),
+          ].map(({ clone, product }, index) => (
             <a
+              aria-hidden={clone || undefined}
+              tabIndex={clone ? -1 : undefined}
               className="group relative w-60 shrink-0 rounded-sm border border-[#e1d6c4] bg-white p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#caa14e] hover:shadow-[0_16px_34px_-20px_rgba(110,20,35,0.6)] sm:w-72"
               href={product.href}
               key={`${product.href}-${index}`}
@@ -454,9 +461,15 @@ function ProductGrid({ products }: Readonly<{ products: VisualTile[] }>) {
                   </span>
                 ) : null}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(0deg,rgb(32_22_12/0.88),transparent)] px-3 pb-3 pt-14 text-white transition-opacity duration-200 group-hover:opacity-0">
-                  <h3 className="font-serif text-[15px] font-medium leading-tight">
-                    {product.title}
-                  </h3>
+                  {clone ? (
+                    <p className="font-serif text-[15px] font-medium leading-tight">
+                      {product.title}
+                    </p>
+                  ) : (
+                    <h3 className="font-serif text-[15px] font-medium leading-tight">
+                      {product.title}
+                    </h3>
+                  )}
                 </div>
                 {product.sizes?.length ? (
                   <div className="absolute inset-x-2 bottom-2 translate-y-2 rounded-sm border border-[#caa14e]/50 bg-white/95 px-2 py-2 opacity-0 shadow-soft transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
