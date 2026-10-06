@@ -7,7 +7,11 @@ const Lottie = dynamic(() => import("lottie-react").then((module) => module.Lott
   ssr: false,
 });
 
-export function TrustLottieIcon({ fallback, src }: Readonly<{ fallback: ReactNode; src: string }>) {
+export function TrustLottieIcon({
+  className = "size-14",
+  fallback,
+  src,
+}: Readonly<{ className?: string; fallback: ReactNode; src: string }>) {
   const [data, setData] = useState<object | null>(null);
 
   useEffect(() => {
@@ -36,5 +40,5 @@ export function TrustLottieIcon({ fallback, src }: Readonly<{ fallback: ReactNod
     return <>{fallback}</>;
   }
 
-  return <Lottie aria-hidden="true" autoplay className="size-14" loop src={data} />;
+  return <Lottie aria-hidden="true" autoplay className={className} loop src={data} />;
 }
