@@ -19,7 +19,9 @@ export function RootChrome({
   return (
     <>
       <Header cms={cms} />
-      <main>{children}</main>
+      <main id="content" tabIndex={-1}>
+        {children}
+      </main>
       <Footer cms={cms} />
     </>
   );

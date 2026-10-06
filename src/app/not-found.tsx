@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-// Next.js adds the single `noindex` robots tag itself when notFound() renders this page.
-export const metadata: Metadata = { title: "Page not found" };
+// The root layout declares "index, follow"; this page overrides it so a 404 never carries a
+// conflicting robots directive (Next.js also adds its own `noindex`, which agrees).
+export const metadata: Metadata = {
+  robots: { follow: false, googleBot: { follow: false, index: false }, index: false },
+  title: "Page not found",
+};
 
 const links = [
   { href: "/shop", label: "Shop all" },
