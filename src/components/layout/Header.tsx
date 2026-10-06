@@ -1,24 +1,13 @@
 "use client";
 
-import { Heart, Menu, Search, ShoppingBag, Truck, UserRound } from "lucide-react";
+import { Heart, Menu, Search, ShoppingBag, UserRound } from "lucide-react";
 import { useEffect } from "react";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { commerceFetch, type Cart } from "@/lib/commerce";
-import type { CmsContent } from "@/lib/cms";
+import { defaultNavigation, type CmsContent } from "@/lib/cms";
 import { useAuthStore } from "@/stores/authStore";
 import { useCartStore } from "@/stores/cartStore";
 
-const navItems = [
-  { label: "Shop", href: "/shop" },
-  { label: "New Arrivals", href: "/shop?sort=-newest" },
-  { label: "Best Sellers", href: "/shop?sort=-bestSelling" },
-  { label: "About", href: "/about" },
-  { label: "Pre-Order", href: "/pre-order" },
-  { label: "Track Order", href: "/track-order" },
-];
-
-const leftNavItems = navItems.slice(0, 3);
-const rightNavItems = navItems.slice(3);
 const actionItems = [
   { icon: Search, label: "Search", href: "/shop" },
   { icon: Heart, label: "Wishlist", href: "/wishlist" },
@@ -30,6 +19,13 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
   const user = useAuthStore((state) => state.user);
   const itemCount = useCartStore((state) => state.itemCount);
   const setCart = useCartStore((state) => state.setCart);
+  const navItems = (cms?.headerNavigation ?? [])
+    .filter((link) => link.enabled !== false && link.href && link.label)
+    .map((link) => ({ href: link.href, label: link.label }));
+  const menuItems = navItems.length ? navItems : defaultNavigation;
+  const splitAt = Math.ceil(menuItems.length / 2);
+  const leftNavItems = menuItems.slice(0, splitAt);
+  const rightNavItems = menuItems.slice(splitAt);
   const headerActionItems = [
     actionItems[0],
     {
@@ -53,29 +49,23 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
     void hydrateCartCount();
   }, [accessToken, setCart]);
 
-  return (
-    <header className="sticky top-0 z-50 border-b border-[#e5dac7] bg-[#fffaf1]/96 backdrop-blur">
-      <div className="bg-[#3a250f] text-[#fff7e8]">
-        <div className="mx-auto flex h-8 max-w-7xl items-center justify-between px-5 text-[11px] font-semibold uppercase tracking-wide">
-          <span>Free shipping on orders above Rs. 1999</span>
-          <div className="hidden items-center gap-4 normal-case tracking-normal md:flex">
-            <a className="inline-flex items-center gap-1" href="/track-order">
-              <Truck aria-hidden="true" size={13} />
-              Track Order
-            </a>
+  const topBarText = cms?.home?.topBarText?.trim() || "Free shipping on orders above ₹1,999";
 
-            <span className="text-white/35">|</span>
-            <div className="flex items-center gap-1">
-              {headerActionItems.map((item) => (
-                <HeaderActionItem item={item} itemCount={itemCount} key={item.label} />
-              ))}
-            </div>
-          </div>
+  return (
+    <header className="sticky top-0 z-50 border-b border-[#e5dac7] bg-[#fffaf1]/96 font-[family-name:var(--font-body)] backdrop-blur">
+      <div
+        className="relative overflow-hidden border-b border-[#d8c3a0]/70 bg-[#f5ede1] text-[#3a2a18]"
+        style={{ backgroundImage: TOP_BAR_TEXTURE }}
+      >
+        <div className="relative mx-auto flex h-8 max-w-7xl items-center justify-center gap-2 px-3 text-[9.5px] font-normal uppercase tracking-[0.12em] md:h-9 md:gap-5 md:text-[11.5px] md:tracking-[0.3em]">
+          <Ornament />
+          <span className="truncate">{topBarText}</span>
+          <Ornament />
         </div>
       </div>
 
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 xl:grid xl:h-20 xl:grid-cols-[1fr_auto_1fr] xl:gap-5">
-        <nav className="hidden items-center gap-8 text-xs font-semibold uppercase tracking-wide text-[#3b3128] xl:flex">
+      <div className="mx-auto flex h-12 max-w-7xl items-center justify-between gap-4 px-5 xl:grid xl:h-[60px] xl:grid-cols-[1fr_auto_1fr] xl:gap-5">
+        <nav className="hidden items-center gap-9 text-[11px] font-normal uppercase tracking-[0.18em] text-[#3b3128] xl:flex">
           {leftNavItems.map((item) => (
             <a className="transition hover:text-primary" href={item.href} key={item.label}>
               {item.label}
@@ -88,7 +78,7 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
           href="/"
         >
           {cms?.footer?.brandLogo?.url ? (
-            <span className="block w-28 xl:w-32">
+            <span className="block w-24 xl:w-28">
               <ResponsiveImage
                 alt={cms.footer.brandLogo.altText ?? "The Vastra House logo"}
                 aspectRatio={cms.footer.brandLogo.aspectRatio ?? "1:1"}
@@ -98,10 +88,10 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
             </span>
           ) : (
             <>
-              <span className="block font-serif text-3xl uppercase tracking-[0.18em] text-[#8a6a42] sm:text-4xl">
+              <span className="block font-[family-name:var(--font-display)] text-[26px] font-medium uppercase tracking-[0.22em] text-[#7a5a34] sm:text-[32px]">
                 Vastra
               </span>
-              <span className="block pl-1 text-[9px] font-semibold uppercase tracking-[0.45em] text-[#8a6a42] sm:text-[10px] xl:pl-0">
+              <span className="block pl-1 text-[8px] font-normal uppercase tracking-[0.5em] text-[#7a5a34] sm:text-[9px] xl:pl-0">
                 House
               </span>
             </>
@@ -109,13 +99,19 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
         </a>
 
         <div className="flex items-center justify-end gap-3">
-          <nav className="mr-3 hidden items-center gap-8 text-xs font-semibold uppercase tracking-wide text-[#3b3128] xl:flex">
+          <nav className="mr-4 hidden items-center gap-8 text-[11px] font-normal uppercase tracking-[0.18em] text-[#3b3128] xl:flex">
             {rightNavItems.map((item) => (
               <a className="transition hover:text-primary" href={item.href} key={item.label}>
                 {item.label}
               </a>
             ))}
           </nav>
+
+          <div className="hidden items-center gap-1 md:flex">
+            {headerActionItems.map((item) => (
+              <HeaderActionItem item={item} itemCount={itemCount} key={item.label} />
+            ))}
+          </div>
 
           <a
             aria-label="Cart"
@@ -140,7 +136,7 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
               <Menu aria-hidden="true" size={21} />
             </summary>
             <nav className="absolute right-0 mt-3 w-60 rounded-md border border-border bg-card p-2 text-sm font-medium shadow-lifted">
-              {navItems.map((item) => (
+              {menuItems.map((item) => (
                 <a
                   className="block rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
                   href={item.href}
@@ -200,16 +196,52 @@ function HeaderActionItem({
   return (
     <a
       aria-label={item.label}
-      className="relative inline-flex size-7 items-center justify-center transition hover:text-[#d8b66d]"
+      className="relative inline-flex size-9 items-center justify-center text-[#3b3128] transition hover:text-primary"
       href={item.href}
       title={item.label}
     >
-      <Icon aria-hidden="true" size={15} />
+      <Icon aria-hidden="true" size={18} strokeWidth={1.5} />
       {showBadge ? (
-        <span className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-[#d8b66d] px-1 text-[10px] font-bold leading-4 text-[#2b1a09]">
+        <span className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-[#7a4a1e] px-1 text-[10px] font-medium leading-4 text-white">
           {itemCount}
         </span>
       ) : null}
     </a>
+  );
+}
+
+/** Soft watercolour wash + paper grain, matching the printed-textile look of the brand. */
+const TOP_BAR_TEXTURE = [
+  "radial-gradient(ellipse 22% 140% at 4% 40%, rgba(214,178,140,0.55), transparent 70%)",
+  "radial-gradient(ellipse 20% 140% at 96% 60%, rgba(222,190,156,0.5), transparent 70%)",
+  "radial-gradient(ellipse 30% 120% at 28% 90%, rgba(255,255,255,0.75), transparent 70%)",
+  "radial-gradient(ellipse 26% 120% at 70% 10%, rgba(255,255,255,0.65), transparent 70%)",
+  "radial-gradient(ellipse 18% 120% at 50% 50%, rgba(236,214,186,0.45), transparent 75%)",
+  `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='60'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.018 0.06' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.38 0 0 0 0 0.2 0 0 0 0.5 -0.12'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+].join(", ");
+
+function Ornament() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-4 w-7 shrink-0 text-[#7b4f24] md:h-[18px] md:w-8"
+      fill="none"
+      viewBox="0 0 32 18"
+    >
+      <path d="M16 1.5l3.2 7.5-3.2 7.5-3.2-7.5z" fill="currentColor" />
+      <path
+        d="M16 5.2c2.2 0 3.6 1.5 3.6 3.8M16 12.8c-2.2 0-3.6-1.5-3.6-3.8"
+        stroke="#f5ede1"
+        strokeLinecap="round"
+        strokeWidth="0.9"
+      />
+      <path d="M12 9H5.5M20 9h6.5" stroke="currentColor" strokeLinecap="round" strokeWidth="0.9" />
+      <circle cx="3.4" cy="9" fill="currentColor" r="1.3" />
+      <circle cx="28.6" cy="9" fill="currentColor" r="1.3" />
+      <circle cx="8.8" cy="5.6" fill="currentColor" r="0.8" />
+      <circle cx="23.2" cy="5.6" fill="currentColor" r="0.8" />
+      <circle cx="8.8" cy="12.4" fill="currentColor" r="0.8" />
+      <circle cx="23.2" cy="12.4" fill="currentColor" r="0.8" />
+    </svg>
   );
 }

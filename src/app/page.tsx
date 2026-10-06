@@ -4,6 +4,7 @@ import { HomeHero } from "@/components/home/HomeHero";
 import { ProductMediaCarousel } from "@/components/catalog/ProductMediaCarousel";
 import { MobileHomeSearch } from "@/components/home/MobileHomeSearch";
 import { PreOrderAnnouncementModal } from "@/components/home/PreOrderAnnouncementModal";
+import { TrustLottieIcon } from "@/components/home/TrustLottieIcon";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import {
   getCatalogHome,
@@ -69,21 +70,13 @@ export default async function HomePage() {
       <PreOrderAnnouncementModal />
       <DamaskBackdrop />
       <div className="relative">
-        <div className="h-[3px] bg-[linear-gradient(90deg,#6e1423,#caa14e,#6e1423)]" />
-        <div className="flex items-center justify-center gap-2 border-b border-[#e1d6c4] bg-[#fffdf8] py-1.5 text-[#9b6d35]">
-          <span className="h-px w-6 bg-[#caa14e]/70" />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.34em]">
-            The Vastra House
-          </span>
-          <span className="h-px w-6 bg-[#caa14e]/70" />
-        </div>
         <MobileHomeSearch />
-        <HomeHero slides={heroSlides} />
+        <HomeHero slideDuration={cms?.home?.hero?.slideDuration} slides={heroSlides} />
+        <TrustStrip />
         <SquareTileRail tiles={categoryTiles} />
         <StoryBand image={storyImage} imageAlt={storyImageAlt} story={cms?.home?.story} />
         <CollectionGrid tiles={collectionTiles} />
         <ProductGrid products={productTiles} />
-        <TrustStrip />
         <SocialGrid instagramPosts={instagramPosts} />
       </div>
       <style>{`
@@ -518,11 +511,36 @@ function ProductGrid({ products }: Readonly<{ products: VisualTile[] }>) {
 
 function TrustStrip() {
   const items = [
-    { icon: Award, label: "Premium Quality", text: "Fine fabrics and careful craftsmanship" },
-    { icon: PackageCheck, label: "Timeless Designs", text: "Classic styles for repeat wear" },
-    { icon: Truck, label: "Free Shipping", text: "On orders above Rs. 1999" },
-    { icon: RotateCcw, label: "Easy Returns", text: "Hassle-free return support" },
-    { icon: ShieldCheck, label: "Secure Payments", text: "Safe checkout experience" },
+    {
+      icon: Award,
+      label: "Premium Quality",
+      lottie: "premium-quality",
+      text: "Fine fabrics and careful craftsmanship",
+    },
+    {
+      icon: PackageCheck,
+      label: "Timeless Designs",
+      lottie: "timeless-designs",
+      text: "Classic styles for repeat wear",
+    },
+    {
+      icon: Truck,
+      label: "Free Shipping",
+      lottie: "free-shipping",
+      text: "On orders above Rs. 1999",
+    },
+    {
+      icon: RotateCcw,
+      label: "Easy Returns",
+      lottie: "easy-returns",
+      text: "Hassle-free return support",
+    },
+    {
+      icon: ShieldCheck,
+      label: "Secure Payments",
+      lottie: "secure-payments",
+      text: "Safe checkout experience",
+    },
   ];
 
   return (
@@ -536,8 +554,11 @@ function TrustStrip() {
               className="border-[#e1d6c4] p-5 text-center md:border-r last:md:border-r-0"
               key={item.label}
             >
-              <span className="relative mx-auto flex size-12 items-center justify-center rounded-full border border-[#caa14e] bg-[#fdf6e8] shadow-[inset_0_0_0_3px_rgba(202,161,78,0.18)]">
-                <Icon aria-hidden="true" className="text-[#6e1423]" size={22} />
+              <span className="relative mx-auto flex size-16 items-center justify-center rounded-full border border-[#caa14e] bg-[#fdf6e8] shadow-[inset_0_0_0_3px_rgba(202,161,78,0.18)]">
+                <TrustLottieIcon
+                  fallback={<Icon aria-hidden="true" className="text-[#6e1423]" size={22} />}
+                  src={`/lottie/${item.lottie}.json`}
+                />
               </span>
               <h3 className="mt-3 font-serif text-sm font-semibold uppercase tracking-wide text-[#3d1620]">
                 {item.label}

@@ -1,15 +1,20 @@
 "use client";
 
-import { ImagePlus, Loader2, Plus, RefreshCw, Save, Trash2, Upload } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ImagePlus, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { FooterEditor } from "@/components/cms/FooterEditor";
+import { HeroSlidesEditor } from "@/components/cms/HeroSlidesEditor";
 import { MediaPicker, type MediaItem } from "@/components/media/MediaPicker";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { errorMessage, useToast } from "@/components/ui/Toast";
-import { apiBaseUrl, apiFetch } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import type { MediaReference } from "@/lib/catalog";
 import {
   defaultCmsContent,
+  defaultFooterHelpLinks,
+  defaultFooterShopLinks,
+  defaultNavigation,
   fetchAdminCmsContent,
   saveAdminCmsContent,
   type CmsCatalogPage,
@@ -29,25 +34,16 @@ export type ContentTab =
   | "testimonials"
   | "faqs"
   | "policies";
-type CmsList =
-  | "navigation"
-  | "testimonials"
-  | "faqs"
-  | "policies"
-  | "aboutValues"
-  | "instagramPosts";
+type CmsList = "headerNavigation" | "testimonials" | "faqs" | "policies" | "aboutValues";
 
 export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTab?: ContentTab }>) {
   const accessToken = useAuthStore((state) => state.accessToken);
   const toast = useToast();
-  const heroUploadRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState<CmsContent>(defaultCmsContent);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<ContentTab>(initialTab);
-  const [uploadingHero, setUploadingHero] = useState(false);
 
-  const heroMedia = content.home?.hero?.media;
   const storyMedia = content.home?.storyMedia;
   const imageMedia = useMemo(() => media.filter((item) => item.resourceType === "image"), [media]);
 
@@ -65,7 +61,25 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
   async function load() {
     try {
       const payload = await fetchAdminCmsContent("storefront-main", accessToken);
-      setContent(normalizeContent(payload.content ?? defaultCmsContent));
+      const loaded = payload.content ?? defaultCmsContent;
+      setContent(
+        normalizeContent({
+          ...loaded,
+          // Show the live header menu so every button can be edited, even before the first save.
+          headerNavigation: loaded.headerNavigation?.length
+            ? loaded.headerNavigation
+            : defaultNavigation,
+          footer: {
+            ...loaded.footer,
+            helpLinks: loaded.footer?.helpLinks?.length
+              ? loaded.footer.helpLinks
+              : defaultFooterHelpLinks,
+            shopLinks: loaded.footer?.shopLinks?.length
+              ? loaded.footer.shopLinks
+              : defaultFooterShopLinks,
+          },
+        }),
+      );
       setMessage(payload.content ? "Content loaded" : "Using starter content");
     } catch (error) {
       toast.error(errorMessage(error, "Content load failed"));
@@ -85,6 +99,14 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
   }
 
   async function save() {
+    const missingAlt = findMissingAltText(content);
+    if (missingAlt.length) {
+      const text = `Alt text is required for: ${missingAlt.join(", ")}`;
+      toast.error(text);
+      setMessage(text);
+      return;
+    }
+
     try {
       const payload = await saveAdminCmsContent(
         "storefront-main",
@@ -104,7 +126,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     setContent((current) => normalizeContent(updater(normalizeContent(current))));
   }
 
-  function updateHome(field: "announcement", value: string) {
+  function updateHome(field: "announcement" | "topBarText", value: string) {
     updateContent((current) => ({ ...current, home: { ...current.home, [field]: value } }));
   }
 
@@ -120,19 +142,6 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
           primaryCta: { enabled: true, href: "/about", label: "Know More About Us" },
           ...current.home?.story,
           ...patch,
-        },
-      },
-    }));
-  }
-
-  function updateHero(field: "copy" | "eyebrow" | "title", value: string) {
-    updateContent((current) => ({
-      ...current,
-      home: {
-        ...current.home,
-        hero: {
-          ...current.home?.hero,
-          [field]: value,
         },
       },
     }));
@@ -263,67 +272,6 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     }));
   }
 
-  function updateHeroLink(
-    field: "primaryCta" | "secondaryCta",
-    key: keyof CmsLink,
-    value: string | boolean,
-  ) {
-    updateContent((current) => ({
-      ...current,
-      home: {
-        ...current.home,
-        hero: {
-          ...current.home?.hero,
-          [field]: {
-            enabled: true,
-            href: "",
-            label: "",
-            ...current.home?.hero?.[field],
-            [key]: value,
-          },
-        },
-      },
-    }));
-  }
-
-  function setHeroMedia(item: MediaItem) {
-    const mediaReference = toMediaReference(
-      item,
-      content.home?.hero?.title ?? "Home hero image",
-      "16:7",
-    );
-
-    updateContent((current) => ({
-      ...current,
-      home: {
-        ...current.home,
-        hero: {
-          ...current.home?.hero,
-          media: mediaReference,
-          slides: (current.home?.hero?.slides ?? []).map((slide, index) =>
-            index === 0 ? { ...slide, media: mediaReference } : slide,
-          ),
-        },
-      },
-    }));
-  }
-
-  function clearHeroMedia() {
-    updateContent((current) => ({
-      ...current,
-      home: {
-        ...current.home,
-        hero: {
-          ...current.home?.hero,
-          media: null,
-          slides: (current.home?.hero?.slides ?? []).map((slide, index) =>
-            index === 0 ? { ...slide, media: null } : slide,
-          ),
-        },
-      },
-    }));
-  }
-
   function setHomeStoryMedia(item: MediaItem) {
     updateContent((current) => ({
       ...current,
@@ -344,114 +292,34 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     }));
   }
 
-  function heroSlides() {
-    return content.home?.hero?.slides?.length
-      ? content.home.hero.slides
-      : [
-          {
-            copy: content.home?.hero?.copy,
-            copyFontSize: "md" as const,
-            contentPosition: "left" as const,
-            eyebrow: content.home?.hero?.eyebrow,
-            fontFamily: "serif" as const,
-            fontSize: "lg" as const,
-            media: content.home?.hero?.media,
-            primaryCta: content.home?.hero?.primaryCta,
-            secondaryCta: content.home?.hero?.secondaryCta,
-            textColor: "#ffffff",
-            title: content.home?.hero?.title,
-          },
-        ];
-  }
+  function heroSlides(): CmsHeroSlide[] {
+    if (content.home?.hero?.slides?.length) {
+      return content.home.hero.slides;
+    }
 
-  function updateHeroSlide(index: number, patch: Partial<CmsHeroSlide>) {
-    updateContent((current) => {
-      const slides = current.home?.hero?.slides?.length
-        ? [...current.home.hero.slides]
-        : heroSlides();
-      slides[index] = { ...slides[index], ...patch };
-
-      return {
-        ...current,
-        home: {
-          ...current.home,
-          hero: {
-            ...current.home?.hero,
-            ...(index === 0 ? patch : {}),
-            slides,
-          },
-        },
-      };
-    });
-  }
-
-  function updateHeroSlideLink(
-    index: number,
-    field: "primaryCta" | "secondaryCta",
-    key: keyof CmsLink,
-    value: string | boolean,
-  ) {
-    const slide = heroSlides()[index] ?? {};
-    updateHeroSlide(index, {
-      [field]: {
+    // Older content kept a single hero in the top-level fields; show it as slide 1.
+    return [
+      {
+        copy: content.home?.hero?.copy,
         enabled: true,
-        href: "",
-        label: "",
-        ...slide[field],
-        [key]: value,
+        eyebrow: content.home?.hero?.eyebrow,
+        media: content.home?.hero?.media,
+        overlay: "medium",
+        primaryCta: content.home?.hero?.primaryCta,
+        secondaryCta: content.home?.hero?.secondaryCta,
+        showOutline: false,
+        showTextOnMobile: true,
+        textColor: "#ffffff",
+        title: content.home?.hero?.title,
       },
-    });
+    ];
   }
 
-  function addHeroSlide() {
+  function setHeroSlides(slides: CmsHeroSlide[]) {
     updateContent((current) => ({
       ...current,
-      home: {
-        ...current.home,
-        hero: {
-          ...current.home?.hero,
-          slides: [
-            ...heroSlides(),
-            {
-              copy: "",
-              copyFontSize: "md",
-              contentPosition: "left",
-              eyebrow: "New Season Edit",
-              fontFamily: "serif",
-              fontSize: "lg",
-              textColor: "#ffffff",
-              title: "New Hero Slide",
-            },
-          ],
-        },
-      },
+      home: { ...current.home, hero: { ...current.home?.hero, slides } },
     }));
-  }
-
-  function removeHeroSlide(index: number) {
-    updateContent((current) => {
-      const slides = heroSlides().filter((_, itemIndex) => itemIndex !== index);
-      return {
-        ...current,
-        home: {
-          ...current.home,
-          hero: {
-            ...current.home?.hero,
-            slides: slides.length ? slides : heroSlides().slice(0, 1),
-          },
-        },
-      };
-    });
-  }
-
-  function setHeroSlideMedia(index: number, item: MediaItem) {
-    updateHeroSlide(index, {
-      media: toMediaReference(item, heroSlides()[index]?.title ?? "Home hero slide", "16:7"),
-    });
-  }
-
-  function clearHeroSlideMedia(index: number) {
-    updateHeroSlide(index, { media: null });
   }
 
   function clearAboutMedia() {
@@ -464,52 +332,10 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     }));
   }
 
-  async function uploadHeroMedia() {
-    const file = heroUploadRef.current?.files?.[0];
-
-    if (!file) {
-      toast.error("Select a hero image first");
-      return;
-    }
-
-    setUploadingHero(true);
-    try {
-      const formData = new FormData();
-      formData.set("file", file);
-      formData.set("aspectRatio", "16:7");
-      formData.set("context", "product-media");
-      formData.set("objectFit", "cover");
-      formData.set("altText", content.home?.hero?.title || "The Vastra House hero image");
-      formData.set("tags", "cms,hero,home");
-
-      const response = await fetch(`${apiBaseUrl}/media/upload`, {
-        body: formData,
-        headers: { Authorization: `Bearer ${accessToken}` },
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        throw new Error((await response.text()) || "Upload failed");
-      }
-
-      const payload = (await response.json()) as { media: MediaItem };
-      setHeroMedia(payload.media);
-      if (heroUploadRef.current) {
-        heroUploadRef.current.value = "";
-      }
-      await loadMedia();
-      toast.success("Hero image uploaded");
-    } catch (error) {
-      toast.error(errorMessage(error, "Hero upload failed"));
-    } finally {
-      setUploadingHero(false);
-    }
-  }
-
   function updateLinkList(index: number, key: keyof CmsLink, value: string | boolean) {
     updateContent((current) => ({
       ...current,
-      navigation: (current.navigation ?? []).map((item, itemIndex) =>
+      headerNavigation: (current.headerNavigation ?? []).map((item, itemIndex) =>
         itemIndex === index ? { ...item, [key]: value } : item,
       ),
     }));
@@ -518,8 +344,8 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
   function addLink() {
     updateContent((current) => ({
       ...current,
-      navigation: [
-        ...(current.navigation ?? []),
+      headerNavigation: [
+        ...(current.headerNavigation ?? []),
         { enabled: true, href: "/shop", label: "New Link" },
       ],
     }));
@@ -537,116 +363,9 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
       return;
     }
 
-    if (list === "instagramPosts") {
-      updateContent((current) => ({
-        ...current,
-        footer: {
-          ...current.footer,
-          instagramPosts: (current.footer?.instagramPosts ?? []).filter(
-            (_, itemIndex) => itemIndex !== index,
-          ),
-        },
-      }));
-      return;
-    }
-
     updateContent((current) => ({
       ...current,
       [list]: (current[list] ?? []).filter((_, itemIndex) => itemIndex !== index),
-    }));
-  }
-
-  function updateFooterTagline(value: string) {
-    updateContent((current) => ({
-      ...current,
-      footer: { ...current.footer, tagline: value },
-    }));
-  }
-
-  function updateFooterField(
-    field: "email" | "instagramUrl" | "location" | "phone" | "whatsappUrl",
-    value: string,
-  ) {
-    updateContent((current) => ({
-      ...current,
-      footer: { ...current.footer, [field]: value },
-    }));
-  }
-
-  function updateInstagramPost(index: number, value: string) {
-    updateContent((current) => ({
-      ...current,
-      footer: {
-        ...current.footer,
-        instagramPosts: (current.footer?.instagramPosts ?? []).map((item, itemIndex) =>
-          itemIndex === index ? value : item,
-        ),
-      },
-    }));
-  }
-
-  function addInstagramPost() {
-    updateContent((current) => ({
-      ...current,
-      footer: {
-        ...current.footer,
-        instagramPosts: [...(current.footer?.instagramPosts ?? []), ""],
-      },
-    }));
-  }
-
-  function setFooterLogo(item: MediaItem) {
-    updateContent((current) => ({
-      ...current,
-      footer: {
-        ...current.footer,
-        brandLogo: toMediaReference(item, "The Vastra House logo", "1:1"),
-      },
-    }));
-  }
-
-  function clearFooterLogo() {
-    updateContent((current) => ({
-      ...current,
-      footer: {
-        ...current.footer,
-        brandLogo: null,
-      },
-    }));
-  }
-
-  function updateFooterLink(index: number, key: keyof CmsLink, value: string | boolean) {
-    updateContent((current) => ({
-      ...current,
-      footer: {
-        ...current.footer,
-        links: (current.footer?.links ?? []).map((item, itemIndex) =>
-          itemIndex === index ? { ...item, [key]: value } : item,
-        ),
-      },
-    }));
-  }
-
-  function addFooterLink() {
-    updateContent((current) => ({
-      ...current,
-      footer: {
-        ...current.footer,
-        links: [
-          ...(current.footer?.links ?? []),
-          { enabled: true, href: "/shop", label: "Footer Link" },
-        ],
-      },
-    }));
-  }
-
-  function removeFooterLink(index: number) {
-    updateContent((current) => ({
-      ...current,
-      footer: {
-        ...current.footer,
-        links: (current.footer?.links ?? []).filter((_, itemIndex) => itemIndex !== index),
-      },
     }));
   }
 
@@ -741,273 +460,40 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
           {tab === "home" ? (
             <section className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
               <div className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-soft sm:p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold">Home Hero</h2>
-                  <button
-                    className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold"
-                    onClick={addHeroSlide}
-                    type="button"
-                  >
-                    <Plus aria-hidden="true" size={15} />
-                    Add Slide
-                  </button>
-                </div>
-                <div className="mt-4 grid gap-3">
-                  <Field
-                    label="Announcement bar"
-                    onChange={(value) => updateHome("announcement", value)}
-                    value={content.home?.announcement ?? ""}
-                  />
-                  <Field
-                    label="Eyebrow"
-                    onChange={(value) => updateHero("eyebrow", value)}
-                    value={content.home?.hero?.eyebrow ?? ""}
-                  />
-                  <Field
-                    label="Hero title"
-                    onChange={(value) => updateHero("title", value)}
-                    value={content.home?.hero?.title ?? ""}
-                  />
-                  <TextEditor
-                    label="Hero copy"
-                    onChange={(value) => updateHero("copy", value)}
-                    value={content.home?.hero?.copy ?? ""}
-                  />
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <CtaEditor
-                      label="Primary CTA"
-                      link={content.home?.hero?.primaryCta}
-                      onChange={(key, value) => updateHeroLink("primaryCta", key, value)}
-                    />
-                    <CtaEditor
-                      label="Secondary CTA"
-                      link={content.home?.hero?.secondaryCta}
-                      onChange={(key, value) => updateHeroLink("secondaryCta", key, value)}
+                <div className="mb-5 rounded-md border border-border p-3">
+                  <h2 className="text-sm font-semibold">Top announcement bar</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Thin strip above the menu, for example your free shipping offer.
+                  </p>
+                  <div className="mt-2">
+                    <Field
+                      label="Text"
+                      onChange={(value) => updateHome("topBarText", value)}
+                      value={content.home?.topBarText ?? ""}
                     />
                   </div>
                 </div>
-                <div className="mt-5 grid gap-4">
-                  {heroSlides().map((slide, index) => (
-                    <div
-                      className="rounded-md border border-border p-3"
-                      key={`${slide.title}-${index}`}
-                    >
-                      <div className="mb-3 flex items-center justify-between gap-2">
-                        <h3 className="text-sm font-semibold">Hero Slide {index + 1}</h3>
-                        {heroSlides().length > 1 ? (
-                          <button
-                            className="inline-flex h-8 items-center gap-1 rounded-md border border-destructive/40 px-2 text-xs font-semibold text-destructive"
-                            onClick={() => removeHeroSlide(index)}
-                            type="button"
-                          >
-                            <Trash2 aria-hidden="true" size={13} />
-                            Remove
-                          </button>
-                        ) : null}
-                      </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <Field
-                          label="Eyebrow"
-                          onChange={(value) => updateHeroSlide(index, { eyebrow: value })}
-                          value={slide.eyebrow ?? ""}
-                        />
-                        <Field
-                          label="Title"
-                          onChange={(value) => updateHeroSlide(index, { title: value })}
-                          value={slide.title ?? ""}
-                        />
-                      </div>
-                      <TextEditor
-                        label="Copy"
-                        onChange={(value) => updateHeroSlide(index, { copy: value })}
-                        value={slide.copy ?? ""}
-                      />
-                      <div className="mt-3 grid gap-3 md:grid-cols-5">
-                        <label className="text-sm font-medium">
-                          Font family
-                          <select
-                            className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                            onChange={(event) =>
-                              updateHeroSlide(index, {
-                                fontFamily: event.target.value as "serif" | "sans",
-                              })
-                            }
-                            value={slide.fontFamily ?? "serif"}
-                          >
-                            <option value="serif">Serif</option>
-                            <option value="sans">Sans</option>
-                          </select>
-                        </label>
-                        <label className="text-sm font-medium">
-                          Font size
-                          <select
-                            className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                            onChange={(event) =>
-                              updateHeroSlide(index, {
-                                fontSize: event.target.value as "sm" | "md" | "lg",
-                              })
-                            }
-                            value={slide.fontSize ?? "lg"}
-                          >
-                            <option value="sm">Small</option>
-                            <option value="md">Medium</option>
-                            <option value="lg">Large</option>
-                          </select>
-                        </label>
-                        <Field
-                          label="Text colour"
-                          onChange={(value) => updateHeroSlide(index, { textColor: value })}
-                          value={slide.textColor ?? "#ffffff"}
-                        />
-                        <label className="text-sm font-medium">
-                          Content position
-                          <select
-                            className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                            onChange={(event) =>
-                              updateHeroSlide(index, {
-                                contentPosition: event.target.value as "left" | "center" | "right",
-                              })
-                            }
-                            value={slide.contentPosition ?? "left"}
-                          >
-                            <option value="left">Left</option>
-                            <option value="center">Center</option>
-                            <option value="right">Right</option>
-                          </select>
-                        </label>
-                        <label className="text-sm font-medium">
-                          Body text size
-                          <select
-                            className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                            onChange={(event) =>
-                              updateHeroSlide(index, {
-                                copyFontSize: event.target.value as "sm" | "md" | "lg",
-                              })
-                            }
-                            value={slide.copyFontSize ?? "md"}
-                          >
-                            <option value="sm">Small</option>
-                            <option value="md">Medium</option>
-                            <option value="lg">Large</option>
-                          </select>
-                        </label>
-                        <label className="flex h-10 items-center gap-2 self-end rounded-md border border-border px-3 text-sm font-medium">
-                          <input
-                            checked={slide.showOutline !== false}
-                            className="size-4 accent-primary"
-                            onChange={(event) =>
-                              updateHeroSlide(index, { showOutline: event.target.checked })
-                            }
-                            type="checkbox"
-                          />
-                          Show outline
-                        </label>
-                      </div>
-                      <div className="mt-3 grid gap-3 md:grid-cols-2">
-                        <CtaEditor
-                          label="Primary CTA"
-                          link={slide.primaryCta}
-                          onChange={(key, value) =>
-                            updateHeroSlideLink(index, "primaryCta", key, value)
-                          }
-                        />
-                        <CtaEditor
-                          label="Secondary CTA"
-                          link={slide.secondaryCta}
-                          onChange={(key, value) =>
-                            updateHeroSlideLink(index, "secondaryCta", key, value)
-                          }
-                        />
-                      </div>
-                      <div className="mt-3">
-                        {slide.media?.url ? (
-                          <div className="mb-2 flex items-center justify-between gap-2 rounded-md border border-border p-2 text-xs text-muted-foreground">
-                            <span className="min-w-0 truncate">
-                              Selected media: {slide.media.altText ?? slide.media.url}
-                            </span>
-                            <button
-                              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-destructive/40 px-2 font-semibold text-destructive"
-                              onClick={() => clearHeroSlideMedia(index)}
-                              type="button"
-                            >
-                              <Trash2 aria-hidden="true" size={12} />
-                              Remove
-                            </button>
-                          </div>
-                        ) : null}
-                        <MediaPicker
-                          media={media}
-                          onSelect={(item) => setHeroSlideMedia(index, item)}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <HeroSlidesEditor
+                  accessToken={accessToken}
+                  media={media}
+                  onChange={setHeroSlides}
+                  onDurationChange={(seconds) =>
+                    updateContent((current) => ({
+                      ...current,
+                      home: {
+                        ...current.home,
+                        hero: { ...current.home?.hero, slideDuration: seconds },
+                      },
+                    }))
+                  }
+                  onMediaUploaded={() => void loadMedia()}
+                  slideDuration={content.home?.hero?.slideDuration}
+                  slides={heroSlides()}
+                />
               </div>
 
               <aside className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-soft sm:p-5">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <ImagePlus aria-hidden="true" size={16} />
-                  Hero Media
-                </div>
-                {heroMedia?.url ? (
-                  <div className="mt-3 grid gap-2">
-                    <ResponsiveImage
-                      alt={heroMedia.altText ?? "Home hero image"}
-                      aspectRatio={heroMedia.aspectRatio?.replace(":", " / ") ?? "16 / 7"}
-                      className="rounded-md border border-border"
-                      objectFit={heroMedia.objectFit}
-                      src={heroMedia.url}
-                    />
-                    <button
-                      className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/40 text-sm font-semibold text-destructive"
-                      onClick={clearHeroMedia}
-                      type="button"
-                    >
-                      <Trash2 aria-hidden="true" size={14} />
-                      Remove selected hero media
-                    </button>
-                  </div>
-                ) : (
-                  <p className="mt-3 rounded-md border border-border p-3 text-sm text-muted-foreground">
-                    No hero media selected.
-                  </p>
-                )}
-                <div className="mt-4 grid gap-2">
-                  <label className="text-xs font-medium">
-                    Upload new hero image or video
-                    <input
-                      accept="image/*,video/*"
-                      className="mt-1 block w-full rounded-md border border-border p-1.5 text-sm"
-                      ref={heroUploadRef}
-                      type="file"
-                    />
-                  </label>
-                  <button
-                    className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={uploadingHero}
-                    onClick={() => void uploadHeroMedia()}
-                    type="button"
-                  >
-                    {uploadingHero ? (
-                      <>
-                        <Loader2 aria-hidden="true" className="animate-spin" size={15} />
-                        Uploading hero media...
-                      </>
-                    ) : (
-                      <>
-                        <Upload aria-hidden="true" size={15} />
-                        Upload Hero Media
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="mt-4">
-                  <p className="mb-2 text-xs font-semibold">Pick from media library</p>
-                  <MediaPicker media={media} onSelect={setHeroMedia} />
-                </div>
-
-                <div className="mt-6 border-t border-border pt-5">
+                <div>
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <ImagePlus aria-hidden="true" size={16} />
                     Home Our Story Image
@@ -1023,6 +509,21 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                         className="rounded-md border border-border"
                         objectFit={storyMedia.objectFit}
                         src={storyMedia.url}
+                      />
+                      <Field
+                        label="Alt text (required)"
+                        onChange={(value) =>
+                          updateContent((current) => ({
+                            ...current,
+                            home: {
+                              ...current.home,
+                              storyMedia: current.home?.storyMedia
+                                ? { ...current.home.storyMedia, altText: value }
+                                : current.home?.storyMedia,
+                            },
+                          }))
+                        }
+                        value={storyMedia.altText ?? ""}
                       />
                       <button
                         className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/40 text-sm font-semibold text-destructive"
@@ -1327,117 +828,33 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
 
           {tab === "navigation" ? (
             <EditorSection title="Navigation Links" onAdd={addLink}>
-              {(content.navigation ?? []).map((link, index) => (
+              <p className="mb-3 text-xs leading-5 text-muted-foreground">
+                These are the header menu buttons (also used in the mobile menu). The first half
+                appears on the left of the logo and the rest on the right. Untick Enabled to hide a
+                button.
+              </p>
+              {(content.headerNavigation ?? []).map((link, index) => (
                 <LinkRow
                   key={`${link.href}-${index}`}
                   link={link}
                   onChange={(key, value) => updateLinkList(index, key, value)}
-                  onRemove={() => removeFromList("navigation", index)}
+                  onRemove={() => removeFromList("headerNavigation", index)}
                 />
               ))}
             </EditorSection>
           ) : null}
 
           {tab === "footer" ? (
-            <EditorSection title="Footer Content" onAdd={addFooterLink}>
-              <div className="mb-4 grid gap-3 rounded-md border border-border p-3">
-                <p className="text-sm font-semibold">Brand Logo</p>
-                {content.footer?.brandLogo?.url ? (
-                  <div className="grid gap-2">
-                    <div className="w-32">
-                      <ResponsiveImage
-                        alt={content.footer.brandLogo.altText ?? "The Vastra House logo"}
-                        aspectRatio={content.footer.brandLogo.aspectRatio ?? "1:1"}
-                        objectFit={content.footer.brandLogo.objectFit ?? "contain"}
-                        src={content.footer.brandLogo.url}
-                      />
-                    </div>
-                    <button
-                      className="inline-flex h-9 w-fit items-center gap-2 rounded-md border border-destructive/40 px-3 text-sm font-semibold text-destructive"
-                      onClick={clearFooterLogo}
-                      type="button"
-                    >
-                      <Trash2 aria-hidden="true" size={14} />
-                      Remove logo
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No logo selected. Header and footer will show text logo.
-                  </p>
-                )}
-                <MediaPicker media={imageMedia} onSelect={setFooterLogo} />
-              </div>
-              <TextEditor
-                label="Footer tagline"
-                onChange={updateFooterTagline}
-                value={content.footer?.tagline ?? ""}
-              />
-              <div className="mt-4 grid gap-3 rounded-md border border-border p-3 md:grid-cols-2">
-                <Field
-                  label="Customer email"
-                  onChange={(value) => updateFooterField("email", value)}
-                  value={content.footer?.email ?? ""}
-                />
-                <Field
-                  label="Phone number"
-                  onChange={(value) => updateFooterField("phone", value)}
-                  value={content.footer?.phone ?? ""}
-                />
-                <Field
-                  label="Location"
-                  onChange={(value) => updateFooterField("location", value)}
-                  value={content.footer?.location ?? ""}
-                />
-                <Field
-                  label="Instagram profile URL"
-                  onChange={(value) => updateFooterField("instagramUrl", value)}
-                  value={content.footer?.instagramUrl ?? ""}
-                />
-                <Field
-                  label="WhatsApp URL"
-                  onChange={(value) => updateFooterField("whatsappUrl", value)}
-                  value={content.footer?.whatsappUrl ?? ""}
-                />
-              </div>
-              <div className="mt-4 rounded-md border border-border p-3">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold">Instagram Post URLs</p>
-                  <button
-                    className="inline-flex h-8 items-center gap-1 rounded-md border border-border px-2 text-xs font-semibold"
-                    onClick={addInstagramPost}
-                    type="button"
-                  >
-                    <Plus aria-hidden="true" size={13} />
-                    Add Post
-                  </button>
-                </div>
-                <div className="grid gap-3">
-                  {(content.footer?.instagramPosts ?? []).map((url, index) => (
-                    <CardRow
-                      key={`${url}-${index}`}
-                      onRemove={() => removeFromList("instagramPosts", index)}
-                    >
-                      <Field
-                        label={`Instagram post ${index + 1}`}
-                        onChange={(value) => updateInstagramPost(index, value)}
-                        value={url}
-                      />
-                    </CardRow>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-4 grid gap-3">
-                {(content.footer?.links ?? []).map((link, index) => (
-                  <LinkRow
-                    key={`${link.href}-${index}`}
-                    link={link}
-                    onChange={(key, value) => updateFooterLink(index, key, value)}
-                    onRemove={() => removeFooterLink(index)}
-                  />
-                ))}
-              </div>
-            </EditorSection>
+            <FooterEditor
+              footer={content.footer ?? {}}
+              images={imageMedia}
+              onChange={(patch) =>
+                updateContent((current) => ({
+                  ...current,
+                  footer: { ...current.footer, ...patch },
+                }))
+              }
+            />
           ) : null}
 
           {tab === "testimonials" ? (
@@ -1977,16 +1394,43 @@ function cleanHeroSlide(slide: CmsHeroSlide): CmsHeroSlide {
     copy: slide.copy,
     copyFontSize: slide.copyFontSize ?? "md",
     contentPosition: slide.contentPosition ?? "left",
+    enabled: slide.enabled !== false,
+    endsAt: slide.endsAt || null,
     eyebrow: slide.eyebrow,
     fontFamily: slide.fontFamily ?? "serif",
     fontSize: slide.fontSize ?? "lg",
     media: cleanMediaReference(slide.media),
+    mobileMedia: cleanMediaReference(slide.mobileMedia),
+    overlay: slide.overlay ?? "medium",
     primaryCta: cleanLink(slide.primaryCta),
     secondaryCta: cleanLink(slide.secondaryCta),
     showOutline: slide.showOutline !== false,
+    showTextOnMobile: slide.showTextOnMobile !== false,
+    startsAt: slide.startsAt || null,
     textColor: slide.textColor ?? "#ffffff",
     title: slide.title,
   };
+}
+
+function findMissingAltText(content: CmsContent) {
+  const missing: string[] = [];
+  const check = (label: string, reference?: MediaReference | null) => {
+    if (reference?.url && (reference.altText ?? "").trim().length < 3) {
+      missing.push(label);
+    }
+  };
+
+  (content.home?.hero?.slides ?? []).forEach((slide, index) => {
+    check(`Hero slide ${index + 1} desktop media`, slide.media);
+    check(`Hero slide ${index + 1} mobile media`, slide.mobileMedia);
+  });
+  check("Home story image", content.home?.storyMedia);
+  check("About image", content.about?.media);
+  check("Shop banner", content.shop?.media);
+  check("Pre-order banner", content.preOrder?.media);
+  check("Footer logo", content.footer?.brandLogo);
+
+  return missing;
 }
 
 function isPresent<T>(value: T | undefined): value is T {
@@ -2015,7 +1459,12 @@ function normalizeContent(content: CmsContent): CmsContent {
       brandLogo: cleanMediaReference(
         content.footer?.brandLogo ?? defaultCmsContent.footer?.brandLogo,
       ),
+      copyrightText: content.footer?.copyrightText,
       email: content.footer?.email ?? defaultCmsContent.footer?.email,
+      helpLinks: (content.footer?.helpLinks ?? []).map((link) => cleanLink(link)).filter(isPresent),
+      newsletterText: content.footer?.newsletterText,
+      newsletterTitle: content.footer?.newsletterTitle,
+      shopLinks: (content.footer?.shopLinks ?? []).map((link) => cleanLink(link)).filter(isPresent),
       instagramPosts: (
         content.footer?.instagramPosts ??
         defaultCmsContent.footer?.instagramPosts ??
@@ -2032,6 +1481,7 @@ function normalizeContent(content: CmsContent): CmsContent {
     },
     home: {
       announcement: content.home?.announcement ?? defaultCmsContent.home?.announcement,
+      topBarText: content.home?.topBarText,
       story: content.home?.story ? cleanHeroSlide(content.home.story) : undefined,
       storyMedia: cleanMediaReference(content.home?.storyMedia),
       hero: {
@@ -2040,6 +1490,7 @@ function normalizeContent(content: CmsContent): CmsContent {
         media: cleanMediaReference(homeHero.media),
         primaryCta: cleanLink(homeHero.primaryCta),
         secondaryCta: cleanLink(homeHero.secondaryCta),
+        slideDuration: homeHero.slideDuration,
         slides: (homeHero.slides ?? []).map((slide) => cleanHeroSlide(slide)),
         title: homeHero.title,
       },
@@ -2086,6 +1537,9 @@ function normalizeContent(content: CmsContent): CmsContent {
       title: preOrder.title,
     },
     navigation: (content.navigation ?? []).map((link) => cleanLink(link)).filter(isPresent),
+    headerNavigation: (content.headerNavigation ?? [])
+      .map((link) => cleanLink(link))
+      .filter(isPresent),
     faqs: (content.faqs ?? []).map((item) => ({
       answer: item.answer,
       question: item.question,

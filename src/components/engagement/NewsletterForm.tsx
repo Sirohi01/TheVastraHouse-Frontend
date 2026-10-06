@@ -59,7 +59,11 @@ export function NewsletterForm({
         </label>
         <input
           autoComplete="email"
-          className="h-11 min-w-0 flex-1 rounded-md border border-border bg-white px-3 text-sm text-foreground"
+          className={`h-11 min-w-0 flex-1 px-3 text-sm ${
+            tone === "dark"
+              ? "rounded-none border border-[#caa14e]/60 bg-[#fffaf1]/5 tracking-wide text-[#f6ecda] outline-none transition placeholder:text-[#f6ecda]/50 focus:border-[#e6c67a]"
+              : "rounded-md border border-border bg-white text-foreground"
+          }`}
           id={id}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="Your email"
@@ -68,7 +72,11 @@ export function NewsletterForm({
           value={email}
         />
         <button
-          className="h-11 shrink-0 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          className={`h-11 shrink-0 px-5 text-sm disabled:opacity-60 ${
+            tone === "dark"
+              ? "bg-gradient-to-b from-[#e6c67a] to-[#c39a45] text-xs font-medium uppercase tracking-[0.18em] text-[#2e0c12] transition hover:brightness-110"
+              : "rounded-md bg-primary font-semibold text-primary-foreground"
+          }`}
           disabled={state.kind === "saving"}
           type="submit"
         >
@@ -87,7 +95,10 @@ export function NewsletterForm({
         <span>I agree to receive marketing emails. I can unsubscribe any time.</span>
       </label>
       {state.kind === "error" ? (
-        <p className="text-xs text-destructive" role="alert">
+        <p
+          className={`text-xs ${tone === "dark" ? "text-[#ffb4a8]" : "text-destructive"}`}
+          role="alert"
+        >
           {state.message}
         </p>
       ) : null}

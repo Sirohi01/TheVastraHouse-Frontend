@@ -1,13 +1,30 @@
 import type { Metadata, Viewport } from "next";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 import { Analytics } from "@/components/analytics/Analytics";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { RootChrome } from "@/components/layout/RootChrome";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
+import { fetchCmsPages } from "@/lib/content";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd, getSeoSettings, getSiteUrl } from "@/lib/seo";
 import "./globals.css";
 
 export const revalidate = 60;
+
+// Storefront chrome (header + hero) display/body fonts. Exposed as CSS variables so
+// the rest of the site keeps its existing typography.
+const displayFont = Cormorant_Garamond({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["400", "500", "600"],
+});
+const bodyFont = Jost({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["300", "400", "500"],
+});
 
 export const viewport: Viewport = {
   initialScale: 1,
@@ -64,10 +81,19 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [cms, seo] = await Promise.all([loadCms(), getSeoSettings()]);
+  const [cms, seo, policies] = await Promise.all([
+    loadCms(),
+    getSeoSettings(),
+    fetchCmsPages("policy").catch(() => ({ pages: [] })),
+  ]);
+  const policyPages = policies.pages.map((page) => ({ slug: page.slug, title: page.title }));
 
   return (
-    <html lang="en-IN" suppressHydrationWarning>
+    <html
+      className={`${displayFont.variable} ${bodyFont.variable}`}
+      lang="en-IN"
+      suppressHydrationWarning
+    >
       <body suppressHydrationWarning>
         <a
           className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow"
@@ -78,7 +104,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <JsonLd data={buildOrganizationJsonLd(seo)} />
         <JsonLd data={buildWebsiteJsonLd(seo)} />
         <AppProviders>
-          <RootChrome cms={cms}>{children}</RootChrome>
+          <RootChrome cms={cms} policyPages={policyPages}>
+            {children}
+          </RootChrome>
           <Analytics measurementId={seo.analytics?.ga4MeasurementId ?? ""} />
         </AppProviders>
       </body>

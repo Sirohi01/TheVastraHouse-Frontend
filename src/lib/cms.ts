@@ -11,13 +11,20 @@ export type CmsHeroSlide = {
   copy?: string;
   copyFontSize?: "sm" | "md" | "lg";
   contentPosition?: "left" | "center" | "right";
+  enabled?: boolean;
+  endsAt?: string | null;
   eyebrow?: string;
   fontFamily?: "serif" | "sans";
   fontSize?: "sm" | "md" | "lg";
   media?: MediaReference | null;
+  /** 4:5 image/video used on phones; falls back to `media`. */
+  mobileMedia?: MediaReference | null;
+  overlay?: "none" | "soft" | "medium" | "strong";
   primaryCta?: CmsLink;
   secondaryCta?: CmsLink;
   showOutline?: boolean;
+  showTextOnMobile?: boolean;
+  startsAt?: string | null;
   textColor?: string;
   title?: string;
 };
@@ -43,12 +50,14 @@ export type CmsContent = {
   status: "draft" | "published";
   home?: {
     announcement?: string;
+    topBarText?: string;
     hero?: {
       copy?: string;
       eyebrow?: string;
       media?: MediaReference | null;
       primaryCta?: CmsLink;
       secondaryCta?: CmsLink;
+      slideDuration?: number;
       slides?: CmsHeroSlide[];
       title?: string;
     };
@@ -76,9 +85,16 @@ export type CmsContent = {
   shop?: CmsCatalogPage;
   preOrder?: CmsCatalogPage;
   navigation?: CmsLink[];
+  /** Header + mobile menu buttons. Separate from the legacy `navigation` list. */
+  headerNavigation?: CmsLink[];
   footer?: {
     brandLogo?: MediaReference | null;
+    copyrightText?: string;
     email?: string;
+    helpLinks?: CmsLink[];
+    newsletterText?: string;
+    newsletterTitle?: string;
+    shopLinks?: CmsLink[];
     instagramPosts?: string[];
     instagramUrl?: string;
     links?: CmsLink[];
@@ -92,7 +108,37 @@ export type CmsContent = {
   policies?: Array<{ body: string; slug: string; title: string }>;
 };
 
+/** Header menu used until the admin saves their own list under Content > Navigation. */
+export const defaultNavigation: CmsLink[] = [
+  { enabled: true, href: "/shop", label: "Shop" },
+  { enabled: true, href: "/shop?sort=-newest", label: "New Arrivals" },
+  { enabled: true, href: "/collections", label: "Collections" },
+  { enabled: true, href: "/about", label: "About" },
+  { enabled: true, href: "/pre-order", label: "Pre-Order" },
+  { enabled: true, href: "/track-order", label: "Track Order" },
+];
+
+export const defaultFooterShopLinks: CmsLink[] = [
+  { enabled: true, href: "/shop", label: "Shop all" },
+  { enabled: true, href: "/shop?sort=-newest", label: "New arrivals" },
+  { enabled: true, href: "/collections", label: "Collections" },
+  { enabled: true, href: "/shop?sort=-bestSelling", label: "Best sellers" },
+  { enabled: true, href: "/pre-order", label: "Pre-order" },
+  { enabled: true, href: "/blog", label: "Journal" },
+];
+
+export const defaultFooterHelpLinks: CmsLink[] = [
+  { enabled: true, href: "/account", label: "My account" },
+  { enabled: true, href: "/account/orders", label: "My orders" },
+  { enabled: true, href: "/track-order", label: "Track order" },
+  { enabled: true, href: "/faq", label: "FAQs" },
+  { enabled: true, href: "/pages/size-guide", label: "Size guide" },
+  { enabled: true, href: "/contact", label: "Contact us" },
+  { enabled: true, href: "/about", label: "About us" },
+];
+
 export const defaultCmsContent: CmsContent = {
+  headerNavigation: defaultNavigation,
   title: "Primary Website Content",
   status: "published",
   home: {
@@ -219,23 +265,31 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
     status: content.status ?? defaultCmsContent.status,
     home: {
       announcement: content.home?.announcement ?? defaultCmsContent.home?.announcement,
+      topBarText: content.home?.topBarText,
       hero: {
         copy: mergedHero.copy,
         eyebrow: mergedHero.eyebrow,
         media: sanitizeMediaReference(mergedHero.media),
         primaryCta: sanitizeLink(mergedHero.primaryCta),
         secondaryCta: sanitizeLink(mergedHero.secondaryCta),
+        slideDuration: mergedHero.slideDuration,
         slides: (mergedHero.slides ?? []).map((slide) => ({
           copy: slide.copy,
           copyFontSize: slide.copyFontSize ?? "md",
           contentPosition: slide.contentPosition ?? "left",
+          enabled: slide.enabled !== false,
+          endsAt: slide.endsAt || null,
           eyebrow: slide.eyebrow,
           fontFamily: slide.fontFamily ?? "serif",
           fontSize: slide.fontSize ?? "lg",
           media: sanitizeMediaReference(slide.media),
+          mobileMedia: sanitizeMediaReference(slide.mobileMedia),
+          overlay: slide.overlay ?? "medium",
           primaryCta: sanitizeLink(slide.primaryCta),
           secondaryCta: sanitizeLink(slide.secondaryCta),
-          showOutline: slide.showOutline !== false,
+          showOutline: slide.showOutline === true,
+          showTextOnMobile: slide.showTextOnMobile !== false,
+          startsAt: slide.startsAt || null,
           textColor: slide.textColor ?? "#ffffff",
           title: slide.title,
         })),
@@ -295,9 +349,21 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       title: mergedPreOrder.title,
     },
     navigation: (content.navigation ?? []).map((link) => sanitizeLink(link)).filter(isPresent),
+    headerNavigation: (content.headerNavigation ?? [])
+      .map((link) => sanitizeLink(link))
+      .filter(isPresent),
     footer: {
       brandLogo: sanitizeMediaReference(mergedFooter.brandLogo),
+      copyrightText: mergedFooter.copyrightText,
       email: mergedFooter.email,
+      helpLinks: (content.footer?.helpLinks ?? [])
+        .map((link) => sanitizeLink(link))
+        .filter(isPresent),
+      newsletterText: mergedFooter.newsletterText,
+      newsletterTitle: mergedFooter.newsletterTitle,
+      shopLinks: (content.footer?.shopLinks ?? [])
+        .map((link) => sanitizeLink(link))
+        .filter(isPresent),
       instagramPosts: (mergedFooter.instagramPosts ?? []).filter(Boolean),
       instagramUrl: mergedFooter.instagramUrl,
       links: (mergedFooter.links ?? []).map((link) => sanitizeLink(link)).filter(isPresent),
