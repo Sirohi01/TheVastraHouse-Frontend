@@ -544,26 +544,33 @@ function TrustStrip() {
   ];
 
   return (
-    <section className="mx-auto max-w-7xl border-b border-[#e1d6c4] px-5 py-6">
-      <div className="grid gap-0 rounded-sm border border-[#e1d6c4] bg-[linear-gradient(180deg,#fffdf8,#fdf6e8)] md:grid-cols-5">
-        {items.map((item) => {
+    <section className="mx-auto max-w-7xl border-b border-[#e1d6c4] px-4 py-5 sm:px-5 sm:py-6">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-[#e1d6c4] bg-[#e1d6c4] md:grid-cols-5">
+        {items.map((item, index) => {
           const Icon = item.icon;
 
           return (
             <div
-              className="border-[#e1d6c4] p-5 text-center md:border-r last:md:border-r-0"
+              className={`flex flex-col items-center bg-[linear-gradient(180deg,#fffdf8,#fdf6e8)] px-3 py-4 text-center md:p-5 ${
+                index === items.length - 1 && items.length % 2 === 1
+                  ? "col-span-2 md:col-span-1"
+                  : ""
+              }`}
               key={item.label}
             >
-              <span className="relative mx-auto flex size-16 items-center justify-center rounded-full border border-[#caa14e] bg-[#fdf6e8] shadow-[inset_0_0_0_3px_rgba(202,161,78,0.18)]">
+              <span className="relative flex size-[52px] items-center justify-center rounded-full border border-[#caa14e] bg-[#fdf6e8] shadow-[inset_0_0_0_3px_rgba(202,161,78,0.18)] md:size-16">
                 <TrustLottieIcon
+                  className="size-10 md:size-14"
                   fallback={<Icon aria-hidden="true" className="text-[#6e1423]" size={22} />}
                   src={`/lottie/${item.lottie}.json`}
                 />
               </span>
-              <h3 className="mt-3 font-serif text-sm font-semibold uppercase tracking-wide text-[#3d1620]">
+              <h3 className="mt-2.5 font-[family-name:var(--font-display)] text-[15px] font-semibold uppercase leading-tight tracking-[0.06em] text-[#3d1620] md:mt-3 md:text-base">
                 {item.label}
               </h3>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.text}</p>
+              <p className="mt-1 max-w-[16rem] text-[11.5px] leading-[1.35rem] text-[#6f6256] md:text-xs md:leading-5">
+                {item.text}
+              </p>
             </div>
           );
         })}

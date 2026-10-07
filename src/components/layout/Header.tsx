@@ -1,7 +1,8 @@
 "use client";
 
-import { Heart, Menu, Search, ShoppingBag, UserRound } from "lucide-react";
+import { Heart, Search, ShoppingBag, UserRound } from "lucide-react";
 import { useEffect } from "react";
+import { MobileMenu } from "@/components/layout/MobileMenu";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { commerceFetch, type Cart } from "@/lib/commerce";
 import { defaultNavigation, type CmsContent } from "@/lib/cms";
@@ -127,35 +128,19 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
             ) : null}
           </a>
 
-          <details className="group relative xl:hidden">
-            <summary
-              aria-label="Menu"
-              className="inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-md text-foreground transition hover:text-primary"
-              title="Menu"
-            >
-              <Menu aria-hidden="true" size={21} />
-            </summary>
-            <nav className="absolute right-0 mt-3 w-60 rounded-md border border-border bg-card p-2 text-sm font-medium shadow-lifted">
-              {menuItems.map((item) => (
-                <a
-                  className="block rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
-                  href={item.href}
-                  key={item.label}
-                >
-                  {item.label}
-                </a>
-              ))}
-              <div className="my-2 h-px bg-border" />
-              {headerActionItems.map((item) => (
-                <HeaderActionItem
-                  item={item}
-                  itemCount={itemCount}
-                  key={item.label}
-                  variant="mobile"
-                />
-              ))}
-            </nav>
-          </details>
+          <MobileMenu
+            accountHref={headerActionItems[1].href}
+            accountLabel={headerActionItems[1].label}
+            cartCount={itemCount}
+            email={cms?.footer?.email}
+            instagramUrl={cms?.footer?.instagramUrl}
+            links={menuItems}
+            logoAlt={cms?.footer?.brandLogo?.altText}
+            logoUrl={cms?.footer?.brandLogo?.url}
+            note={topBarText}
+            phone={cms?.footer?.phone}
+            whatsappUrl={cms?.footer?.whatsappUrl}
+          />
         </div>
       </div>
     </header>
@@ -165,33 +150,12 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
 function HeaderActionItem({
   item,
   itemCount,
-  variant = "top",
 }: Readonly<{
   item: (typeof actionItems)[number];
   itemCount: number;
-  variant?: "mobile" | "top";
 }>) {
   const Icon = item.icon;
   const showBadge = item.label === "Cart" && itemCount > 0;
-
-  if (variant === "mobile") {
-    return (
-      <a
-        className="flex items-center justify-between gap-3 rounded-md px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-primary"
-        href={item.href}
-      >
-        <span className="inline-flex items-center gap-3">
-          <Icon aria-hidden="true" size={17} />
-          {item.label}
-        </span>
-        {showBadge ? (
-          <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
-            {itemCount}
-          </span>
-        ) : null}
-      </a>
-    );
-  }
 
   return (
     <a
