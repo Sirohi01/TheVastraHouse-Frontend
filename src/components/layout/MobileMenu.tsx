@@ -208,17 +208,25 @@ export function MobileMenu({
 
                 {/* Search */}
                 <div className="px-6 pt-5">
-                  <a
-                    className="flex h-11 items-center gap-3 rounded-full border border-[#caa14e]/40 bg-[#fffaf1]/5 px-4 transition hover:border-[#e6c67a]/80"
-                    href="/shop"
+                  <form
+                    action="/shop"
+                    className="flex h-11 items-center gap-3 rounded-full border border-[#caa14e]/40 bg-[#fffaf1]/5 px-4 transition focus-within:border-[#e6c67a]/80 hover:border-[#e6c67a]/80"
+                    method="get"
+                    role="search"
                   >
                     <span className="text-[#d8b66d]">
                       <Search aria-hidden="true" size={16} />
                     </span>
-                    <span className="text-[13px] font-light tracking-wide text-[#f6ecda]/70">
-                      Search the collection
-                    </span>
-                  </a>
+                    <input
+                      aria-label="Search the collection"
+                      autoComplete="off"
+                      className="min-w-0 flex-1 bg-transparent text-[13px] font-light tracking-wide text-[#f6ecda] outline-none placeholder:text-[#f6ecda]/70"
+                      enterKeyHint="search"
+                      name="q"
+                      placeholder="Search the collection"
+                      type="search"
+                    />
+                  </form>
                 </div>
 
                 {/* Links */}

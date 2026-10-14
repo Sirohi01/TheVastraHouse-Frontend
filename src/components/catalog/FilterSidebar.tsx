@@ -132,30 +132,6 @@ export function FilterSidebar({
               ))}
             </div>
           </FilterGroup>
-          <FilterGroup title="Fabric">
-            {filters.fabrics.map((item) => (
-              <Checkbox
-                checked={query.fabric === item}
-                key={item}
-                label={item}
-                name="fabric"
-                value={item}
-              />
-            ))}
-          </FilterGroup>
-          {filters.tags.length ? (
-            <FilterGroup title="Tags">
-              {filters.tags.map((item) => (
-                <Checkbox
-                  checked={query.tagId === item._id}
-                  key={item._id}
-                  label={`${item.name} (${item.count})`}
-                  name="tagId"
-                  value={item._id}
-                />
-              ))}
-            </FilterGroup>
-          ) : null}
           <div className="grid grid-cols-2 gap-3 p-4 sm:p-5">
             <a
               className="grid h-10 place-items-center border border-[#6e1423] text-sm font-semibold uppercase tracking-wide text-[#6e1423] transition-colors hover:bg-[#6e1423] hover:text-white"

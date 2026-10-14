@@ -5,6 +5,7 @@ import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { FilterSidebar } from "@/components/catalog/FilterSidebar";
 import { Pagination } from "@/components/catalog/Pagination";
 import { ProductGrid } from "@/components/catalog/ProductGrid";
+import { HeroMedia, heroOverlayClass } from "@/components/media/HeroMedia";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { ErrorState } from "@/components/states/ErrorState";
 import type { CmsCatalogPage } from "@/lib/cms";
@@ -28,6 +29,7 @@ export async function CatalogPage({
   bannerStyle,
   faqs,
   heroMedia,
+  heroMobileMedia,
   imageOnlyBanners = false,
   introContent,
   onProducts,
@@ -41,6 +43,8 @@ export async function CatalogPage({
   bannerStyle?: CmsCatalogPage;
   faqs?: ContentFaq[];
   heroMedia?: MediaReference | null;
+  /** 4:5 image shown on phones; falls back to `heroMedia`. */
+  heroMobileMedia?: MediaReference | null;
   imageOnlyBanners?: boolean;
   introContent?: string;
   /** Receives the first page of products (used for ItemList structured data). */
@@ -74,28 +78,27 @@ export async function CatalogPage({
     return (
       <div className="bg-[#fbf7ef]">
         {onProducts ? onProducts(products) : null}
-        {breadcrumbs?.length ? (
-          <div className="mx-auto max-w-7xl px-3 pt-4 sm:px-5">
-            <Breadcrumbs items={breadcrumbs} />
-          </div>
-        ) : null}
-        <section className="mx-auto max-w-7xl px-3 py-4 sm:px-5 sm:py-6">
-          <div className="relative overflow-hidden rounded-sm border border-[#e1d6c4] shadow-[0_24px_60px_-46px_rgba(46,12,18,0.6)]">
-            <ResponsiveImage
-              alt={heroMedia?.altText ?? `${title} banner`}
-              aspectRatio="16 / 7"
-              objectFit={heroMedia?.objectFit}
-              priority
-              sizes="100vw"
-              src={heroMedia?.url ?? heroImage}
+        {/* Trail is hidden visually (hero comes first) but the BreadcrumbList schema stays. */}
+        {breadcrumbs?.length ? <Breadcrumbs items={breadcrumbs} visible={false} /> : null}
+        {/* Same proportion as the home hero: 4:5 on phones, wide 16/4.4 from md up. */}
+        <section className="relative border-b border-[#e1d6c4]">
+          <div className="relative aspect-[4/5] overflow-hidden bg-[#2e0c12] md:aspect-[16/4.4] md:min-h-[340px]">
+            <HeroMedia
+              desktop={heroMedia}
+              eager
+              fallbackAlt={`${title} banner`}
+              fallbackSrc={heroImage}
+              mobile={heroMobileMedia}
+              title={title}
             />
+            <div className={`absolute inset-0 ${heroOverlayClass(bannerStyle?.overlay)}`} />
 
             {/* Royal inset frame + corner filigree */}
             <div
               className={
                 imageOnlyBanners || bannerStyle?.showOutline === false
                   ? "hidden"
-                  : "pointer-events-none absolute inset-3 hidden border border-[#caa14e]/45 md:block md:inset-5"
+                  : "pointer-events-none absolute inset-3 hidden border border-[#caa14e]/45 md:block md:inset-4"
               }
             >
               <CornerFiligree className="absolute -left-px -top-px text-[#caa14e]/85" />
@@ -104,40 +107,44 @@ export async function CatalogPage({
               <CornerFiligree className="absolute -bottom-px -left-px -rotate-90 text-[#caa14e]/85" />
             </div>
 
-            {/* One H1 for every breakpoint: below the image on mobile, overlaid on desktop. */}
+            {/* One H1 for every breakpoint, overlaid like the home hero. */}
             <div
               className={
-                imageOnlyBanners
-                  ? "px-4 py-4 md:sr-only"
-                  : "px-4 py-4 md:absolute md:inset-0 md:flex md:items-center md:px-10 md:py-0"
+                imageOnlyBanners ? "sr-only" : "absolute inset-0 flex items-end md:items-center"
               }
             >
-              <div
-                className={`max-w-xl text-[#3d1620] md:text-[var(--banner-text)] ${catalogContentAlignment(bannerStyle?.contentPosition)} ${
-                  bannerStyle?.fontFamily === "sans" ? "" : "font-serif"
-                }`}
-                style={
-                  { "--banner-text": bannerStyle?.textColor ?? "#ffffff" } as React.CSSProperties
-                }
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-current opacity-80">
-                  {eyebrow ?? "The Vastra House"}
-                </p>
-                <div className="mt-4 flex items-center gap-2 text-[#caa14e]">
-                  <span className="h-px w-10 bg-[#caa14e]" />
-                  <span aria-hidden="true">✦</span>
-                  <span className="h-px w-6 bg-[#caa14e]/60" />
+              <div className="mx-auto w-full max-w-7xl px-6 pb-9 md:px-16 md:pb-0">
+                <div
+                  className={`max-w-[34rem] ${catalogContentAlignment(bannerStyle?.contentPosition)} ${
+                    bannerStyle?.fontFamily === "sans" ? "" : "font-serif"
+                  }`}
+                  style={{
+                    color: bannerStyle?.textColor ?? "#ffffff",
+                    textShadow:
+                      bannerStyle?.overlay && bannerStyle.overlay !== "none"
+                        ? undefined
+                        : "0 0 3px rgba(0,0,0,0.55), 0 2px 20px rgba(0,0,0,0.65)",
+                  }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-current md:text-xs">
+                    {eyebrow ?? "The Vastra House"}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2 text-[#caa14e] md:mt-3">
+                    <span className="h-px w-10 bg-[#caa14e]" />
+                    <span aria-hidden="true">✦</span>
+                    <span className="h-px w-6 bg-[#caa14e]/60" />
+                  </div>
+                  <h1
+                    className={`mt-2 font-semibold uppercase leading-tight md:mt-3 ${catalogTitleSize(bannerStyle?.fontSize)}`}
+                  >
+                    {title}
+                  </h1>
+                  <p
+                    className={`mt-2 line-clamp-2 max-w-md font-medium leading-6 text-current md:mt-3 md:line-clamp-3 md:leading-7 ${catalogCopySize(bannerStyle?.copyFontSize)}`}
+                  >
+                    {description}
+                  </p>
                 </div>
-                <h1
-                  className={`mt-3 uppercase leading-tight drop-shadow-sm ${catalogTitleSize(bannerStyle?.fontSize)}`}
-                >
-                  {title}
-                </h1>
-                <p
-                  className={`mt-4 max-w-md leading-7 text-current opacity-[.88] ${catalogCopySize(bannerStyle?.copyFontSize)}`}
-                >
-                  {description}
-                </p>
               </div>
             </div>
           </div>
@@ -205,15 +212,15 @@ function catalogContentAlignment(position?: CmsCatalogPage["contentPosition"]) {
 }
 
 function catalogTitleSize(size?: CmsCatalogPage["fontSize"]) {
-  if (size === "sm") return "text-3xl sm:text-4xl";
-  if (size === "md") return "text-4xl sm:text-5xl";
-  return "text-4xl sm:text-5xl";
+  if (size === "sm") return "text-[22px] md:text-[28px] lg:text-[34px]";
+  if (size === "md") return "text-[26px] md:text-[34px] lg:text-[42px]";
+  return "text-[30px] md:text-[38px] lg:text-[48px] xl:text-[54px]";
 }
 
 function catalogCopySize(size?: CmsCatalogPage["copyFontSize"]) {
-  if (size === "sm") return "text-sm";
-  if (size === "lg") return "text-lg";
-  return "text-base";
+  if (size === "sm") return "text-xs md:text-sm";
+  if (size === "lg") return "text-sm md:text-lg";
+  return "text-[13px] md:text-base";
 }
 
 function PromoBand({
@@ -227,7 +234,7 @@ function PromoBand({
     >
       <ResponsiveImage
         alt={promo?.media?.altText ?? "Crafted heritage fabric banner"}
-        aspectRatio="16 / 7"
+        aspectRatio="16 / 4.4"
         className="transition-transform duration-500 group-hover:scale-105"
         sizes="100vw"
         src={promo?.media?.url ?? heroImage}

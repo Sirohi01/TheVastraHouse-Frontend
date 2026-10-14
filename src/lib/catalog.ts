@@ -58,6 +58,10 @@ export type TaxonomyRef = {
   description?: string;
   seo?: SeoFields;
   banner?: MediaReference;
+  /** 4:5 banner shown on phones; falls back to `banner`. */
+  mobileBanner?: MediaReference;
+  /** false hides the gold frame on the listing banner. */
+  bannerOutline?: boolean;
   introContent?: string;
   bottomContent?: string;
   faqs?: ContentFaq[];

@@ -29,6 +29,7 @@ export default async function PreOrderPage() {
       description={preOrder.description ?? ""}
       eyebrow={preOrder.eyebrow}
       heroMedia={preOrder.media}
+      heroMobileMedia={preOrder.mobileMedia}
       onProducts={(products) => (
         <JsonLd
           data={buildCollectionPageJsonLd({

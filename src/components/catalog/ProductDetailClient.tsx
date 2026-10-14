@@ -7,9 +7,11 @@ import { NotifyMeForm } from "@/components/catalog/NotifyMeForm";
 import { trackViewItem } from "@/lib/analytics";
 import { AddToCartButton } from "@/components/commerce/AddToCartButton";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { ProductTrustBadges } from "@/components/catalog/ProductTrustBadges";
 import { RecentlyViewed } from "@/components/catalog/RecentlyViewed";
 import { ReviewForm } from "@/components/catalog/ReviewForm";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
+import type { CmsTrustBadge } from "@/lib/cms";
 import {
   getProductMedia,
   getProductPricing,
@@ -24,7 +26,13 @@ export function ProductDetailClient({
   pdp,
   reviewSummary,
   reviews,
-}: Readonly<{ pdp: PdpResponse; reviewSummary?: ReviewSummary; reviews: ProductReview[] }>) {
+  trustBadges,
+}: Readonly<{
+  pdp: PdpResponse;
+  reviewSummary?: ReviewSummary;
+  reviews: ProductReview[];
+  trustBadges?: CmsTrustBadge[];
+}>) {
   const [selectedMedia, setSelectedMedia] = useState(0);
   const product = pdp.product;
   const activeVariants = product.variants.filter((item) => item.active !== false);
@@ -259,6 +267,8 @@ export function ProductDetailClient({
             ) : canDirectOrder ? (
               <AvailabilityStrip label="Ready stock" value="Direct checkout available" />
             ) : null}
+
+            <ProductTrustBadges badges={trustBadges} />
 
             <div className="mt-8 divide-y divide-[#e1d6c4] rounded-sm border border-[#e1d6c4] bg-white">
               <DetailSection title="Highlights">

@@ -13,10 +13,12 @@ export function FooterEditor({
   footer,
   images,
   onChange,
+  onMediaUploaded,
 }: Readonly<{
   footer: Footer;
   images: MediaItem[];
   onChange: (patch: Partial<Footer>) => void;
+  onMediaUploaded?: () => void;
 }>) {
   const [showLibrary, setShowLibrary] = useState(false);
   const logo = footer.brandLogo;
@@ -88,7 +90,12 @@ export function FooterEditor({
           </button>
           {showLibrary ? (
             <div className="max-h-72 overflow-y-auto rounded-md border border-border p-2">
-              <MediaPicker media={images} onSelect={selectLogo} pageSize={8} />
+              <MediaPicker
+                media={images}
+                onSelect={selectLogo}
+                pageSize={8}
+                upload={{ aspectRatio: "1:1", onUploaded: onMediaUploaded, tags: "cms,logo" }}
+              />
             </div>
           ) : null}
           <label className="text-sm font-medium">

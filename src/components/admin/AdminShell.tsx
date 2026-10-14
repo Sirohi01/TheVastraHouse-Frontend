@@ -92,6 +92,7 @@ const cmsContentSections = [
   { href: "/admin/content/shop", label: "Shop" },
   { href: "/admin/content/preOrder", label: "Pre-Order" },
   { href: "/admin/content/navigation", label: "Navigation" },
+  { href: "/admin/content/productBadges", label: "Product Badges" },
   { href: "/admin/content/footer", label: "Footer" },
   { href: "/admin/content/testimonials", label: "Testimonials" },
   { href: "/admin/content/faqs", label: "FAQs" },

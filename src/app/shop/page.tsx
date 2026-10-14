@@ -62,6 +62,7 @@ export default async function ShopPage({ searchParams }: Readonly<ShopPageProps>
         description={shop.description ?? ""}
         eyebrow={shop.eyebrow}
         heroMedia={shop.media}
+        heroMobileMedia={shop.mobileMedia}
         onProducts={(products) =>
           searchTerm ? null : (
             <JsonLd

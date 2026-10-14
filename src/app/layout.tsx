@@ -11,19 +11,19 @@ import "./globals.css";
 
 export const revalidate = 60;
 
-// Storefront chrome (header + hero) display/body fonts. Exposed as CSS variables so
-// the rest of the site keeps its existing typography.
+// Site-wide display/body fonts, exposed as CSS variables and mapped to Tailwind's
+// font-serif / font-sans (and the body default) in globals.css.
 const displayFont = Cormorant_Garamond({
   display: "swap",
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 const bodyFont = Jost({
   display: "swap",
   subsets: ["latin"],
   variable: "--font-body",
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600"],
 });
 
 export const viewport: Viewport = {

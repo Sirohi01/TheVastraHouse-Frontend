@@ -12,6 +12,9 @@ import { apiFetch } from "@/lib/api";
 import type { MediaReference } from "@/lib/catalog";
 import {
   defaultCmsContent,
+  defaultProductTrustBadges,
+  trustBadgeIcons,
+  type CmsTrustBadge,
   defaultFooterHelpLinks,
   defaultFooterShopLinks,
   defaultNavigation,
@@ -30,6 +33,7 @@ export type ContentTab =
   | "shop"
   | "preOrder"
   | "navigation"
+  | "productBadges"
   | "footer"
   | "testimonials"
   | "faqs"
@@ -147,22 +151,9 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     }));
   }
 
-  function updateAbout(
-    field: "description" | "eyebrow" | "storyCopy" | "storyEyebrow" | "storyTitle" | "title",
-    value: string | boolean,
-  ) {
-    updateContent((current) => ({
-      ...current,
-      about: {
-        ...current.about,
-        [field]: value,
-      },
-    }));
-  }
-
   function updateCatalogPage(
     page: "preOrder" | "shop",
-    field: Exclude<keyof CmsCatalogPage, "media">,
+    field: Exclude<keyof CmsCatalogPage, "media" | "mobileMedia">,
     value: string | boolean,
   ) {
     updateContent((current) => ({
@@ -193,26 +184,33 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     }));
   }
 
-  function setCatalogPageMedia(page: "preOrder" | "shop", item: MediaItem) {
+  function setCatalogPageMedia(
+    page: "preOrder" | "shop",
+    item: MediaItem,
+    slot: "media" | "mobileMedia" = "media",
+  ) {
     updateContent((current) => ({
       ...current,
       [page]: {
         ...current[page],
-        media: toMediaReference(
+        [slot]: toMediaReference(
           item,
           current[page]?.title ?? `${page === "shop" ? "Shop" : "Pre-order"} banner`,
-          "16:7",
+          slot === "mobileMedia" ? "4:5" : "16:7",
         ),
       },
     }));
   }
 
-  function clearCatalogPageMedia(page: "preOrder" | "shop") {
+  function clearCatalogPageMedia(
+    page: "preOrder" | "shop",
+    slot: "media" | "mobileMedia" = "media",
+  ) {
     updateContent((current) => ({
       ...current,
       [page]: {
         ...current[page],
-        media: null,
+        [slot]: null,
       },
     }));
   }
@@ -233,43 +231,8 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     }));
   }
 
-  function setAboutMedia(item: MediaItem) {
-    updateContent((current) => ({
-      ...current,
-      about: {
-        ...current.about,
-        media: toMediaReference(item, current.about?.storyTitle ?? "About story image", "16:9"),
-      },
-    }));
-  }
-
-  function updateAboutValue(
-    index: number,
-    field: "icon" | "text" | "title",
-    value: "award" | "care" | "shield" | "sparkles" | string,
-  ) {
-    updateContent((current) => ({
-      ...current,
-      about: {
-        ...current.about,
-        values: (current.about?.values ?? []).map((item, itemIndex) =>
-          itemIndex === index ? { ...item, [field]: value } : item,
-        ),
-      },
-    }));
-  }
-
-  function addAboutValue() {
-    updateContent((current) => ({
-      ...current,
-      about: {
-        ...current.about,
-        values: [
-          ...(current.about?.values ?? []),
-          { icon: "sparkles", text: "Describe this brand value.", title: "New Value" },
-        ],
-      },
-    }));
+  function updateAboutContent(patch: Partial<NonNullable<CmsContent["about"]>>) {
+    updateContent((current) => ({ ...current, about: { ...current.about, ...patch } }));
   }
 
   function setHomeStoryMedia(item: MediaItem) {
@@ -322,22 +285,44 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
     }));
   }
 
-  function clearAboutMedia() {
-    updateContent((current) => ({
-      ...current,
-      about: {
-        ...current.about,
-        media: null,
-      },
-    }));
-  }
-
   function updateLinkList(index: number, key: keyof CmsLink, value: string | boolean) {
     updateContent((current) => ({
       ...current,
       headerNavigation: (current.headerNavigation ?? []).map((item, itemIndex) =>
         itemIndex === index ? { ...item, [key]: value } : item,
       ),
+    }));
+  }
+
+  function productBadges(current: CmsContent) {
+    return current.productTrustBadges?.length
+      ? current.productTrustBadges
+      : defaultProductTrustBadges;
+  }
+
+  function updateTrustBadge(index: number, patch: Partial<CmsTrustBadge>) {
+    updateContent((current) => ({
+      ...current,
+      productTrustBadges: productBadges(current).map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    }));
+  }
+
+  function addTrustBadge() {
+    updateContent((current) => ({
+      ...current,
+      productTrustBadges: [
+        ...productBadges(current),
+        { enabled: true, icon: "sparkles", title: "New promise" },
+      ],
+    }));
+  }
+
+  function removeTrustBadge(index: number) {
+    updateContent((current) => ({
+      ...current,
+      productTrustBadges: productBadges(current).filter((_, itemIndex) => itemIndex !== index),
     }));
   }
 
@@ -541,7 +526,15 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                   )}
                   <div className="mt-4">
                     <p className="mb-2 text-xs font-semibold">Pick from media library</p>
-                    <MediaPicker media={imageMedia} onSelect={setHomeStoryMedia} />
+                    <MediaPicker
+                      media={imageMedia}
+                      onSelect={setHomeStoryMedia}
+                      upload={{
+                        aspectRatio: "16:7",
+                        onUploaded: () => void loadMedia(),
+                        tags: "cms,home,story",
+                      }}
+                    />
                   </div>
                   <div className="mt-5 grid gap-3 border-t border-border pt-5">
                     <p className="text-sm font-semibold">Our Story Content</p>
@@ -623,7 +616,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                         </select>
                       </label>
                     </div>
-                    <Field
+                    <ColorField
                       label="Text colour"
                       onChange={(value) => updateHomeStory({ textColor: value })}
                       value={content.home?.story?.textColor ?? "#3d1620"}
@@ -661,135 +654,13 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
           ) : null}
 
           {tab === "about" ? (
-            <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="rounded-lg border border-border bg-card p-5 shadow-soft">
-                <h2 className="text-lg font-semibold">About Page</h2>
-                <div className="mt-4 grid gap-3">
-                  <Field
-                    label="Page eyebrow"
-                    onChange={(value) => updateAbout("eyebrow", value)}
-                    value={content.about?.eyebrow ?? ""}
-                  />
-                  <Field
-                    label="Page title"
-                    onChange={(value) => updateAbout("title", value)}
-                    value={content.about?.title ?? ""}
-                  />
-                  <TextEditor
-                    label="Page description"
-                    onChange={(value) => updateAbout("description", value)}
-                    value={content.about?.description ?? ""}
-                  />
-                  <Field
-                    label="Story eyebrow"
-                    onChange={(value) => updateAbout("storyEyebrow", value)}
-                    value={content.about?.storyEyebrow ?? ""}
-                  />
-                  <Field
-                    label="Story title"
-                    onChange={(value) => updateAbout("storyTitle", value)}
-                    value={content.about?.storyTitle ?? ""}
-                  />
-                  <TextEditor
-                    label="Story copy"
-                    minHeight="min-h-40"
-                    onChange={(value) => updateAbout("storyCopy", value)}
-                    value={content.about?.storyCopy ?? ""}
-                  />
-                  <CtaEditor
-                    label="Primary CTA"
-                    link={content.about?.primaryCta}
-                    onChange={updateAboutLink}
-                  />
-                </div>
-
-                <div className="mt-5">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold">Value Cards</h3>
-                    <button
-                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-semibold"
-                      onClick={addAboutValue}
-                      type="button"
-                    >
-                      <Plus aria-hidden="true" size={13} />
-                      Add Value
-                    </button>
-                  </div>
-                  <div className="grid gap-3">
-                    {(content.about?.values ?? []).map((item, index) => (
-                      <CardRow
-                        key={`${item.title}-${index}`}
-                        onRemove={() => removeFromList("aboutValues", index)}
-                      >
-                        <div className="grid gap-3 md:grid-cols-3">
-                          <label className="text-sm font-medium">
-                            Icon
-                            <select
-                              className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
-                              onChange={(event) =>
-                                updateAboutValue(index, "icon", event.target.value)
-                              }
-                              value={item.icon ?? "sparkles"}
-                            >
-                              <option value="sparkles">Sparkles</option>
-                              <option value="award">Award</option>
-                              <option value="shield">Shield</option>
-                              <option value="care">Care</option>
-                            </select>
-                          </label>
-                          <div className="md:col-span-2">
-                            <Field
-                              label="Title"
-                              onChange={(value) => updateAboutValue(index, "title", value)}
-                              value={item.title}
-                            />
-                          </div>
-                        </div>
-                        <TextEditor
-                          label="Text"
-                          onChange={(value) => updateAboutValue(index, "text", value)}
-                          value={item.text}
-                        />
-                      </CardRow>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <aside className="rounded-lg border border-border bg-card p-5 shadow-soft">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <ImagePlus aria-hidden="true" size={16} />
-                  About Image
-                </div>
-                {content.about?.media?.url ? (
-                  <div className="mt-3 grid gap-2">
-                    <ResponsiveImage
-                      alt={content.about.media.altText ?? "About story image"}
-                      aspectRatio={content.about.media.aspectRatio ?? "16 / 9"}
-                      className="rounded-md border border-border"
-                      objectFit={content.about.media.objectFit}
-                      src={content.about.media.url}
-                    />
-                    <button
-                      className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/40 text-sm font-semibold text-destructive"
-                      onClick={clearAboutMedia}
-                      type="button"
-                    >
-                      <Trash2 aria-hidden="true" size={14} />
-                      Remove about image
-                    </button>
-                  </div>
-                ) : (
-                  <p className="mt-3 rounded-md border border-border p-3 text-sm text-muted-foreground">
-                    No about image selected.
-                  </p>
-                )}
-                <div className="mt-4">
-                  <p className="mb-2 text-xs font-semibold">Pick from media library</p>
-                  <MediaPicker media={imageMedia} onSelect={setAboutMedia} />
-                </div>
-              </aside>
-            </section>
+            <AboutEditor
+              about={content.about ?? {}}
+              media={imageMedia}
+              onChange={updateAboutContent}
+              onCtaChange={updateAboutLink}
+              onMediaUploaded={() => void loadMedia()}
+            />
           ) : null}
 
           {tab === "shop" ? (
@@ -804,7 +675,10 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                 })
               }
               onClearMedia={() => clearCatalogPageMedia("shop")}
+              onClearMobileMedia={() => clearCatalogPageMedia("shop", "mobileMedia")}
+              onMediaUploaded={() => void loadMedia()}
               onSelectMedia={(item) => setCatalogPageMedia("shop", item)}
+              onSelectMobileMedia={(item) => setCatalogPageMedia("shop", item, "mobileMedia")}
               page={content.shop}
             />
           ) : null}
@@ -821,7 +695,10 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                 })
               }
               onClearMedia={() => clearCatalogPageMedia("preOrder")}
+              onClearMobileMedia={() => clearCatalogPageMedia("preOrder", "mobileMedia")}
+              onMediaUploaded={() => void loadMedia()}
               onSelectMedia={(item) => setCatalogPageMedia("preOrder", item)}
+              onSelectMobileMedia={(item) => setCatalogPageMedia("preOrder", item, "mobileMedia")}
               page={content.preOrder}
             />
           ) : null}
@@ -844,6 +721,61 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
             </EditorSection>
           ) : null}
 
+          {tab === "productBadges" ? (
+            <EditorSection title="Product Page Badges" onAdd={addTrustBadge}>
+              <p className="mb-3 text-xs leading-5 text-muted-foreground">
+                Icon strip shown under the Add to cart buttons on every product page (up to 8).
+                Untick Enabled to hide one. If you remove every badge, the default set is shown.
+              </p>
+              <div className="grid gap-3">
+                {productBadges(content).map((item, index) => (
+                  <CardRow key={`${item.icon}-${index}`} onRemove={() => removeTrustBadge(index)}>
+                    <div className="grid gap-3 md:grid-cols-[110px_150px_1fr_1fr]">
+                      <label className="flex items-center gap-2 text-xs font-medium">
+                        <input
+                          checked={item.enabled !== false}
+                          onChange={(event) =>
+                            updateTrustBadge(index, { enabled: event.target.checked })
+                          }
+                          type="checkbox"
+                        />
+                        Enabled
+                      </label>
+                      <label className="text-sm font-medium">
+                        Icon
+                        <select
+                          className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                          onChange={(event) =>
+                            updateTrustBadge(index, {
+                              icon: event.target.value as CmsTrustBadge["icon"],
+                            })
+                          }
+                          value={item.icon}
+                        >
+                          {trustBadgeIcons.map((icon) => (
+                            <option key={icon} value={icon}>
+                              {icon}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <Field
+                        label="Title"
+                        onChange={(value) => updateTrustBadge(index, { title: value })}
+                        value={item.title}
+                      />
+                      <Field
+                        label="Small text (optional)"
+                        onChange={(value) => updateTrustBadge(index, { subtitle: value })}
+                        value={item.subtitle ?? ""}
+                      />
+                    </div>
+                  </CardRow>
+                ))}
+              </div>
+            </EditorSection>
+          ) : null}
+
           {tab === "footer" ? (
             <FooterEditor
               footer={content.footer ?? {}}
@@ -854,6 +786,7 @@ export function AdminContentClient({ initialTab = "home" }: Readonly<{ initialTa
                   footer: { ...current.footer, ...patch },
                 }))
               }
+              onMediaUploaded={() => void loadMedia()}
             />
           ) : null}
 
@@ -954,18 +887,27 @@ function CatalogPageContentEditor({
   media,
   onChange,
   onClearMedia,
+  onClearMobileMedia,
+  onMediaUploaded,
   onPromoChange,
   onPromoSelectMedia,
   onSelectMedia,
+  onSelectMobileMedia,
   page,
 }: Readonly<{
   heading: string;
   media: MediaItem[];
-  onChange: (field: Exclude<keyof CmsCatalogPage, "media">, value: string | boolean) => void;
+  onChange: (
+    field: Exclude<keyof CmsCatalogPage, "media" | "mobileMedia">,
+    value: string | boolean,
+  ) => void;
   onClearMedia: () => void;
+  onClearMobileMedia: () => void;
+  onMediaUploaded: () => void;
   onPromoChange: (patch: Partial<CmsHeroSlide>) => void;
   onPromoSelectMedia: (item: MediaItem) => void;
   onSelectMedia: (item: MediaItem) => void;
+  onSelectMobileMedia: (item: MediaItem) => void;
   page?: CmsCatalogPage;
 }>) {
   return (
@@ -1039,7 +981,7 @@ function CatalogPageContentEditor({
                 <option value="lg">Large</option>
               </select>
             </label>
-            <Field
+            <ColorField
               label="Text colour"
               onChange={(value) => onChange("textColor", value)}
               value={page?.textColor ?? "#ffffff"}
@@ -1051,7 +993,20 @@ function CatalogPageContentEditor({
                 onChange={(event) => onChange("showOutline", event.target.checked)}
                 type="checkbox"
               />
-              Show outline
+              Show gold frame line on banner
+            </label>
+            <label className="text-sm font-medium">
+              Colour overlay on image
+              <select
+                className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                onChange={(event) => onChange("overlay", event.target.value)}
+                value={page?.overlay ?? "none"}
+              >
+                <option value="none">None (original photo)</option>
+                <option value="soft">Soft dark tint</option>
+                <option value="medium">Medium dark tint</option>
+                <option value="strong">Strong dark tint</option>
+              </select>
             </label>
           </div>
           <div className="mt-5 border-t border-border pt-5">
@@ -1115,7 +1070,7 @@ function CatalogPageContentEditor({
                   </select>
                 </label>
               </div>
-              <Field
+              <ColorField
                 label="Text colour"
                 onChange={(value) => onPromoChange({ textColor: value })}
                 value={page?.promo?.textColor ?? "#ffffff"}
@@ -1148,7 +1103,11 @@ function CatalogPageContentEditor({
               />
               <div>
                 <p className="mb-2 text-xs font-semibold">Promo image</p>
-                <MediaPicker media={media} onSelect={onPromoSelectMedia} />
+                <MediaPicker
+                  media={media}
+                  onSelect={onPromoSelectMedia}
+                  upload={{ aspectRatio: "16:5", onUploaded: onMediaUploaded, tags: "cms,promo" }}
+                />
               </div>
             </div>
           </div>
@@ -1161,13 +1120,14 @@ function CatalogPageContentEditor({
           {heading} Banner Image
         </div>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Recommended aspect ratio: 16:7. The image is cropped responsively with cover fit.
+          Shown on laptop/desktop, same wide proportion as the home page hero. Recommended 2400 x
+          660 px (about 16:4.4); it is cropped with cover fit.
         </p>
         {page?.media?.url ? (
           <div className="mt-3 grid gap-2">
             <ResponsiveImage
               alt={page.media.altText ?? `${heading} banner`}
-              aspectRatio={page.media.aspectRatio?.replace(":", " / ") ?? "16 / 7"}
+              aspectRatio="16 / 4.4"
               className="rounded-md border border-border"
               objectFit={page.media.objectFit}
               src={page.media.url}
@@ -1188,10 +1148,531 @@ function CatalogPageContentEditor({
         )}
         <div className="mt-4">
           <p className="mb-2 text-xs font-semibold">Pick from media library</p>
-          <MediaPicker media={media} onSelect={onSelectMedia} />
+          <MediaPicker
+            media={media}
+            onSelect={onSelectMedia}
+            upload={{ aspectRatio: "16:4.4", onUploaded: onMediaUploaded, tags: "cms,banner" }}
+          />
+        </div>
+
+        <div className="mt-6 border-t border-border pt-5">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <ImagePlus aria-hidden="true" size={16} />
+            {heading} Mobile Banner Image
+          </div>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            4:5 portrait image shown on phones, same as the home page hero. Recommended 1080 x 1350
+            px. If empty, the banner image above is used.
+          </p>
+          {page?.mobileMedia?.url ? (
+            <div className="mx-auto mt-3 grid max-w-[220px] gap-2">
+              <ResponsiveImage
+                alt={page.mobileMedia.altText ?? `${heading} mobile banner`}
+                aspectRatio="4 / 5"
+                className="rounded-md border border-border"
+                src={page.mobileMedia.url}
+              />
+              <button
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/40 text-sm font-semibold text-destructive"
+                onClick={onClearMobileMedia}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" size={14} />
+                Remove mobile image
+              </button>
+            </div>
+          ) : (
+            <p className="mt-3 rounded-md border border-border p-3 text-sm text-muted-foreground">
+              No mobile image selected. The banner image is used on phones.
+            </p>
+          )}
+          <div className="mt-4">
+            <p className="mb-2 text-xs font-semibold">Pick from media library</p>
+            <MediaPicker
+              media={media}
+              onSelect={onSelectMobileMedia}
+              upload={{
+                aspectRatio: "4:5",
+                onUploaded: onMediaUploaded,
+                tags: "cms,banner,mobile",
+              }}
+            />
+          </div>
         </div>
       </aside>
     </section>
+  );
+}
+
+type AboutContentValue = NonNullable<CmsContent["about"]>;
+type AboutMediaKey = "media" | "mobileMedia" | "storyMedia";
+
+function AboutEditor({
+  about,
+  media,
+  onChange,
+  onCtaChange,
+  onMediaUploaded,
+}: Readonly<{
+  about: AboutContentValue;
+  media: MediaItem[];
+  onChange: (patch: Partial<AboutContentValue>) => void;
+  onCtaChange: (key: keyof CmsLink, value: string | boolean) => void;
+  onMediaUploaded: () => void;
+}>) {
+  const sections = about.sections ?? [];
+  const values = about.values ?? [];
+
+  function setMedia(key: AboutMediaKey, item: MediaItem, ratio: string) {
+    onChange({
+      [key]: toMediaReference(
+        item,
+        about.storyTitle ?? about.title ?? "The Vastra House about page",
+        ratio,
+      ),
+    });
+  }
+
+  function patchMediaAlt(key: AboutMediaKey, altText: string) {
+    const current = about[key];
+    if (current?.url) onChange({ [key]: { ...current, altText } });
+  }
+
+  function updateSection(index: number, patch: { body?: string; heading?: string }) {
+    onChange({
+      sections: sections.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    });
+  }
+
+  function updateValue(index: number, patch: Partial<NonNullable<AboutContentValue["values"]>[0]>) {
+    onChange({
+      values: values.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+    });
+  }
+
+  return (
+    <div className="grid gap-4">
+      <AboutCard
+        description="The wide banner at the top of the About page. Same proportion as the home hero: 4:5 on phones, 16:4.4 on laptop/desktop."
+        title="1. Hero banner"
+      >
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid content-start gap-3">
+            <Field
+              label="Eyebrow (small text above title)"
+              onChange={(value) => onChange({ eyebrow: value })}
+              value={about.eyebrow ?? ""}
+            />
+            <Field
+              label="Title"
+              onChange={(value) => onChange({ title: value })}
+              value={about.title ?? ""}
+            />
+            <TextEditor
+              label="Description (also used for SEO)"
+              onChange={(value) => onChange({ description: value })}
+              value={about.description ?? ""}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-sm font-medium">
+                Text position
+                <select
+                  className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                  onChange={(event) =>
+                    onChange({
+                      contentPosition: event.target.value as "left" | "center" | "right",
+                    })
+                  }
+                  value={about.contentPosition ?? "left"}
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </label>
+              <ColorField
+                label="Text colour"
+                onChange={(value) => onChange({ textColor: value })}
+                value={about.textColor ?? "#ffffff"}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                checked={about.showOutline !== false}
+                onChange={(event) => onChange({ showOutline: event.target.checked })}
+                type="checkbox"
+              />
+              Show gold frame line on the banner
+            </label>
+            <label className="text-sm font-medium">
+              Colour overlay on image
+              <select
+                className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                onChange={(event) =>
+                  onChange({
+                    overlay: event.target.value as "none" | "soft" | "medium" | "strong",
+                  })
+                }
+                value={about.overlay ?? "none"}
+              >
+                <option value="none">None (original photo)</option>
+                <option value="soft">Soft dark tint</option>
+                <option value="medium">Medium dark tint</option>
+                <option value="strong">Strong dark tint</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="grid content-start gap-5">
+            <AboutImageSlot
+              altText={about.media?.altText}
+              hint="Laptop/desktop banner. Recommended 2400 x 660 px (16:4.4)."
+              label="Banner image (desktop)"
+              media={media}
+              onAltChange={(value) => patchMediaAlt("media", value)}
+              onClear={() => onChange({ media: null })}
+              onMediaUploaded={onMediaUploaded}
+              onSelect={(item) => setMedia("media", item, "16:4.4")}
+              previewRatio="16 / 4.4"
+              uploadRatio="16:4.4"
+              url={about.media?.url}
+            />
+            <AboutImageSlot
+              altText={about.mobileMedia?.altText}
+              hint="Phone banner, 4:5 portrait. Recommended 1080 x 1350 px. Empty = desktop banner is used."
+              label="Banner image (mobile)"
+              media={media}
+              narrow
+              onAltChange={(value) => patchMediaAlt("mobileMedia", value)}
+              onClear={() => onChange({ mobileMedia: null })}
+              onMediaUploaded={onMediaUploaded}
+              onSelect={(item) => setMedia("mobileMedia", item, "4:5")}
+              previewRatio="4 / 5"
+              uploadRatio="4:5"
+              url={about.mobileMedia?.url}
+            />
+          </div>
+        </div>
+      </AboutCard>
+
+      <AboutCard
+        description="The first block under the banner: text on one side, image on the other."
+        title="2. Our story"
+      >
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid content-start gap-3">
+            <Field
+              label="Eyebrow"
+              onChange={(value) => onChange({ storyEyebrow: value })}
+              value={about.storyEyebrow ?? ""}
+            />
+            <Field
+              label="Heading"
+              onChange={(value) => onChange({ storyTitle: value })}
+              value={about.storyTitle ?? ""}
+            />
+            <TextEditor
+              label="Story text"
+              minHeight="min-h-40"
+              onChange={(value) => onChange({ storyCopy: value })}
+              value={about.storyCopy ?? ""}
+            />
+            <label className="text-sm font-medium">
+              Founded year (optional, shown as &quot;Since ...&quot;)
+              <input
+                className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                inputMode="numeric"
+                onChange={(event) => {
+                  const year = Number(event.target.value.replace(/\D/g, "").slice(0, 4));
+                  onChange({ foundedYear: year >= 1800 && year <= 2100 ? year : undefined });
+                }}
+                value={about.foundedYear ?? ""}
+              />
+            </label>
+            <CtaEditor
+              label="Button (story + bottom band)"
+              link={about.primaryCta}
+              onChange={onCtaChange}
+            />
+          </div>
+          <AboutImageSlot
+            altText={about.storyMedia?.altText}
+            hint="Shown beside the story text. Any ratio works, landscape 3:2 or 4:5 looks best."
+            label="Story image"
+            media={media}
+            onAltChange={(value) => patchMediaAlt("storyMedia", value)}
+            onClear={() => onChange({ storyMedia: null })}
+            onMediaUploaded={onMediaUploaded}
+            onSelect={(item) => setMedia("storyMedia", item, "4:5")}
+            previewRatio="4 / 3"
+            uploadRatio="4:5"
+            url={about.storyMedia?.url}
+          />
+        </div>
+      </AboutCard>
+
+      <AboutCard
+        action={
+          <button
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-semibold"
+            onClick={() =>
+              onChange({
+                sections: [
+                  ...sections,
+                  { body: "Write the details here.", heading: "New section" },
+                ],
+              })
+            }
+            type="button"
+          >
+            <Plus aria-hidden="true" size={13} />
+            Add section
+          </button>
+        }
+        description="Text cards shown in two columns (who we are, what we sell, how orders work...)."
+        title="3. Content sections"
+      >
+        <div className="grid gap-3">
+          {sections.length ? null : (
+            <p className="text-sm text-muted-foreground">No sections yet.</p>
+          )}
+          {sections.map((item, index) => (
+            <CardRow
+              key={`section-${index}`}
+              onRemove={() =>
+                onChange({ sections: sections.filter((_, itemIndex) => itemIndex !== index) })
+              }
+            >
+              <Field
+                label="Heading"
+                onChange={(value) => updateSection(index, { heading: value })}
+                value={item.heading}
+              />
+              <TextEditor
+                label="Text"
+                onChange={(value) => updateSection(index, { body: value })}
+                value={item.body}
+              />
+            </CardRow>
+          ))}
+        </div>
+      </AboutCard>
+
+      <AboutCard
+        description="Optional. Shown as a quote-style card only when a name is entered."
+        title="4. Founder"
+      >
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field
+            label="Name"
+            onChange={(value) => onChange({ founder: { ...about.founder, name: value } })}
+            value={about.founder?.name ?? ""}
+          />
+          <Field
+            label="Role"
+            onChange={(value) => onChange({ founder: { ...about.founder, role: value } })}
+            value={about.founder?.role ?? ""}
+          />
+        </div>
+        <div className="mt-3">
+          <TextEditor
+            label="Bio"
+            onChange={(value) => onChange({ founder: { ...about.founder, bio: value } })}
+            value={about.founder?.bio ?? ""}
+          />
+        </div>
+      </AboutCard>
+
+      <AboutCard
+        action={
+          <button
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-semibold"
+            onClick={() =>
+              onChange({
+                values: [
+                  ...values,
+                  { icon: "sparkles", text: "Describe this brand value.", title: "New Value" },
+                ],
+              })
+            }
+            type="button"
+          >
+            <Plus aria-hidden="true" size={13} />
+            Add value
+          </button>
+        }
+        description="Icon cards, up to 4 fit best in one row."
+        title="5. Brand values"
+      >
+        <div className="grid gap-3">
+          <Field
+            label="Section heading"
+            onChange={(value) => onChange({ valuesTitle: value })}
+            value={about.valuesTitle ?? ""}
+          />
+          {values.map((item, index) => (
+            <CardRow
+              key={`value-${index}`}
+              onRemove={() =>
+                onChange({ values: values.filter((_, itemIndex) => itemIndex !== index) })
+              }
+            >
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="text-sm font-medium">
+                  Icon
+                  <select
+                    className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm"
+                    onChange={(event) =>
+                      updateValue(index, {
+                        icon: event.target.value as "award" | "care" | "shield" | "sparkles",
+                      })
+                    }
+                    value={item.icon ?? "sparkles"}
+                  >
+                    <option value="sparkles">Sparkles</option>
+                    <option value="award">Award</option>
+                    <option value="shield">Shield</option>
+                    <option value="care">Care</option>
+                  </select>
+                </label>
+                <div className="md:col-span-2">
+                  <Field
+                    label="Title"
+                    onChange={(value) => updateValue(index, { title: value })}
+                    value={item.title}
+                  />
+                </div>
+              </div>
+              <TextEditor
+                label="Text"
+                onChange={(value) => updateValue(index, { text: value })}
+                value={item.text}
+              />
+            </CardRow>
+          ))}
+        </div>
+      </AboutCard>
+
+      <AboutCard
+        description="Dark band at the bottom with a button (uses the button from section 2)."
+        title="6. Closing band"
+      >
+        <div className="grid gap-3">
+          <Field
+            label="Heading"
+            onChange={(value) => onChange({ closingTitle: value })}
+            value={about.closingTitle ?? ""}
+          />
+          <TextEditor
+            label="Text"
+            onChange={(value) => onChange({ closingCopy: value })}
+            value={about.closingCopy ?? ""}
+          />
+        </div>
+      </AboutCard>
+    </div>
+  );
+}
+
+function AboutCard({
+  action,
+  children,
+  description,
+  title,
+}: Readonly<{
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  description?: string;
+  title: string;
+}>) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-5 shadow-soft">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">{title}</h2>
+          {description ? (
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function AboutImageSlot({
+  altText,
+  hint,
+  label,
+  media,
+  narrow = false,
+  onAltChange,
+  onClear,
+  onMediaUploaded,
+  onSelect,
+  previewRatio,
+  uploadRatio,
+  url,
+}: Readonly<{
+  altText?: string;
+  hint: string;
+  label: string;
+  media: MediaItem[];
+  narrow?: boolean;
+  onAltChange: (value: string) => void;
+  onClear: () => void;
+  onMediaUploaded: () => void;
+  onSelect: (item: MediaItem) => void;
+  previewRatio: string;
+  uploadRatio: string;
+  url?: string;
+}>) {
+  return (
+    <div className="min-w-0 rounded-md border border-border p-3">
+      <div className="flex items-center gap-2 text-sm font-semibold">
+        <ImagePlus aria-hidden="true" size={16} />
+        {label}
+      </div>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">{hint}</p>
+      {url ? (
+        <div className={`mt-3 grid gap-2 ${narrow ? "mx-auto max-w-[220px]" : ""}`}>
+          <ResponsiveImage
+            alt={altText || label}
+            aspectRatio={previewRatio}
+            className="rounded-md border border-border"
+            src={url}
+          />
+          <Field
+            label="Alt text (describe the image)"
+            onChange={onAltChange}
+            value={altText ?? ""}
+          />
+          <button
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-destructive/40 text-sm font-semibold text-destructive"
+            onClick={onClear}
+            type="button"
+          >
+            <Trash2 aria-hidden="true" size={14} />
+            Remove image
+          </button>
+        </div>
+      ) : (
+        <p className="mt-3 rounded-md border border-border p-3 text-sm text-muted-foreground">
+          No image selected.
+        </p>
+      )}
+      <div className="mt-3">
+        <MediaPicker
+          media={media}
+          onSelect={onSelect}
+          pageSize={8}
+          upload={{ aspectRatio: uploadRatio, onUploaded: onMediaUploaded, tags: "cms,about" }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -1297,6 +1778,36 @@ function CardRow({
         </button>
       </div>
       <div className="mt-2 grid gap-3">{children}</div>
+    </div>
+  );
+}
+
+function ColorField({
+  label,
+  onChange,
+  value,
+}: Readonly<{ label: string; onChange: (value: string) => void; value: string }>) {
+  const picker = /^#[0-9a-f]{6}$/i.test(value) ? value : "#ffffff";
+
+  return (
+    <div className="text-sm font-medium">
+      {label}
+      <div className="mt-1 flex items-center gap-2">
+        <input
+          aria-label={`${label} picker`}
+          className="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-border bg-background p-1"
+          onChange={(event) => onChange(event.target.value)}
+          type="color"
+          value={picker}
+        />
+        <input
+          aria-label={label}
+          className="h-10 min-w-0 flex-1 rounded-md border border-border px-3 text-sm"
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="#ffffff"
+          value={value}
+        />
+      </div>
     </div>
   );
 }
@@ -1425,9 +1936,13 @@ function findMissingAltText(content: CmsContent) {
     check(`Hero slide ${index + 1} mobile media`, slide.mobileMedia);
   });
   check("Home story image", content.home?.storyMedia);
-  check("About image", content.about?.media);
+  check("About banner", content.about?.media);
+  check("About mobile banner", content.about?.mobileMedia);
+  check("About story image", content.about?.storyMedia);
   check("Shop banner", content.shop?.media);
   check("Pre-order banner", content.preOrder?.media);
+  check("Shop mobile banner", content.shop?.mobileMedia);
+  check("Pre-order mobile banner", content.preOrder?.mobileMedia);
   check("Footer logo", content.footer?.brandLogo);
 
   return missing;
@@ -1499,6 +2014,18 @@ function normalizeContent(content: CmsContent): CmsContent {
       description: content.about?.description ?? defaultCmsContent.about?.description,
       eyebrow: content.about?.eyebrow ?? defaultCmsContent.about?.eyebrow,
       media: cleanMediaReference(content.about?.media ?? defaultCmsContent.about?.media),
+      mobileMedia: cleanMediaReference(content.about?.mobileMedia),
+      storyMedia: cleanMediaReference(content.about?.storyMedia),
+      textColor: content.about?.textColor,
+      contentPosition: content.about?.contentPosition,
+      showOutline: content.about?.showOutline,
+      overlay: content.about?.overlay,
+      valuesTitle: content.about?.valuesTitle,
+      closingTitle: content.about?.closingTitle,
+      closingCopy: content.about?.closingCopy,
+      sections: content.about?.sections,
+      founder: content.about?.founder,
+      foundedYear: content.about?.foundedYear,
       primaryCta: cleanLink(aboutPrimaryCta),
       storyCopy: content.about?.storyCopy ?? defaultCmsContent.about?.storyCopy,
       storyEyebrow: content.about?.storyEyebrow ?? defaultCmsContent.about?.storyEyebrow,
@@ -1518,6 +2045,8 @@ function normalizeContent(content: CmsContent): CmsContent {
       fontFamily: shop.fontFamily ?? "serif",
       fontSize: shop.fontSize ?? "lg",
       media: cleanMediaReference(shop.media),
+      mobileMedia: cleanMediaReference(shop.mobileMedia),
+      overlay: shop.overlay,
       promo: shop.promo ? cleanHeroSlide(shop.promo) : undefined,
       showOutline: shop.showOutline !== false,
       textColor: shop.textColor ?? "#ffffff",
@@ -1531,12 +2060,15 @@ function normalizeContent(content: CmsContent): CmsContent {
       fontFamily: preOrder.fontFamily ?? "serif",
       fontSize: preOrder.fontSize ?? "lg",
       media: cleanMediaReference(preOrder.media),
+      mobileMedia: cleanMediaReference(preOrder.mobileMedia),
+      overlay: preOrder.overlay,
       promo: preOrder.promo ? cleanHeroSlide(preOrder.promo) : undefined,
       showOutline: preOrder.showOutline !== false,
       textColor: preOrder.textColor ?? "#ffffff",
       title: preOrder.title,
     },
     navigation: (content.navigation ?? []).map((link) => cleanLink(link)).filter(isPresent),
+    productTrustBadges: content.productTrustBadges,
     headerNavigation: (content.headerNavigation ?? [])
       .map((link) => cleanLink(link))
       .filter(isPresent),

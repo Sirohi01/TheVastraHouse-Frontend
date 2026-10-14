@@ -27,6 +27,8 @@ type TaxonomyItem = {
   slug: string;
   description?: string;
   banner?: MediaReference | null;
+  mobileBanner?: MediaReference | null;
+  bannerOutline?: boolean;
   active: boolean;
 };
 
@@ -35,6 +37,8 @@ type TaxonomyForm = {
   slug: string;
   description: string;
   banner: MediaReference | null;
+  mobileBanner: MediaReference | null;
+  bannerOutline: boolean;
   active: boolean;
 };
 
@@ -49,6 +53,8 @@ const blankForm: TaxonomyForm = {
   slug: "",
   description: "",
   banner: null,
+  mobileBanner: null,
+  bannerOutline: true,
   active: true,
 };
 
@@ -119,6 +125,17 @@ export default function AdminCatalogPage() {
     setForm((current) => ({ ...current, banner: null }));
   }
 
+  function setMobileBanner(item: MediaItem) {
+    setForm((current) => ({
+      ...current,
+      mobileBanner: toMediaReference(item, current.name || labelFor(kind).replace(/s$/, ""), "4:5"),
+    }));
+  }
+
+  function clearMobileBanner() {
+    setForm((current) => ({ ...current, mobileBanner: null }));
+  }
+
   function selectKind(nextKind: TaxonomyKind) {
     setKind(nextKind);
   }
@@ -136,6 +153,8 @@ export default function AdminCatalogPage() {
       slug: item.slug,
       description: item.description ?? "",
       banner: item.banner ?? null,
+      mobileBanner: item.mobileBanner ?? null,
+      bannerOutline: item.bannerOutline !== false,
       active: item.active,
     });
     setEditorOpen(true);
@@ -151,6 +170,8 @@ export default function AdminCatalogPage() {
             slug: form.slug || undefined,
             description: form.description || undefined,
             banner: form.banner,
+            mobileBanner: form.mobileBanner,
+            bannerOutline: form.bannerOutline,
             active: form.active,
           };
     const path = editingId ? `/catalog/admin/${kind}/${editingId}` : `/catalog/admin/${kind}`;
@@ -336,14 +357,15 @@ export default function AdminCatalogPage() {
                     Banner Image
                   </div>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Used on category and collection cards. Recommended ratio: 9:16.
+                    Hero banner on the page (laptop/desktop), same wide proportion as the home hero,
+                    and also the listing card image. Recommended 2400 x 660 px.
                   </p>
                   {form.banner?.url ? (
                     <div className="mt-3 grid gap-2">
-                      <div className="w-32 overflow-hidden rounded-md border border-border">
+                      <div className="w-64 overflow-hidden rounded-md border border-border">
                         <ResponsiveImage
                           alt={form.banner.altText ?? `${form.name || "Catalog"} banner`}
-                          aspectRatio={form.banner.aspectRatio ?? "9:16"}
+                          aspectRatio="16 / 4.4"
                           sizes="128px"
                           src={form.banner.url}
                         />
@@ -363,10 +385,72 @@ export default function AdminCatalogPage() {
                     </p>
                   )}
                   <div className="mt-3">
-                    <MediaPicker media={imageMedia} onSelect={setBanner} />
+                    <MediaPicker
+                      media={imageMedia}
+                      onSelect={setBanner}
+                      upload={{
+                        aspectRatio: "16:4.4",
+                        onUploaded: () => void loadMedia(),
+                        tags: "cms,banner",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <ImagePlus aria-hidden="true" size={16} />
+                    Mobile Banner Image
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    4:5 portrait banner shown on phones, same as the home hero. Recommended 1080 x
+                    1350 px. If empty, the banner image above is used.
+                  </p>
+                  {form.mobileBanner?.url ? (
+                    <div className="mt-3 grid gap-2">
+                      <div className="w-32 overflow-hidden rounded-md border border-border">
+                        <ResponsiveImage
+                          alt={
+                            form.mobileBanner.altText ?? `${form.name || "Catalog"} mobile banner`
+                          }
+                          aspectRatio="4 / 5"
+                          sizes="128px"
+                          src={form.mobileBanner.url}
+                        />
+                      </div>
+                      <button
+                        className="inline-flex h-8 w-fit items-center gap-1.5 rounded-md border border-destructive/40 px-2 text-xs font-semibold text-destructive"
+                        onClick={clearMobileBanner}
+                        type="button"
+                      >
+                        <Trash2 aria-hidden="true" size={13} />
+                        Remove image
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="mt-3 rounded-md border border-border p-3 text-sm text-muted-foreground">
+                      No mobile banner selected.
+                    </p>
+                  )}
+                  <div className="mt-3">
+                    <MediaPicker
+                      media={imageMedia}
+                      onSelect={setMobileBanner}
+                      upload={{
+                        aspectRatio: "4:5",
+                        onUploaded: () => void loadMedia(),
+                        tags: "cms,banner,mobile",
+                      }}
+                    />
                   </div>
                 </div>
               </>
+            ) : null}
+            {kind !== "tags" ? (
+              <Checkbox
+                checked={form.bannerOutline}
+                label="Show gold frame line on the page banner"
+                onChange={(value) => setForm((current) => ({ ...current, bannerOutline: value }))}
+              />
             ) : null}
             <Checkbox
               checked={form.active}

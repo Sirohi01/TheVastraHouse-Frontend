@@ -37,11 +37,52 @@ export type CmsCatalogPage = {
   fontFamily?: "serif" | "sans";
   fontSize?: "sm" | "md" | "lg";
   media?: MediaReference | null;
+  /** 4:5 image used on phones; falls back to `media`. */
+  mobileMedia?: MediaReference | null;
+  overlay?: "none" | "soft" | "medium" | "strong";
   promo?: CmsHeroSlide;
   showOutline?: boolean;
   textColor?: string;
   title?: string;
 };
+
+export type CmsTrustBadgeIcon =
+  | "truck"
+  | "box"
+  | "returns"
+  | "wallet"
+  | "shield"
+  | "leaf"
+  | "sparkles"
+  | "heart";
+
+export type CmsTrustBadge = {
+  enabled?: boolean;
+  icon: CmsTrustBadgeIcon;
+  subtitle?: string;
+  title: string;
+};
+
+export const trustBadgeIcons: CmsTrustBadgeIcon[] = [
+  "truck",
+  "box",
+  "returns",
+  "wallet",
+  "shield",
+  "leaf",
+  "sparkles",
+  "heart",
+];
+
+/** Shown under the buy buttons until the admin saves their own list (Content > Product Badges). */
+export const defaultProductTrustBadges: CmsTrustBadge[] = [
+  { enabled: true, icon: "truck", title: "Pan India Shipping" },
+  { enabled: true, icon: "box", title: "12 Days Replacement" },
+  { enabled: true, icon: "returns", subtitle: "(Conditions Apply)", title: "Returns Allowed" },
+  { enabled: true, icon: "wallet", title: "Vastra Credits On Returns" },
+  { enabled: true, icon: "shield", title: "Secure Payments" },
+  { enabled: true, icon: "leaf", title: "Premium Cotton Fabric" },
+];
 
 export type CmsContent = {
   _id?: string;
@@ -75,6 +116,17 @@ export type CmsContent = {
     foundedYear?: number;
     founder?: { name?: string; role?: string; bio?: string };
     media?: MediaReference | null;
+    /** 4:5 hero banner for phones; falls back to `media`. */
+    mobileMedia?: MediaReference | null;
+    /** Image shown beside the story section under the hero. */
+    storyMedia?: MediaReference | null;
+    textColor?: string;
+    contentPosition?: "left" | "center" | "right";
+    showOutline?: boolean;
+    overlay?: "none" | "soft" | "medium" | "strong";
+    valuesTitle?: string;
+    closingTitle?: string;
+    closingCopy?: string;
     primaryCta?: CmsLink;
     values?: Array<{
       icon?: "sparkles" | "award" | "shield" | "care";
@@ -85,6 +137,7 @@ export type CmsContent = {
   shop?: CmsCatalogPage;
   preOrder?: CmsCatalogPage;
   navigation?: CmsLink[];
+  productTrustBadges?: CmsTrustBadge[];
   /** Header + mobile menu buttons. Separate from the legacy `navigation` list. */
   headerNavigation?: CmsLink[];
   footer?: {
@@ -304,6 +357,15 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       description: mergedAbout.description,
       eyebrow: mergedAbout.eyebrow,
       media: sanitizeMediaReference(mergedAbout.media),
+      mobileMedia: sanitizeMediaReference(mergedAbout.mobileMedia),
+      storyMedia: sanitizeMediaReference(mergedAbout.storyMedia),
+      textColor: mergedAbout.textColor,
+      contentPosition: mergedAbout.contentPosition,
+      showOutline: mergedAbout.showOutline,
+      overlay: mergedAbout.overlay,
+      valuesTitle: mergedAbout.valuesTitle,
+      closingTitle: mergedAbout.closingTitle,
+      closingCopy: mergedAbout.closingCopy,
       primaryCta: sanitizeLink(mergedAbout.primaryCta),
       storyCopy: mergedAbout.storyCopy,
       sections: (mergedAbout.sections ?? []).filter((item) => item.heading && item.body),
@@ -326,6 +388,8 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       fontFamily: mergedShop.fontFamily ?? "serif",
       fontSize: mergedShop.fontSize ?? "lg",
       media: sanitizeMediaReference(mergedShop.media),
+      mobileMedia: sanitizeMediaReference(mergedShop.mobileMedia),
+      overlay: mergedShop.overlay,
       promo: mergedShop.promo
         ? { ...mergedShop.promo, media: sanitizeMediaReference(mergedShop.promo.media) }
         : undefined,
@@ -341,6 +405,8 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       fontFamily: mergedPreOrder.fontFamily ?? "serif",
       fontSize: mergedPreOrder.fontSize ?? "lg",
       media: sanitizeMediaReference(mergedPreOrder.media),
+      mobileMedia: sanitizeMediaReference(mergedPreOrder.mobileMedia),
+      overlay: mergedPreOrder.overlay,
       promo: mergedPreOrder.promo
         ? { ...mergedPreOrder.promo, media: sanitizeMediaReference(mergedPreOrder.promo.media) }
         : undefined,
@@ -349,6 +415,14 @@ export function sanitizeCmsContent(content: CmsContent): CmsContent {
       title: mergedPreOrder.title,
     },
     navigation: (content.navigation ?? []).map((link) => sanitizeLink(link)).filter(isPresent),
+    productTrustBadges: (content.productTrustBadges ?? [])
+      .filter((item) => item.title?.trim())
+      .map((item) => ({
+        enabled: item.enabled !== false,
+        icon: trustBadgeIcons.includes(item.icon) ? item.icon : "sparkles",
+        subtitle: item.subtitle?.trim() || undefined,
+        title: item.title.trim(),
+      })),
     headerNavigation: (content.headerNavigation ?? [])
       .map((link) => sanitizeLink(link))
       .filter(isPresent),

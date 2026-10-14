@@ -2,7 +2,7 @@ import { ArrowRight, Award, HeartHandshake, ShieldCheck, Sparkles } from "lucide
 import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import { PublicPageFrame } from "@/components/layout/PublicPageFrame";
+import { HeroMedia, heroOverlayClass } from "@/components/media/HeroMedia";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { defaultCmsContent, fetchCmsContent, type CmsContent } from "@/lib/cms";
@@ -32,54 +32,125 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AboutPage() {
   const content = await loadAboutContent();
-  const about = content.about ?? defaultCmsContent.about;
-  const cta = about?.primaryCta ?? { href: "/shop", label: "Explore Shop" };
+  const about = { ...defaultCmsContent.about, ...content.about };
+  const cta = about.primaryCta ?? { enabled: true, href: "/shop", label: "Explore Shop" };
+  const ctaVisible = cta.enabled !== false && Boolean(cta.href) && Boolean(cta.label);
+  const title = about.title ?? "Crafted With Passion, Worn With Pride";
+  const sections = about.sections ?? [];
+  const values = about.values ?? [];
+  const storyImage = about.storyMedia?.url ? about.storyMedia : null;
 
   return (
-    <PublicPageFrame
-      eyebrow={about?.eyebrow ?? "Our Story"}
-      title={about?.title ?? "Crafted With Passion, Worn With Pride"}
-      description={
-        about?.description ??
-        "The Vastra House is an Indian ethnic wear brand for women, offering kurtis and co-ord sets."
-      }
-    >
-      <Breadcrumbs items={[{ name: "About Us", path: "/about" }]} />
+    <div className="bg-[#fbf7ef]">
+      <Breadcrumbs items={[{ name: "About Us", path: "/about" }]} visible={false} />
       <JsonLd
         data={buildWebPageJsonLd({
-          description: about?.description,
+          description: about.description,
           name: "About The Vastra House",
           path: "/about",
           type: "AboutPage",
           aboutOrganization: true,
         })}
       />
-      <section className="mt-5 overflow-hidden rounded-md border border-[#e5dac7] bg-[#fffaf1] shadow-[0_24px_60px_-44px_rgba(46,12,18,0.5)]">
-        <div className="h-[3px] bg-[linear-gradient(90deg,#6e1423,#caa14e,#6e1423)]" />
-        <div className="grid min-w-0 lg:grid-cols-[42%_58%]">
-          <div className="flex min-w-0 items-center p-5 sm:p-8 lg:p-10">
-            <div className="min-w-0 vh-rise">
-              <p className="flex items-center gap-2 break-words text-xs font-semibold uppercase tracking-[0.18em] text-[#9b6d35] sm:tracking-[0.24em]">
+
+      {/* Hero: same proportion as the home hero (4:5 on phones, 16/4.4 from md up). */}
+      <section className="relative border-b border-[#e1d6c4]">
+        <div className="relative aspect-[4/5] overflow-hidden bg-[#2e0c12] md:aspect-[16/4.4] md:min-h-[340px]">
+          <HeroMedia
+            desktop={about.media}
+            eager
+            fallbackAlt="The Vastra House about banner"
+            mobile={about.mobileMedia}
+            title={title}
+          />
+          <div className={`absolute inset-0 ${heroOverlayClass(about.overlay)}`} />
+
+          {about.showOutline !== false ? (
+            <div className="pointer-events-none absolute inset-3 hidden border border-[#caa14e]/45 md:block md:inset-4">
+              <CornerFiligree className="absolute -left-px -top-px text-[#caa14e]/85" />
+              <CornerFiligree className="absolute -right-px -top-px rotate-90 text-[#caa14e]/85" />
+              <CornerFiligree className="absolute -bottom-px -right-px rotate-180 text-[#caa14e]/85" />
+              <CornerFiligree className="absolute -bottom-px -left-px -rotate-90 text-[#caa14e]/85" />
+            </div>
+          ) : null}
+
+          <div className="absolute inset-0 flex items-end md:items-center">
+            <div className="mx-auto w-full max-w-7xl px-6 pb-9 md:px-16 md:pb-0">
+              <div
+                className={`max-w-[34rem] ${
+                  about.contentPosition === "center"
+                    ? "mx-auto"
+                    : about.contentPosition === "right"
+                      ? "ml-auto"
+                      : ""
+                }`}
+                style={{
+                  color: about.textColor || "#ffffff",
+                  textShadow:
+                    about.overlay && about.overlay !== "none"
+                      ? undefined
+                      : "0 0 3px rgba(0,0,0,0.55), 0 2px 20px rgba(0,0,0,0.65)",
+                }}
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] md:text-xs">
+                  {about.eyebrow ?? "Our Story"}
+                </p>
+                <div className="mt-2 flex items-center gap-2 text-[#caa14e] md:mt-3">
+                  <span className="h-px w-10 bg-[#caa14e]" />
+                  <span aria-hidden="true">✦</span>
+                  <span className="h-px w-6 bg-[#caa14e]/60" />
+                </div>
+                <h1 className="mt-2 font-serif text-[30px] font-semibold uppercase leading-tight md:mt-3 md:text-[38px] lg:text-[48px] xl:text-[54px]">
+                  {title}
+                </h1>
+                {about.description ? (
+                  <p className="mt-2 line-clamp-3 max-w-md text-[13px] font-medium leading-6 md:mt-3 md:text-base md:leading-7">
+                    {about.description}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-7xl px-4 pb-14 sm:px-5">
+        {/* Story */}
+        <section className="py-10 sm:py-14">
+          <div
+            className={`grid items-center gap-8 lg:gap-14 ${
+              storyImage ? "lg:grid-cols-2" : "mx-auto max-w-3xl text-center"
+            }`}
+          >
+            <div className="min-w-0">
+              <p
+                className={`flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#9b6d35] ${
+                  storyImage ? "" : "justify-center"
+                }`}
+              >
                 <span aria-hidden="true" className="text-sm text-[#caa14e]">
                   ❖
                 </span>
-                {about?.storyEyebrow ?? "The Vastra House"}
+                {about.storyEyebrow ?? "The Vastra House"}
+                {about.foundedYear ? (
+                  <span className="rounded-sm border border-[#caa14e]/60 px-2 py-0.5 tracking-[0.14em] text-[#6e1423]">
+                    Since {about.foundedYear}
+                  </span>
+                ) : null}
               </p>
-              <h2 className="mt-4 break-words font-serif text-2xl uppercase leading-tight text-[#3d1620] sm:text-[34px]">
-                {about?.storyTitle ?? "Clothing that feels rooted, refined, and ready."}
+              <h2 className="mt-4 break-words font-serif text-3xl uppercase leading-tight text-[#3d1620] sm:text-4xl">
+                {about.storyTitle ?? "Clothing that feels rooted, refined, and ready."}
               </h2>
-              <FiligreeDivider align="start" className="my-5" />
-              <p className="break-words text-sm leading-7 text-[#6f6256]">
-                {about?.storyCopy ??
-                  "We design for customers who want familiar craft language with a cleaner, more international shopping experience."}
+              <FiligreeDivider align={storyImage ? "start" : "center"} className="my-5" />
+              <p className="whitespace-pre-line break-words text-[15px] leading-8 text-[#5c5046]">
+                {about.storyCopy}
               </p>
-              {cta.enabled !== false ? (
+              {ctaVisible ? (
                 <a
-                  className="group relative mt-7 inline-flex h-11 items-center gap-2 border border-[#caa14e] bg-[#6e1423] px-5 text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-200 hover:bg-[#84182c]"
+                  className="group relative mt-7 inline-flex h-12 items-center gap-2 border border-[#caa14e] bg-[#6e1423] px-6 text-xs font-semibold uppercase tracking-[0.14em] text-white transition-colors duration-200 hover:bg-[#84182c]"
                   href={cta.href}
+                  style={{ color: "#ffffff" }}
                 >
-                  <span className="pointer-events-none absolute left-1 top-1 size-1.5 border-l border-t border-[#f0d9a4]/70" />
-                  <span className="pointer-events-none absolute bottom-1 right-1 size-1.5 border-b border-r border-[#f0d9a4]/70" />
                   {cta.label}
                   <ArrowRight
                     aria-hidden="true"
@@ -89,94 +160,122 @@ export default async function AboutPage() {
                 </a>
               ) : null}
             </div>
-          </div>
-          <div className="relative min-w-0">
-            <ResponsiveImage
-              alt={about?.media?.altText ?? "The Vastra House embroidered ethnic wear story image"}
-              aspectRatio={about?.media?.aspectRatio ?? "16 / 9"}
-              className="h-full"
-              objectFit={about?.media?.objectFit}
-              priority
-              sizes="(max-width: 1024px) 100vw, 58vw"
-              src={about?.media?.url ?? "/images/home-hero.jpg"}
-            />
-            <span className="pointer-events-none absolute inset-4 border border-[#caa14e]/40" />
-            <CornerFiligree className="pointer-events-none absolute left-3 top-3 text-[#caa14e]/80" />
-            <CornerFiligree className="pointer-events-none absolute right-3 top-3 rotate-90 text-[#caa14e]/80" />
-            <CornerFiligree className="pointer-events-none absolute bottom-3 right-3 rotate-180 text-[#caa14e]/80" />
-            <CornerFiligree className="pointer-events-none absolute bottom-3 left-3 -rotate-90 text-[#caa14e]/80" />
-          </div>
-        </div>
-      </section>
 
-      {(about?.sections ?? []).length ? (
-        <section className="mt-10 grid gap-5 md:grid-cols-2" aria-label="About The Vastra House">
-          {(about?.sections ?? []).map((section) => (
-            <article
-              className="rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 sm:p-6"
-              key={section.heading}
-            >
-              <h2 className="font-serif text-xl text-[#3d1620]">{section.heading}</h2>
-              <p className="mt-3 text-sm leading-7 text-[#4f443a]">{section.body}</p>
-            </article>
-          ))}
+            {storyImage ? (
+              <div className="relative min-w-0 overflow-hidden rounded-sm border border-[#e1d6c4] shadow-[0_24px_60px_-44px_rgba(46,12,18,0.6)]">
+                <ResponsiveImage
+                  alt={storyImage.altText ?? "The Vastra House story"}
+                  aspectRatio="4 / 3"
+                  objectFit="cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  src={storyImage.url}
+                />
+                <span className="pointer-events-none absolute inset-3 border border-[#caa14e]/45" />
+              </div>
+            ) : null}
+          </div>
         </section>
-      ) : null}
 
-      {about?.founder?.name ? (
-        <section className="mt-5 rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 sm:p-6">
-          <h2 className="font-serif text-xl text-[#3d1620]">
-            {about.founder.role ? `${about.founder.role}: ` : ""}
-            {about.founder.name}
-          </h2>
-          {about.founder.bio ? (
-            <p className="mt-3 text-sm leading-7 text-[#4f443a]">{about.founder.bio}</p>
-          ) : null}
-        </section>
-      ) : null}
-
-      {(about?.values ?? []).length ? (
-        <section className="mt-10">
-          <div className="text-center">
-            <FiligreeDivider align="center" />
-            <h2 className="mt-3 font-serif text-2xl uppercase tracking-[0.08em] text-[#3d1620]">
-              What We Stand For
-            </h2>
-          </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {(about?.values ?? []).map((item) => {
-              const Icon = iconMap[item.icon ?? "sparkles"] ?? Sparkles;
-
-              return (
-                <article
-                  className="group relative min-w-0 rounded-md border border-[#e5dac7] bg-[#fffaf1] p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#caa14e] hover:shadow-[0_16px_34px_-22px_rgba(110,20,35,0.6)]"
-                  key={item.title}
+        {/* Content sections */}
+        {sections.length ? (
+          <section aria-label="About The Vastra House" className="grid gap-5 md:grid-cols-2">
+            {sections.map((section, index) => (
+              <article
+                className="relative rounded-sm border border-[#e5dac7] bg-[#fffaf1] p-6 sm:p-7"
+                key={`${section.heading}-${index}`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="font-serif text-3xl leading-none text-[#caa14e]/70"
                 >
-                  <span className="grid size-12 place-items-center rounded-full border border-[#caa14e] bg-[#fdf6e8] shadow-[inset_0_0_0_3px_rgba(202,161,78,0.18)]">
-                    <Icon aria-hidden="true" className="text-[#6e1423]" size={22} />
-                  </span>
-                  <h3 className="mt-4 break-words font-serif text-sm font-semibold uppercase tracking-wide text-[#3d1620]">
-                    {item.title}
-                  </h3>
-                  <p className="mt-2 break-words text-sm leading-6 text-[#6f6256]">{item.text}</p>
-                  <span className="pointer-events-none absolute right-3 top-3 text-xs text-[#caa14e]/0 transition-colors duration-200 group-hover:text-[#caa14e]/70">
-                    ✦
-                  </span>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h2 className="mt-3 break-words font-serif text-2xl text-[#3d1620]">
+                  {section.heading}
+                </h2>
+                <p className="mt-3 whitespace-pre-line break-words text-sm leading-7 text-[#5c5046]">
+                  {section.body}
+                </p>
+              </article>
+            ))}
+          </section>
+        ) : null}
 
-      <style>{`
-        @keyframes vhRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-        .vh-rise { animation: vhRise 0.7s ease-out both; }
-        @media (prefers-reduced-motion: reduce) {
-          .vh-rise { animation: none !important; opacity: 1 !important; transform: none !important; }
-        }
-      `}</style>
-    </PublicPageFrame>
+        {/* Founder */}
+        {about.founder?.name ? (
+          <section className="mt-8 rounded-sm border border-[#e5dac7] bg-[#fffaf1] px-6 py-8 text-center sm:px-12">
+            <FiligreeDivider align="center" />
+            {about.founder.bio ? (
+              <p className="mx-auto mt-5 max-w-3xl whitespace-pre-line font-serif text-xl leading-9 text-[#3d1620] sm:text-2xl">
+                “{about.founder.bio}”
+              </p>
+            ) : null}
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-[#9b6d35]">
+              {about.founder.name}
+              {about.founder.role ? ` · ${about.founder.role}` : ""}
+            </p>
+          </section>
+        ) : null}
+
+        {/* Values */}
+        {values.length ? (
+          <section className="mt-14">
+            <div className="text-center">
+              <FiligreeDivider align="center" />
+              <h2 className="mt-3 font-serif text-3xl uppercase tracking-[0.06em] text-[#3d1620]">
+                {about.valuesTitle || "What We Stand For"}
+              </h2>
+            </div>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {values.map((item, index) => {
+                const Icon = iconMap[item.icon ?? "sparkles"] ?? Sparkles;
+
+                return (
+                  <article
+                    className="group relative min-w-0 rounded-sm border border-[#e5dac7] bg-[#fffaf1] p-6 text-center transition-all duration-200 hover:-translate-y-0.5 hover:border-[#caa14e] hover:shadow-[0_16px_34px_-22px_rgba(110,20,35,0.6)]"
+                    key={`${item.title}-${index}`}
+                  >
+                    <span className="mx-auto grid size-14 place-items-center rounded-full border border-[#caa14e] bg-[#fdf6e8] shadow-[inset_0_0_0_3px_rgba(202,161,78,0.18)]">
+                      <Icon aria-hidden="true" className="text-[#6e1423]" size={24} />
+                    </span>
+                    <h3 className="mt-4 break-words font-serif text-base font-semibold uppercase tracking-wide text-[#3d1620]">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 break-words text-sm leading-6 text-[#6f6256]">{item.text}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Closing band */}
+        {ctaVisible ? (
+          <section className="relative mt-14 overflow-hidden rounded-sm bg-[#2e0c12] px-6 py-12 text-center text-white sm:px-12">
+            <span className="pointer-events-none absolute inset-3 border border-[#caa14e]/40" />
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#e6c67a]">
+              {about.storyEyebrow ?? "The Vastra House"}
+            </p>
+            <h2 className="mx-auto mt-3 max-w-2xl font-serif text-3xl uppercase leading-tight sm:text-4xl">
+              {about.closingTitle || "Discover the collection"}
+            </h2>
+            {about.closingCopy ? (
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-white/80">
+                {about.closingCopy}
+              </p>
+            ) : null}
+            <a
+              className="mt-7 inline-flex h-12 items-center gap-2 border border-[#caa14e] bg-white px-7 text-xs font-semibold uppercase tracking-[0.14em] text-[#5a3a1c] transition-colors hover:bg-[#f6ecda]"
+              href={cta.href}
+              style={{ color: "#5a3a1c" }}
+            >
+              {cta.label}
+              <ArrowRight aria-hidden="true" size={14} />
+            </a>
+          </section>
+        ) : null}
+      </div>
+    </div>
   );
 }
 

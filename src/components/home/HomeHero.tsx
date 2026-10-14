@@ -1,9 +1,8 @@
 "use client";
 
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import type { MediaReference } from "@/lib/catalog";
+import { HeroMedia } from "@/components/media/HeroMedia";
 import type { CmsHeroSlide } from "@/lib/cms";
 
 const DEFAULT_SLIDE_SECONDS = 6;
@@ -135,7 +134,7 @@ function HeroSlide({ isFirst, slide }: Readonly<{ isFirst: boolean; slide: CmsHe
 
   return (
     <>
-      <MediaLayer desktop={desktopMedia} eager={isFirst} mobile={mobileMedia} title={slide.title} />
+      <HeroMedia desktop={desktopMedia} eager={isFirst} mobile={mobileMedia} title={slide.title} />
       <div className={`absolute inset-0 ${overlayClass(slide.overlay)}`} />
       {slide.showOutline === true ? (
         <div className="pointer-events-none absolute inset-3 border border-[#caa14e]/45 md:inset-4">
@@ -212,85 +211,6 @@ function HeroSlide({ isFirst, slide }: Readonly<{ isFirst: boolean; slide: CmsHe
         </div>
       ) : null}
     </>
-  );
-}
-
-/** Desktop media on md+, 4:5 mobile media below md (falls back to the desktop media). */
-function MediaLayer({
-  desktop,
-  eager,
-  mobile,
-  title,
-}: Readonly<{
-  desktop?: MediaReference | null;
-  eager: boolean;
-  mobile?: MediaReference | null;
-  title?: string;
-}>) {
-  const desktopMedia = desktop?.url ? desktop : null;
-  const mobileMedia = mobile?.url ? mobile : null;
-  const sameSource = desktopMedia?.url === mobileMedia?.url;
-
-  if (!desktopMedia && !mobileMedia) {
-    return (
-      <Image
-        alt="The Vastra House heritage inspired fashion hero banner"
-        className="object-cover"
-        fill
-        priority={eager}
-        sizes="100vw"
-        src="/images/home-hero.jpg"
-      />
-    );
-  }
-
-  if (sameSource || !mobileMedia || !desktopMedia) {
-    return <SingleMedia eager={eager} media={(desktopMedia ?? mobileMedia)!} title={title} />;
-  }
-
-  return (
-    <>
-      <div className="absolute inset-0 hidden md:block">
-        <SingleMedia eager={eager} media={desktopMedia} title={title} />
-      </div>
-      <div className="absolute inset-0 md:hidden">
-        <SingleMedia eager={eager} media={mobileMedia} title={title} />
-      </div>
-    </>
-  );
-}
-
-function SingleMedia({
-  eager,
-  media,
-  title,
-}: Readonly<{ eager: boolean; media: MediaReference; title?: string }>) {
-  const alt = media.altText ?? title ?? "The Vastra House hero banner";
-
-  if (media.type === "video") {
-    return (
-      <video
-        aria-label={alt}
-        autoPlay
-        className="size-full object-cover"
-        loop
-        muted
-        playsInline
-        preload={eager ? "auto" : "metadata"}
-        src={media.url}
-      />
-    );
-  }
-
-  return (
-    <Image
-      alt={alt}
-      className="object-cover"
-      fetchPriority={eager ? "high" : "auto"}
-      fill
-      sizes="100vw"
-      src={media.url}
-    />
   );
 }
 

@@ -4,6 +4,7 @@ import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ProductAnswers } from "@/components/catalog/ProductAnswers";
 import { ProductDetailClient } from "@/components/catalog/ProductDetailClient";
+import { fetchCmsContent } from "@/lib/cms";
 import { getProductPdp, getProductReviews, type PdpResponse } from "@/lib/catalog";
 import { applyManagedRedirect } from "@/lib/redirects";
 import { buildPageMetadata, buildProductJsonLd, getSeoSettings } from "@/lib/seo";
@@ -52,13 +53,16 @@ export default async function ProductPage({ params }: Readonly<ProductPageProps>
     notFound();
   }
 
-  const [reviews, settings] = await Promise.all([
+  const [reviews, settings, cms] = await Promise.all([
     getProductReviews(slug).catch(() => ({
       data: [],
       meta: undefined,
       summary: { average: 0, count: 0, distribution: {} },
     })),
     getSeoSettings(),
+    fetchCmsContent("storefront-main")
+      .then((payload) => payload.content)
+      .catch(() => null),
   ]);
   const primaryCategory = pdp.product.categoryIds?.[0];
 
@@ -85,7 +89,12 @@ export default async function ProductPage({ params }: Readonly<ProductPageProps>
           ]}
         />
       </div>
-      <ProductDetailClient pdp={pdp} reviewSummary={reviews.summary} reviews={reviews.data} />
+      <ProductDetailClient
+        pdp={pdp}
+        reviewSummary={reviews.summary}
+        reviews={reviews.data}
+        trustBadges={cms?.productTrustBadges}
+      />
       <ProductAnswers commerce={settings.commerce} product={pdp.product} />
     </>
   );

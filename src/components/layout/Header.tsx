@@ -2,6 +2,7 @@
 
 import { Heart, Search, ShoppingBag, UserRound } from "lucide-react";
 import { useEffect } from "react";
+import { HeaderSearch } from "@/components/layout/HeaderSearch";
 import { MobileMenu } from "@/components/layout/MobileMenu";
 import { ResponsiveImage } from "@/components/media/ResponsiveImage";
 import { commerceFetch, type Cart } from "@/lib/commerce";
@@ -14,6 +15,9 @@ const actionItems = [
   { icon: Heart, label: "Wishlist", href: "/wishlist" },
   { icon: ShoppingBag, label: "Cart", href: "/cart" },
 ];
+
+const ACTION_CLASS =
+  "relative inline-flex size-9 items-center justify-center text-[#3b3128] transition hover:text-primary";
 
 export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
   const accessToken = useAuthStore((state) => state.accessToken);
@@ -109,10 +113,16 @@ export function Header({ cms }: Readonly<{ cms?: CmsContent }>) {
           </nav>
 
           <div className="hidden items-center gap-1 md:flex">
-            {headerActionItems.map((item) => (
-              <HeaderActionItem item={item} itemCount={itemCount} key={item.label} />
-            ))}
+            {headerActionItems.map((item) =>
+              item.label === "Search" ? (
+                <HeaderSearch className={ACTION_CLASS} key={item.label} />
+              ) : (
+                <HeaderActionItem item={item} itemCount={itemCount} key={item.label} />
+              ),
+            )}
           </div>
+
+          <HeaderSearch className="relative inline-flex size-10 items-center justify-center rounded-md text-foreground transition hover:text-primary md:hidden" />
 
           <a
             aria-label="Cart"
@@ -158,12 +168,7 @@ function HeaderActionItem({
   const showBadge = item.label === "Cart" && itemCount > 0;
 
   return (
-    <a
-      aria-label={item.label}
-      className="relative inline-flex size-9 items-center justify-center text-[#3b3128] transition hover:text-primary"
-      href={item.href}
-      title={item.label}
-    >
+    <a aria-label={item.label} className={ACTION_CLASS} href={item.href} title={item.label}>
       <Icon aria-hidden="true" size={18} strokeWidth={1.5} />
       {showBadge ? (
         <span className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded-full bg-[#7a4a1e] px-1 text-[10px] font-medium leading-4 text-white">

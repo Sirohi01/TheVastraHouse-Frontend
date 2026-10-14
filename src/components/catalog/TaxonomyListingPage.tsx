@@ -66,6 +66,7 @@ export async function TaxonomyListingPage({
 
   return (
     <CatalogPage
+      bannerStyle={{ showOutline: taxonomy.bannerOutline !== false }}
       bottomContent={taxonomy.bottomContent}
       breadcrumbs={[
         { name: "Shop", path: "/shop" },
@@ -74,6 +75,7 @@ export async function TaxonomyListingPage({
       description={taxonomy.description ?? `Products in ${taxonomy.name}.`}
       faqs={taxonomy.faqs}
       heroMedia={taxonomy.banner}
+      heroMobileMedia={taxonomy.mobileBanner}
       introContent={taxonomy.introContent}
       onProducts={(products) =>
         schemaEnabled ? (

@@ -8,13 +8,16 @@ export type BreadcrumbItem = { name: string; path: string };
  * Visible breadcrumb trail plus matching BreadcrumbList schema, so the two can never drift.
  * "Home" is prepended automatically.
  */
-export function Breadcrumbs({ items }: Readonly<{ items: BreadcrumbItem[] }>) {
+export function Breadcrumbs({
+  items,
+  visible = true,
+}: Readonly<{ items: BreadcrumbItem[]; visible?: boolean }>) {
   const trail = [{ name: "Home", path: "/" }, ...items];
 
   return (
     <>
       <JsonLd data={buildBreadcrumbJsonLd(trail)} />
-      <nav aria-label="Breadcrumb" className="text-xs text-[#6f6256]">
+      <nav aria-label="Breadcrumb" className={visible ? "text-xs text-[#6f6256]" : "sr-only"}>
         <ol className="flex flex-wrap items-center gap-1">
           {trail.map((item, index) => {
             const last = index === trail.length - 1;

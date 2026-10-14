@@ -7,6 +7,7 @@ const contentSections = new Set<ContentTab>([
   "shop",
   "preOrder",
   "navigation",
+  "productBadges",
   "footer",
   "testimonials",
   "faqs",
