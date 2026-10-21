@@ -76,12 +76,10 @@ export const trustBadgeIcons: CmsTrustBadgeIcon[] = [
 
 /** Shown under the buy buttons until the admin saves their own list (Content > Product Badges). */
 export const defaultProductTrustBadges: CmsTrustBadge[] = [
-  { enabled: true, icon: "truck", title: "Pan India Shipping" },
-  { enabled: true, icon: "box", title: "12 Days Replacement" },
-  { enabled: true, icon: "returns", subtitle: "(Conditions Apply)", title: "Returns Allowed" },
-  { enabled: true, icon: "wallet", title: "Vastra Credits On Returns" },
+  { enabled: true, icon: "truck", title: "Tracked Delivery" },
+  { enabled: true, icon: "returns", subtitle: "(Conditions Apply)", title: "7-Day Returns" },
+  { enabled: true, icon: "wallet", title: "Refund To Original Payment" },
   { enabled: true, icon: "shield", title: "Secure Payments" },
-  { enabled: true, icon: "leaf", title: "Premium Cotton Fabric" },
 ];
 
 export type CmsContent = {

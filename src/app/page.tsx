@@ -531,9 +531,9 @@ function TrustStrip() {
     },
     {
       icon: RotateCcw,
-      label: "Easy Returns",
+      label: "7-Day Returns",
       lottie: "easy-returns",
-      text: "Hassle-free return support",
+      text: "Conditions apply, see return policy",
     },
     {
       icon: ShieldCheck,
