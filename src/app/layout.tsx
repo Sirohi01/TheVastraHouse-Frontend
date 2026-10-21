@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
+import { preconnect } from "react-dom";
 import { Analytics } from "@/components/analytics/Analytics";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { RootChrome } from "@/components/layout/RootChrome";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { apiBaseUrl } from "@/lib/api";
 import { defaultCmsContent, fetchCmsContent } from "@/lib/cms";
 import { fetchCmsPages } from "@/lib/content";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd, getSeoSettings, getSiteUrl } from "@/lib/seo";
@@ -81,6 +83,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Cart, search and catalog calls go to the API origin on every page; warm the connection early.
+  try {
+    preconnect(new URL(apiBaseUrl).origin, { crossOrigin: "anonymous" });
+  } catch {
+    // Relative or invalid API base URL: nothing to preconnect.
+  }
   const [cms, seo, policies] = await Promise.all([
     loadCms(),
     getSeoSettings(),

@@ -186,14 +186,13 @@ export function sendVisitBeacon() {
   });
   const url = `${apiBaseUrl}/engagement/visit`;
 
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
-  } else {
-    void fetch(url, {
-      body,
-      headers: { "Content-Type": "application/json" },
-      keepalive: true,
-      method: "POST",
-    }).catch(() => undefined);
-  }
+  // Not sendBeacon: beacons always send credentials, and the API (credentials: false) fails that
+  // preflight, silently dropping every visit. keepalive gives the same survive-unload behaviour.
+  void fetch(url, {
+    body,
+    credentials: "omit",
+    headers: { "Content-Type": "application/json" },
+    keepalive: true,
+    method: "POST",
+  }).catch(() => undefined);
 }

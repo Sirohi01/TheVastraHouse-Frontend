@@ -76,8 +76,10 @@ function SingleMedia({
     <Image
       alt={alt}
       className="object-cover"
-      fetchPriority={eager ? "high" : "auto"}
       fill
+      // priority = eager load + preload. fetchPriority alone left Next defaulting to
+      // loading="lazy", which delayed the LCP image by seconds.
+      priority={eager}
       sizes="100vw"
       src={media.url}
     />
