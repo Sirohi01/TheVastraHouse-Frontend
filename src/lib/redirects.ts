@@ -18,8 +18,12 @@ export async function applyManagedRedirect(path: string) {
       target = (
         (await response.json()) as { redirect: { destination: string; statusCode: number } | null }
       ).redirect;
+    } else {
+      logRedirectFailure(path, `status ${response.status}`);
     }
-  } catch {
+  } catch (error) {
+    // A failed lookup degrades to a 404; log it so lost redirects are noticed.
+    logRedirectFailure(path, error instanceof Error ? error.message : "request failed");
     target = null;
   }
 
@@ -30,4 +34,10 @@ export async function applyManagedRedirect(path: string) {
   }
 
   permanentRedirect(target.destination);
+}
+
+function logRedirectFailure(path: string, reason: string) {
+  console.warn(
+    JSON.stringify({ event: "redirect_resolve_failed", path: path.slice(0, 300), reason }),
+  );
 }
