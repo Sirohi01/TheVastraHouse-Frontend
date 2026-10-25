@@ -1,5 +1,6 @@
 import { apiBaseUrl } from "@/lib/api";
 import { absoluteUrl, getSeoSettings, getSitemapData } from "@/lib/seo";
+import { publicFetchOptions } from "@/lib/cacheTags";
 
 export const revalidate = 3600;
 
@@ -14,7 +15,7 @@ export async function GET() {
   const [settings, catalog, pages] = await Promise.all([
     getSeoSettings(),
     getSitemapData(),
-    fetch(`${apiBaseUrl}/content/pages`, { next: { revalidate: 3600 } })
+    fetch(`${apiBaseUrl}/content/pages`, publicFetchOptions([], 3600))
       .then((response) => (response.ok ? (response.json() as Promise<PageList>) : { pages: [] }))
       .catch(() => ({ pages: [] }) as PageList),
   ]);

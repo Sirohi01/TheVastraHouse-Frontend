@@ -20,7 +20,8 @@ import { homeContent } from "@/lib/cms/homeContent";
 import { buildPageMetadata, getSeoSettings } from "@/lib/seo";
 import type { Metadata } from "next";
 
-export const revalidate = 60;
+// Matches the public data window; admin edits refresh sooner via /api/revalidate.
+export const revalidate = 300;
 
 type HomeData = {
   categories: CatalogTile[];

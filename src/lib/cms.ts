@@ -1,5 +1,6 @@
 import { apiBaseUrl, apiFetch } from "@/lib/api";
 import type { MediaReference } from "@/lib/catalog";
+import { publicFetchOptions } from "@/lib/cacheTags";
 
 export type CmsLink = {
   enabled?: boolean;
@@ -272,9 +273,10 @@ export const defaultCmsContent: CmsContent = {
 };
 
 export async function fetchCmsContent(key: string) {
-  const response = await fetch(`${apiBaseUrl}/cms/content/${key}`, {
-    next: { revalidate: 60, tags: [`cms:${key}`] },
-  });
+  const response = await fetch(
+    `${apiBaseUrl}/cms/content/${key}`,
+    publicFetchOptions([`cms:${key}`]),
+  );
 
   if (!response.ok) {
     throw new Error(`Failed to load CMS content (${response.status})`);

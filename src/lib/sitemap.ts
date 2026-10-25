@@ -1,5 +1,6 @@
 import { apiBaseUrl } from "@/lib/api";
 import { getSeoSettings, getSitemapData, getSiteUrl } from "@/lib/seo";
+import { publicFetchOptions } from "@/lib/cacheTags";
 
 /**
  * XML sitemap generation. The index at /sitemap.xml points to typed child sitemaps so large
@@ -88,7 +89,7 @@ type PageSitemap = {
 
 async function fetchJson<T>(path: string, fallback: T): Promise<T> {
   try {
-    const response = await fetch(`${apiBaseUrl}${path}`, { next: { revalidate: 300 } });
+    const response = await fetch(`${apiBaseUrl}${path}`, publicFetchOptions());
     return response.ok ? ((await response.json()) as T) : fallback;
   } catch {
     return fallback;

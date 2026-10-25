@@ -8,7 +8,8 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { defaultCmsContent, fetchCmsContent, type CmsContent } from "@/lib/cms";
 import { buildPageMetadata, buildWebPageJsonLd, getSeoSettings } from "@/lib/seo";
 
-export const revalidate = 60;
+// Matches the public data window; admin edits refresh sooner via /api/revalidate.
+export const revalidate = 300;
 
 const iconMap: Record<string, LucideIcon> = {
   award: Award,

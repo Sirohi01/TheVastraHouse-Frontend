@@ -11,7 +11,8 @@ import { fetchCmsPages } from "@/lib/content";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd, getSeoSettings, getSiteUrl } from "@/lib/seo";
 import "./globals.css";
 
-export const revalidate = 60;
+// Matches the public data window; admin edits refresh sooner via /api/revalidate.
+export const revalidate = 300;
 
 // Site-wide display/body fonts, exposed as CSS variables and mapped to Tailwind's
 // font-serif / font-sans (and the body default) in globals.css.

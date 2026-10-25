@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { apiBaseUrl } from "@/lib/api";
 import type { CatalogProduct, MediaReference, ProductVariant } from "@/lib/catalog";
+import { publicFetchOptions } from "@/lib/cacheTags";
 
 /**
  * Single source of truth for storefront SEO. Every public page builds its metadata through
@@ -117,9 +118,10 @@ export function absoluteUrl(pathOrUrl: string) {
 
 export async function getSeoSettings(): Promise<SeoSettings> {
   try {
-    const response = await fetch(`${apiBaseUrl}/catalog/seo-settings`, {
-      next: { revalidate: 120, tags: ["seo:settings"] },
-    });
+    const response = await fetch(
+      `${apiBaseUrl}/catalog/seo-settings`,
+      publicFetchOptions(["seo:settings"]),
+    );
 
     if (!response.ok) return FALLBACK_SETTINGS;
 
@@ -638,7 +640,7 @@ export type SitemapData = {
 
 export async function getSitemapData(): Promise<SitemapData> {
   try {
-    const response = await fetch(`${apiBaseUrl}/catalog/sitemap`, { next: { revalidate: 300 } });
+    const response = await fetch(`${apiBaseUrl}/catalog/sitemap`, publicFetchOptions());
     if (!response.ok) return { categories: [], collections: [], products: [] };
     return (await response.json()) as SitemapData;
   } catch {

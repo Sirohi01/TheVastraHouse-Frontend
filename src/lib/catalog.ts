@@ -1,5 +1,6 @@
 import { apiBaseUrl } from "@/lib/api";
 import type { EntitySeo } from "@/lib/seo";
+import { PUBLIC_DATA_TAG, publicFetchOptions } from "@/lib/cacheTags";
 
 export type MediaReference = {
   mediaId?: string;
@@ -199,9 +200,7 @@ export async function getCatalogFilters() {
 }
 
 export async function getCatalogHome() {
-  const response = await fetch(`${apiBaseUrl}/catalog/home`, {
-    next: { revalidate: 60, tags: ["catalog:home"] },
-  });
+  const response = await fetch(`${apiBaseUrl}/catalog/home`, publicFetchOptions(["catalog:home"]));
   if (!response.ok) {
     throw new Error((await response.text()) || "Catalog home request failed");
   }
@@ -306,7 +305,10 @@ function formatMoney(price: number, currency: string) {
 }
 
 async function catalogFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, { next: { revalidate: 30 } });
+  // Short window: listings and product pages carry live stock. Admin edits refresh via the tag.
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    next: { revalidate: 30, tags: [PUBLIC_DATA_TAG] },
+  });
 
   if (!response.ok) {
     throw new Error((await response.text()) || "Catalog request failed");

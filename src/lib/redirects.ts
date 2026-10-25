@@ -1,5 +1,6 @@
 import { permanentRedirect, redirect } from "next/navigation";
 import { apiBaseUrl } from "@/lib/api";
+import { publicFetchOptions } from "@/lib/cacheTags";
 
 /**
  * Looks up an admin-managed or slug-change redirect for a path that would otherwise 404 and
@@ -11,7 +12,7 @@ export async function applyManagedRedirect(path: string) {
   try {
     const response = await fetch(
       `${apiBaseUrl}/content/redirects/resolve?path=${encodeURIComponent(path)}`,
-      { next: { revalidate: 60 } },
+      publicFetchOptions(["redirects"]),
     );
     if (response.ok) {
       target = (

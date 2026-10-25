@@ -1,6 +1,7 @@
 import { apiBaseUrl } from "@/lib/api";
 import type { MediaReference } from "@/lib/catalog";
 import type { EntitySeo } from "@/lib/seo";
+import { publicFetchOptions } from "@/lib/cacheTags";
 
 export type CmsFaq = { question: string; answer: string };
 export type CmsPage = {
@@ -44,7 +45,7 @@ export type PaginatedContent<T> = {
 
 async function contentFetch<T>(path: string, fallback?: T): Promise<T> {
   try {
-    const response = await fetch(`${apiBaseUrl}${path}`, { next: { revalidate: 60 } });
+    const response = await fetch(`${apiBaseUrl}${path}`, publicFetchOptions());
     if (!response.ok) {
       if (fallback !== undefined) return fallback;
       throw new Error("Content unavailable");
