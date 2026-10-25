@@ -405,7 +405,8 @@ function ProductMediaFrame({
       className="rounded-sm border border-[#e1d6c4]"
       objectFit={media.objectFit}
       priority={priority}
-      sizes={thumbnail ? "20vw" : "(max-width: 1024px) 100vw, 55vw"}
+      // Thumbnails are a 5-column strip under the gallery (about 11vw next to the details on lg+).
+      sizes={thumbnail ? "(min-width: 1024px) 11vw, 20vw" : "(max-width: 1024px) 100vw, 55vw"}
       src={media.url}
     />
   );

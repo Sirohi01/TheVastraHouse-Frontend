@@ -397,7 +397,8 @@ function CollectionGrid({ tiles }: Readonly<{ tiles: VisualTile[] }>) {
                   alt={tile.media.alt}
                   aspectRatio={TALL_TILE_ASPECT_RATIO}
                   className="z-0 transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 33vw"
+                  // Tiles are fixed-width (w-44 / sm:w-52), not a fraction of the viewport.
+                  sizes="(min-width: 640px) 208px, 176px"
                   src={tile.media.src}
                 />
                 <div className="absolute inset-0 z-10 bg-[linear-gradient(0deg,rgb(32_22_12/0.82),transparent_56%)]" />
@@ -446,7 +447,8 @@ function ProductGrid({ products }: Readonly<{ products: VisualTile[] }>) {
                 <ProductMediaCarousel
                   alt={product.media.alt}
                   media={product.mediaItems ?? []}
-                  sizes="(max-width: 640px) 100vw, 25vw"
+                  // Cards are fixed-width (w-60 / sm:w-72): 100vw fetched ~1200w files on phones.
+                  sizes="(min-width: 640px) 288px, 240px"
                 />
                 <span className="pointer-events-none absolute inset-1.5 border border-white/0 transition-colors duration-200 group-hover:border-[#caa14e]/55" />
                 {product.pricing?.hasSale ? (
