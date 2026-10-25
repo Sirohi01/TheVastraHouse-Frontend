@@ -1,8 +1,20 @@
 import { spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { existsSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-rmSync(".next", { force: true, recursive: true });
+/**
+ * Clears previous build output but keeps .next/cache: container builders (Coolify's Railpack)
+ * mount it as a persistent cache volume, and removing a mount point fails with EBUSY. The cache
+ * only holds reusable compiler/fetch data, so keeping it is safe and makes builds faster.
+ */
+function cleanBuildOutput() {
+  if (!existsSync(".next")) return;
+  for (const entry of readdirSync(".next")) {
+    if (entry !== "cache") rmSync(join(".next", entry), { force: true, recursive: true });
+  }
+}
+
+cleanBuildOutput();
 
 // Next 15 can race while writing app route manifests on Windows. Keeping the
 // build in worker mode avoids intermittent PageNotFoundError failures.
@@ -15,7 +27,7 @@ let result = spawnSync(process.execPath, [nextBin, "build"], {
 });
 
 if (result.status !== 0) {
-  rmSync(".next", { force: true, recursive: true });
+  cleanBuildOutput();
   result = spawnSync(process.execPath, [nextBin, "build"], {
     env: process.env,
     stdio: "inherit",
