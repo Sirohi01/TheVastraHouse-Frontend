@@ -24,6 +24,7 @@ const STATIC_PATHS: Array<{ path: string; priority: number; changefreq: UrlEntry
     { changefreq: "monthly", path: "/about", priority: 0.5 },
     { changefreq: "monthly", path: "/contact", priority: 0.5 },
     { changefreq: "monthly", path: "/faq", priority: 0.5 },
+    { changefreq: "weekly", path: "/collections", priority: 0.6 },
     { changefreq: "weekly", path: "/blog", priority: 0.6 },
     { changefreq: "monthly", path: "/policies", priority: 0.3 },
   ];

@@ -554,7 +554,9 @@ export function buildArticleJsonLd(input: {
     headline: input.headline.slice(0, 110),
     image: input.image ? [input.image] : undefined,
     mainEntityOfPage: { "@id": absoluteUrl(input.path), "@type": "WebPage" },
+    // Same entity as the site-wide Organization node, so the article joins the brand graph.
     publisher: {
+      "@id": `${getSiteUrl()}/#organization`,
       "@type": "Organization",
       name: input.publisherName,
       ...(input.publisherLogo
